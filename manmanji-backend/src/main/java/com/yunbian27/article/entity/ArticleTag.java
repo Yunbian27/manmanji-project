@@ -7,6 +7,8 @@ import lombok.Data;
 @TableName("article_tags")
 public class ArticleTag {
 
+    /** 文章ID */
     private Long articleId;
+    /** 标签ID */
     private Long tagId;
 }
