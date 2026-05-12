@@ -236,7 +236,27 @@ CREATE TABLE IF NOT EXISTS ai_messages (
 CREATE INDEX IF NOT EXISTS idx_messages_conversation ON ai_messages(conversation_id, created_at);
 
 -- ============================================
--- 14. 积分流水
+-- 14. AI — LLM Provider 配置
+-- ============================================
+
+CREATE TABLE IF NOT EXISTS llm_provider_config (
+    id                      VARCHAR(30)   PRIMARY KEY,
+    base_url                VARCHAR(300)  NOT NULL,
+    api_key_ciphertext      TEXT,
+    api_key_nonce           VARCHAR(50),
+    model                   VARCHAR(100)  NOT NULL,
+    embedding_model         VARCHAR(100),
+    embedding_dimensions    INT,
+    supports_embedding      BOOLEAN       NOT NULL DEFAULT FALSE,
+    temperature             DOUBLE PRECISION,
+    enabled                 BOOLEAN       NOT NULL DEFAULT TRUE,
+    builtin                 BOOLEAN       NOT NULL DEFAULT FALSE,
+    created_at              TIMESTAMP     NOT NULL DEFAULT NOW(),
+    updated_at              TIMESTAMP     NOT NULL DEFAULT NOW()
+);
+
+-- ============================================
+-- 15. 积分流水
 -- ============================================
 
 CREATE TABLE IF NOT EXISTS points_transactions (
@@ -253,7 +273,7 @@ CREATE INDEX IF NOT EXISTS idx_points_user ON points_transactions(user_id, creat
 CREATE INDEX IF NOT EXISTS idx_points_type ON points_transactions(type);
 
 -- ============================================
--- 15. 秒杀活动
+-- 16. 秒杀活动
 -- ============================================
 
 CREATE TABLE IF NOT EXISTS flash_sales (
@@ -270,7 +290,7 @@ CREATE TABLE IF NOT EXISTS flash_sales (
 CREATE INDEX IF NOT EXISTS idx_flash_sales_status ON flash_sales(status, start_time, end_time);
 
 -- ============================================
--- 16. 秒杀商品
+-- 17. 秒杀商品
 -- ============================================
 
 CREATE TABLE IF NOT EXISTS flash_sale_items (
@@ -289,7 +309,7 @@ CREATE TABLE IF NOT EXISTS flash_sale_items (
 CREATE INDEX IF NOT EXISTS idx_flash_items_sale ON flash_sale_items(flash_sale_id);
 
 -- ============================================
--- 17. 秒杀订单
+-- 18. 秒杀订单
 -- ============================================
 
 CREATE TABLE IF NOT EXISTS flash_sale_orders (
@@ -305,7 +325,7 @@ CREATE TABLE IF NOT EXISTS flash_sale_orders (
 CREATE INDEX IF NOT EXISTS idx_flash_orders_user ON flash_sale_orders(user_id);
 
 -- ============================================
--- 18. 优惠券模板
+-- 19. 优惠券模板
 -- ============================================
 
 CREATE TABLE IF NOT EXISTS coupons (
@@ -322,7 +342,7 @@ CREATE TABLE IF NOT EXISTS coupons (
 );
 
 -- ============================================
--- 19. 用户优惠券
+-- 20. 用户优惠券
 -- ============================================
 
 CREATE TABLE IF NOT EXISTS user_coupons (

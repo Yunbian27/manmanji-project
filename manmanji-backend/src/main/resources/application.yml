@@ -65,7 +65,7 @@ spring:
 jwt:
   private-key-path: classpath:keys/rsa_private.pem
   public-key-path: classpath:keys/rsa_public.pem
-  access-token-expire: 900        # 15 分钟
+  access-token-expire: 900000000000        # 15 分钟(900)
   refresh-token-expire: 604800    # 7 天
 
 # MyBatis-Plus
@@ -138,6 +138,18 @@ ai:
     message-chat-memory-enabled: ${APP_AI_ADVISORS_MESSAGE_CHAT_MEMORY_ENABLED:false}
     message-chat-memory-max-messages: ${APP_AI_ADVISORS_MESSAGE_CHAT_MEMORY_MAX_MESSAGES:120}
     simple-logger-enabled: ${APP_AI_ADVISORS_SIMPLE_LOGGER_ENABLED:false}
+
+# SpringDoc OpenAPI / Swagger配置
+springdoc:
+  api-docs:
+    enabled: true
+    path: /v3/api-docs
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: alpha
+  packages-to-scan: com.yunbian27
 
 # 日志
 logging:

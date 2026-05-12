@@ -32,6 +32,12 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
+                // Swagger & API 文档
+                .requestMatchers(
+                    "/swagger-ui.html", "/swagger-ui/**",
+                    "/v3/api-docs", "/v3/api-docs/**",
+                    "/scalar", "/scalar/**"
+                ).permitAll()
                 // 公开接口
                 .requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/refresh").permitAll()
                 .requestMatchers(HttpMethod.GET,

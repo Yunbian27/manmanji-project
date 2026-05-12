@@ -1,4 +1,4 @@
-package com.yunbian27.ai.service;
+package com.yunbian27.ai.utils;
 
 import com.yunbian27.ai.config.LlmProviderProperties;
 import com.yunbian27.common.exception.BusinessException;
@@ -12,11 +12,11 @@ import javax.crypto.Cipher;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 
 @Slf4j
-@Service
-public class ApiKeyEncryptionService {
+@Component
+public class ApiKeyEncryption {
 
     private static final int NONCE_BYTES = 12;
     private static final int GCM_TAG_BITS = 128;
@@ -28,7 +28,7 @@ public class ApiKeyEncryptionService {
     private final SecureRandom secureRandom = new SecureRandom();
     private SecretKeySpec secretKey;
 
-    public ApiKeyEncryptionService(LlmProviderProperties properties) {
+    public ApiKeyEncryption(LlmProviderProperties properties) {
         this.properties = properties;
     }
 
@@ -47,6 +47,9 @@ public class ApiKeyEncryptionService {
         secretKey = new SecretKeySpec(resolveKeyBytes(configuredKey), "AES");
     }
 
+    /**
+     * 加密 Provider API Key
+     */
     public EncryptedValue encrypt(String plainText) {
         try {
             byte[] nonce = new byte[NONCE_BYTES];
@@ -66,6 +69,9 @@ public class ApiKeyEncryptionService {
         }
     }
 
+    /**
+     * 解密 Provider API Key
+     */
     public String decrypt(String nonceBase64, String ciphertextBase64) {
         try {
             byte[] nonce = Base64.getDecoder().decode(nonceBase64);

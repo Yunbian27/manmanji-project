@@ -1,8 +1,9 @@
-package com.yunbian27.article.controller;
+package com.yunbian27.article;
 
 import com.yunbian27.article.dto.ArticleCreateReq;
 import com.yunbian27.article.service.ArticleService;
 import com.yunbian27.common.Result;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/article")
 @RequiredArgsConstructor
+@Tag(name = "文章模块", description = "管理文章编辑发布相关操作")
 public class ArticleController {
 
     private final ArticleService articleService;
