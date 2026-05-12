@@ -6,7 +6,8 @@ import com.yunbian27.auth.dto.LoginResp;
 import com.yunbian27.auth.dto.RegisterReq;
 import com.yunbian27.auth.entity.User;
 import com.yunbian27.auth.mapper.UserMapper;
-import com.yunbian27.common.BizException;
+import com.yunbian27.common.exception.BusinessException;
+import com.yunbian27.common.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -30,13 +31,13 @@ public class AuthService {
         boolean exists = userMapper.exists(new LambdaQueryWrapper<User>()
                 .eq(User::getUsername, req.getUsername()));
         if (exists) {
-            throw new BizException("用户名已存在");
+            throw new BusinessException(ErrorCode.USERNAME_EXISTS);
         }
 
         exists = userMapper.exists(new LambdaQueryWrapper<User>()
                 .eq(User::getEmail, req.getEmail()));
         if (exists) {
-            throw new BizException("邮箱已被注册");
+            throw new BusinessException(ErrorCode.EMAIL_EXISTS);
         }
 
         User user = new User();
@@ -93,10 +94,10 @@ public class AuthService {
 
         User user = userMapper.selectById(userId);
         if (user == null) {
-            throw new BizException("用户不存在");
+            throw new BusinessException(ErrorCode.USER_NOT_FOUND);
         }
         if ("BANNED".equals(user.getStatus())) {
-            throw new BizException("用户已被禁用");
+            throw new BusinessException(ErrorCode.USER_BANNED);
         }
 
         String newAccessToken = jwtService.generateAccessToken(user.getId(), user.getRole());

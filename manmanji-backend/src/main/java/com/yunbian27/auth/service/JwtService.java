@@ -1,11 +1,11 @@
 package com.yunbian27.auth.service;
 
+import com.yunbian27.auth.config.JwtProperties;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import jakarta.annotation.PostConstruct;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StreamUtils;
 
@@ -21,19 +21,10 @@ import java.util.UUID;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class JwtService {
 
-    @Value("${jwt.private-key-path}")
-    private Resource privateKeyResource;
-
-    @Value("${jwt.public-key-path}")
-    private Resource publicKeyResource;
-
-    @Value("${jwt.access-token-expire}")
-    private long accessTokenExpire;
-
-    @Value("${jwt.refresh-token-expire}")
-    private long refreshTokenExpire;
+    private final JwtProperties jwtProperties;
 
     private PrivateKey privateKey;
     private PublicKey publicKey;
@@ -42,9 +33,9 @@ public class JwtService {
     public void init() {
         try {
             String privateKeyContent = StreamUtils.copyToString(
-                    privateKeyResource.getInputStream(), StandardCharsets.UTF_8);
+                    jwtProperties.getPrivateKeyPath().getInputStream(), StandardCharsets.UTF_8);
             String publicKeyContent = StreamUtils.copyToString(
-                    publicKeyResource.getInputStream(), StandardCharsets.UTF_8);
+                    jwtProperties.getPublicKeyPath().getInputStream(), StandardCharsets.UTF_8);
 
             privateKeyContent = stripPemHeaders(privateKeyContent);
             publicKeyContent = stripPemHeaders(publicKeyContent);
@@ -79,7 +70,7 @@ public class JwtService {
     public String generateAccessToken(Long userId, String role) {
         String tokenId = UUID.randomUUID().toString();
         Date now = new Date();
-        Date expiry = new Date(now.getTime() + accessTokenExpire * 1000);
+        Date expiry = new Date(now.getTime() + jwtProperties.getAccessTokenExpire() * 1000);
 
         return Jwts.builder()
                 .id(tokenId)
@@ -94,7 +85,7 @@ public class JwtService {
     public String generateRefreshToken(Long userId) {
         String tokenId = UUID.randomUUID().toString();
         Date now = new Date();
-        Date expiry = new Date(now.getTime() + refreshTokenExpire * 1000);
+        Date expiry = new Date(now.getTime() + jwtProperties.getRefreshTokenExpire() * 1000);
 
         return Jwts.builder()
                 .id(tokenId)
@@ -119,6 +110,6 @@ public class JwtService {
     }
 
     public long getAccessTokenExpire() {
-        return accessTokenExpire;
+        return jwtProperties.getAccessTokenExpire();
     }
 }

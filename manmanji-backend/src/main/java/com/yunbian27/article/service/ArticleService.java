@@ -85,4 +85,10 @@ public class ArticleService {
 
         return slug;
     }
+
+    public String improve(String article) {
+        //TODO调用ai，获取生成后的文章
+        log.info("ai润色后的文章：");
+        return "生成后的文章";
+    }
 }

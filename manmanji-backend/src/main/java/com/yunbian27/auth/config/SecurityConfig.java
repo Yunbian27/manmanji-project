@@ -1,4 +1,4 @@
-package com.yunbian27.config;
+package com.yunbian27.auth.config;
 
 import com.yunbian27.auth.security.JwtAuthFilter;
 import org.springframework.context.annotation.Bean;

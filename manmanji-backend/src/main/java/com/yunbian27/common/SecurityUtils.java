@@ -1,5 +1,7 @@
 package com.yunbian27.common;
 
+import com.yunbian27.common.exception.BusinessException;
+import com.yunbian27.common.exception.ErrorCode;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
@@ -11,7 +13,7 @@ public class SecurityUtils {
     public static Long getCurrentUserId() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || !(auth.getPrincipal() instanceof Long)) {
-            throw new BizException("未登录");
+            throw new BusinessException(ErrorCode.UNAUTHORIZED);
         }
         return (Long) auth.getPrincipal();
     }

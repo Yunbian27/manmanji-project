@@ -1,4 +1,4 @@
-package com.yunbian27.config;
+package com.yunbian27.common.config;
 
 import com.baomidou.mybatisplus.annotation.DbType;
 import com.baomidou.mybatisplus.core.handlers.MetaObjectHandler;

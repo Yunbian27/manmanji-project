@@ -1,55 +1,29 @@
+# ==========================================
+# 开发环境敏感配置模板
+# 复制为 application-dev.yml 后填入真实值：
+#   cp application-dev.yml.example application-dev.yml
+# ==========================================
+
 spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/manmanji
     username: postgres
-    password: your_password
-    driver-class-name: org.postgresql.Driver
-    hikari:
-      maximum-pool-size: 20
-      minimum-idle: 5
-      idle-timeout: 300000
-      connection-timeout: 20000
+    password: your-password
 
   data:
     redis:
       host: localhost
       port: 6379
-      database: 0
-      lettuce:
-        pool:
-          max-active: 16
-          max-idle: 8
-          min-idle: 4
 
-  # Spring AI — 接入 DeepSeek（OpenAI 兼容协议）
   ai:
     openai:
-      api-key: ${DEEPSEEK_API_KEY:your-deepseek-api-key}
-      base-url: https://api.deepseek.com
-      chat:
-        options:
-          model: deepseek-chat
-          temperature: 0.7
-    vectorstore:
-      pgvector:
-        initialize-schema: false  # 由 schema.sql 手动创建
+      api-key: ${DEEPSEEK_API_KEY:sk-placeholder}
 
-# MyBatis-Plus
-mybatis-plus:
-  mapper-locations: classpath*:/mapper/**/*.xml
-  type-aliases-package: com.yunbian27
-  configuration:
-    map-underscore-to-camel-case: true
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
-  global-config:
-    db-config:
-      id-type: auto
-      logic-delete-field: deleted
-      logic-delete-value: true
-      logic-not-delete-value: false
+# AI 厂商 API Key（去对应平台申请）
+AI_BAILIAN_API_KEY: your-bailian-key-here       # https://bailian.console.aliyun.com/
+PROVIDER_KIMI_API_KEY: ""                        # https://platform.moonshot.cn/
+PROVIDER_DEEPSEEK_API_KEY: ""                    # https://platform.deepseek.com/
+PROVIDER_GLM_API_KEY: ""                         # https://open.bigmodel.cn/
 
-# 开发环境日志
-logging:
-  level:
-    com.yunbian27: debug
-    com.baomidou.mybatisplus: debug
+# 配置加密密钥（用于加密存储 API Key 到数据库）
+APP_AI_CONFIG_ENCRYPTION_KEY: ""
