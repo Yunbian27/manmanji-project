@@ -1,11 +1,13 @@
 package com.yunbian27.ai.model;
 
 import com.baomidou.mybatisplus.annotation.*;
+import lombok.Builder;
 import lombok.Data;
 
 import java.time.LocalDateTime;
 
 @Data
+@Builder
 @TableName("llm_global_setting")
 public class LlmGlobalSettingEntity {
 

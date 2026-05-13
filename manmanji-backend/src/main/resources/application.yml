@@ -10,9 +10,9 @@ spring:
   # 数据库初始化
   sql:
     init:
-      mode: always
+      mode: never #项目第一次执行之后将always改为never
       schema-locations: classpath:schema.sql
-      data-locations: classpath:data.sql
+      #data-locations: classpath:data.sql
 
   # Jackson
   jackson:
