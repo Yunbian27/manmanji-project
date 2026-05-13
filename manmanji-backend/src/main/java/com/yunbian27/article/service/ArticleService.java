@@ -1,6 +1,9 @@
 package com.yunbian27.article.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.yunbian27.ai.mapper.LlmGlobalSettingMapper;
+import com.yunbian27.ai.model.LlmGlobalSettingEntity;
+import com.yunbian27.ai.utils.LlmProviderRegistry;
 import com.yunbian27.article.model.ArticleCreateDTO;
 import com.yunbian27.article.entity.Article;
 import com.yunbian27.article.entity.ArticleTag;
@@ -9,6 +12,7 @@ import com.yunbian27.article.mapper.ArticleTagMapper;
 import com.yunbian27.common.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,6 +27,8 @@ public class ArticleService {
 
     private final ArticleMapper articleMapper;
     private final ArticleTagMapper articleTagMapper;
+    private final LlmProviderRegistry providerRegistry;
+    private final LlmGlobalSettingMapper llmGlobalSettingMapper;
 
     @Transactional
     public Long createArticle(ArticleCreateDTO req) {
@@ -86,9 +92,18 @@ public class ArticleService {
         return slug;
     }
 
+    /**
+     * ai润色文章
+     * @param article
+     * @return
+     */
     public String improve(String article) {
-        //TODO调用ai，获取生成后的文章
-        log.info("ai润色后的文章：");
-        return "生成后的文章";
+        ChatClient chatClient = providerRegistry.getChatClient(
+                llmGlobalSettingMapper.selectById(LlmGlobalSettingEntity.SINGLETON_ID).getDefaultChatProviderId());
+        return chatClient.prompt()
+                .system("你是ai聊天助手")
+                .user(article)
+                .call()
+                .content();
     }
 }

@@ -7,6 +7,7 @@ import com.yunbian27.ai.model.LlmProviderVO;
 import com.yunbian27.ai.model.LlmProviderEntity;
 import com.yunbian27.ai.mapper.LlmProviderMapper;
 import com.yunbian27.ai.utils.ApiKeyEncryption;
+import com.yunbian27.ai.utils.LlmProviderRegistry;
 import com.yunbian27.common.exception.BusinessException;
 import com.yunbian27.common.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +26,7 @@ public class AiService {
     private final LlmProviderMapper llmProviderMapper;
     private final LlmProviderProperties providerProperties;
     private final ApiKeyEncryption encryption;
+    private final LlmProviderRegistry registry;
 
     private static final Map<String, String> RECOMMENDED_EMBEDDING_MODELS = Map.of(
             "dashscope", "text-embedding-v3",
@@ -95,8 +97,7 @@ public class AiService {
                 .enabled(true)
                 .builtin(false)
                 .build());
-        //TODO 后续完成热更新
-        //registry.reload();
+        registry.reload();
         log.info("Created provider: id={}, baseUrl={}, model={}", providerId, baseUrl, model);
     }
 

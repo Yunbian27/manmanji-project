@@ -32,7 +32,7 @@ public class ArticleController {
     /**
      * 文章润色
      */
-    @GetMapping("improve")
+    @PostMapping("improve")
     public Result<String> improve(@RequestBody String article) {
         return Result.success(articleService.improve(article));
     }

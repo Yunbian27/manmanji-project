@@ -60,6 +60,13 @@ public class LlmProviderRegistry {
         });
     }
 
+    public void reload() {
+        int size = clientCache.size() + embeddingModelCache.size();
+        log.info("[LlmProviderRegistry] 正在重新加载模型服务商配置，当前缓存大小为: {}", size);
+        clientCache.clear();
+        embeddingModelCache.clear();
+    }
+
     /**
      * 创建 ChatClient
      * @param providerId
