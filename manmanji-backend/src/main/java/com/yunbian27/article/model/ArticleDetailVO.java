@@ -1,4 +1,4 @@
-package com.yunbian27.article.dto;
+package com.yunbian27.article.model;
 
 import lombok.Builder;
 import lombok.Data;
@@ -8,7 +8,7 @@ import java.util.List;
 
 @Data
 @Builder
-public class ArticleDetailResp {
+public class ArticleDetailVO {
 
     /** 文章ID */
     private Long id;

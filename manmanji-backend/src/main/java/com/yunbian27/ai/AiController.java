@@ -1,6 +1,7 @@
 package com.yunbian27.ai;
 
-import com.yunbian27.ai.dto.LlmProviderVO;
+import com.yunbian27.ai.model.CreateProviderDTO;
+import com.yunbian27.ai.model.LlmProviderVO;
 import com.yunbian27.ai.service.AiService;
 import com.yunbian27.common.Result;
 import io.swagger.v3.oas.annotations.Operation;
@@ -28,5 +29,14 @@ public class AiController {
     @Operation(summary = "查询单个 LLM Provider 详情")
     public Result<LlmProviderVO> getProvider(@PathVariable String id) {
         return Result.success(aiService.getProvider(id));
+    }
+
+    /**
+     * 创建 LLM Provider
+     */
+    @PostMapping("/create")
+    public Result<Void> createProvider(@RequestBody CreateProviderDTO dto) {
+        aiService.createProvider(dto);
+        return Result.success();
     }
 }

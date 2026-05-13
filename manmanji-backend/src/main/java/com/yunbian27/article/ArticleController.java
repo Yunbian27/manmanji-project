@@ -1,6 +1,6 @@
 package com.yunbian27.article;
 
-import com.yunbian27.article.dto.ArticleCreateReq;
+import com.yunbian27.article.model.ArticleCreateDTO;
 import com.yunbian27.article.service.ArticleService;
 import com.yunbian27.common.Result;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -24,7 +24,7 @@ public class ArticleController {
      * @return
      */
     @PostMapping("/create")
-    public Result<Long> create(@Valid @RequestBody ArticleCreateReq req) {
+    public Result<Long> create(@Valid @RequestBody ArticleCreateDTO req) {
         Long articleId = articleService.createArticle(req);
         return Result.success(articleId);
     }

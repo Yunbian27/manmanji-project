@@ -1,7 +1,7 @@
 package com.yunbian27.article.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.yunbian27.article.dto.ArticleCreateReq;
+import com.yunbian27.article.model.ArticleCreateDTO;
 import com.yunbian27.article.entity.Article;
 import com.yunbian27.article.entity.ArticleTag;
 import com.yunbian27.article.mapper.ArticleMapper;
@@ -25,7 +25,7 @@ public class ArticleService {
     private final ArticleTagMapper articleTagMapper;
 
     @Transactional
-    public Long createArticle(ArticleCreateReq req) {
+    public Long createArticle(ArticleCreateDTO req) {
         Long authorId = SecurityUtils.getCurrentUserId();
 
         Article article = new Article();

@@ -1,9 +1,9 @@
 package com.yunbian27.auth.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.yunbian27.auth.dto.LoginReq;
-import com.yunbian27.auth.dto.LoginResp;
-import com.yunbian27.auth.dto.RegisterReq;
+import com.yunbian27.auth.model.LoginDTO;
+import com.yunbian27.auth.model.LoginVO;
+import com.yunbian27.auth.model.RegisterDTO;
 import com.yunbian27.auth.entity.User;
 import com.yunbian27.auth.mapper.UserMapper;
 import com.yunbian27.common.exception.BusinessException;
@@ -27,7 +27,7 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
 
-    public LoginResp register(RegisterReq req) {
+    public LoginVO register(RegisterDTO req) {
         boolean exists = userMapper.exists(new LambdaQueryWrapper<User>()
                 .eq(User::getUsername, req.getUsername()));
         if (exists) {
@@ -54,7 +54,7 @@ public class AuthService {
         String accessToken = jwtService.generateAccessToken(user.getId(), user.getRole());
         String refreshToken = jwtService.generateRefreshToken(user.getId());
 
-        return LoginResp.builder()
+        return LoginVO.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
                 .expiresIn(jwtService.getAccessTokenExpire())
@@ -62,7 +62,7 @@ public class AuthService {
                 .build();
     }
 
-    public LoginResp login(LoginReq req) {
+    public LoginVO login(LoginDTO req) {
         try {
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(req.getUsername(), req.getPassword())
@@ -77,7 +77,7 @@ public class AuthService {
             String accessToken = jwtService.generateAccessToken(user.getId(), user.getRole());
             String refreshToken = jwtService.generateRefreshToken(user.getId());
 
-            return LoginResp.builder()
+            return LoginVO.builder()
                     .accessToken(accessToken)
                     .refreshToken(refreshToken)
                     .expiresIn(jwtService.getAccessTokenExpire())
@@ -89,7 +89,7 @@ public class AuthService {
         }
     }
 
-    public LoginResp refreshAccessToken(String refreshTokenStr) {
+    public LoginVO refreshAccessToken(String refreshTokenStr) {
         Long userId = jwtService.getUserIdFromToken(refreshTokenStr);
 
         User user = userMapper.selectById(userId);
@@ -103,7 +103,7 @@ public class AuthService {
         String newAccessToken = jwtService.generateAccessToken(user.getId(), user.getRole());
         String newRefreshToken = jwtService.generateRefreshToken(user.getId());
 
-        return LoginResp.builder()
+        return LoginVO.builder()
                 .accessToken(newAccessToken)
                 .refreshToken(newRefreshToken)
                 .expiresIn(jwtService.getAccessTokenExpire())
@@ -111,8 +111,8 @@ public class AuthService {
                 .build();
     }
 
-    private LoginResp.UserInfo toUserInfo(User user) {
-        return LoginResp.UserInfo.builder()
+    private LoginVO.UserInfo toUserInfo(User user) {
+        return LoginVO.UserInfo.builder()
                 .id(user.getId())
                 .username(user.getUsername())
                 .email(user.getEmail())

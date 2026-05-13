@@ -1,4 +1,4 @@
-package com.yunbian27.ai.dto;
+package com.yunbian27.ai.model;
 
 import lombok.Data;
 

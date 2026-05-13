@@ -1,4 +1,4 @@
-package com.yunbian27.auth.dto;
+package com.yunbian27.auth.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -7,7 +7,7 @@ import lombok.Data;
 @Data
 @Builder
 @AllArgsConstructor
-public class LoginResp {
+public class LoginVO {
 
     /** 访问令牌(15分钟) */
     private String accessToken;

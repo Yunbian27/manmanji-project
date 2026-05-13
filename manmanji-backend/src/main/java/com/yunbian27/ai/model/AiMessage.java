@@ -1,4 +1,4 @@
-package com.yunbian27.ai.entity;
+package com.yunbian27.ai.model;
 
 import com.baomidou.mybatisplus.annotation.*;
 import lombok.Data;

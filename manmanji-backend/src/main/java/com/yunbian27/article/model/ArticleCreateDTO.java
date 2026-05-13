@@ -1,4 +1,4 @@
-package com.yunbian27.article.dto;
+package com.yunbian27.article.model;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -7,7 +7,7 @@ import lombok.Data;
 import java.util.List;
 
 @Data
-public class ArticleCreateReq {
+public class ArticleCreateDTO {
 
     /** 文章标题(最长200) */
     @NotBlank(message = "标题不能为空")
@@ -36,3 +36,4 @@ public class ArticleCreateReq {
     /** 状态(DRAFT/PUBLISHED) */
     private String status;
 }
+

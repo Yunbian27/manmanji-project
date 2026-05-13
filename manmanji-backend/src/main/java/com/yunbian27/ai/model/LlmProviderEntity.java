@@ -1,11 +1,13 @@
-package com.yunbian27.ai.entity;
+package com.yunbian27.ai.model;
 
 import com.baomidou.mybatisplus.annotation.*;
+import lombok.Builder;
 import lombok.Data;
 
 import java.time.LocalDateTime;
 
 @Data
+@Builder
 @TableName("llm_provider_config")
 public class LlmProviderEntity {
 
@@ -21,7 +23,7 @@ public class LlmProviderEntity {
     @TableField("api_key_ciphertext")
     private String apiKeyCiphertext;
 
-    /** API密钥加密用Nonce */
+    /** API密钥加密用12位随机数 */
     @TableField("api_key_nonce")
     private String apiKeyNonce;
 

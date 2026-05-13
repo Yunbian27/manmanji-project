@@ -1,10 +1,10 @@
-package com.yunbian27.auth.dto;
+package com.yunbian27.auth.model;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 @Data
-public class LoginReq {
+public class LoginDTO {
 
     /** 用户名 */
     @NotBlank(message = "用户名不能为空")

@@ -1,4 +1,4 @@
-package com.yunbian27.auth.dto;
+package com.yunbian27.auth.model;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -6,7 +6,7 @@ import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 @Data
-public class RegisterReq {
+public class RegisterDTO {
 
     /** 用户名(3-50字符) */
     @NotBlank(message = "用户名不能为空")

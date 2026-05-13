@@ -1,4 +1,4 @@
-package com.yunbian27.article.dto;
+package com.yunbian27.article.model;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
@@ -6,7 +6,7 @@ import lombok.Data;
 import java.util.List;
 
 @Data
-public class ArticleGenerateReq {
+public class ArticleGenerateDTO {
 
     /** 用户的模糊想法/主题 */
     @NotBlank(message = "想法不能为空")

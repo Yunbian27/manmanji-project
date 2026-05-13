@@ -3,7 +3,7 @@ package com.yunbian27.ai.utils;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.yunbian27.ai.config.LlmProviderProperties;
-import com.yunbian27.ai.entity.LlmProviderEntity;
+import com.yunbian27.ai.model.LlmProviderEntity;
 import com.yunbian27.ai.mapper.LlmProviderMapper;
 import io.micrometer.observation.ObservationRegistry;
 import lombok.extern.slf4j.Slf4j;
