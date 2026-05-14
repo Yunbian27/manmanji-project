@@ -28,6 +28,7 @@ public class ArticleService {
 
     private final ArticleMapper articleMapper;
     private final ArticleTagMapper articleTagMapper;
+
     private final LlmProviderRegistry providerRegistry;
     private final LlmGlobalSettingMapper llmGlobalSettingMapper;
 
@@ -114,6 +115,9 @@ public class ArticleService {
      * @return
      */
     public ArticleVO showArticle(Long articleId) {
-        return null;
+        ArticleVO articleVO = new ArticleVO();
+        Article article = articleMapper.selectById(articleId);
+        BeanUtils.copyProperties(article, articleVO);
+        return articleVO;
     }
 }

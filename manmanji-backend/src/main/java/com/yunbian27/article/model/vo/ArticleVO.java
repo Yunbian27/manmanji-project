@@ -1,18 +1,14 @@
 package com.yunbian27.article.model.vo;
 
-import com.baomidou.mybatisplus.annotation.*;
 import lombok.Data;
 
 import java.time.LocalDateTime;
 
 @Data
-@TableName("articles")
 public class ArticleVO {
 
     /** 主键ID */
-    @TableId(type = IdType.AUTO)
     private Long id;
-
     /** 标题 */
     private String title;
     /** URL标识 */
@@ -47,15 +43,10 @@ public class ArticleVO {
     private Boolean isOriginal;
     /** 转载来源链接 */
     private String sourceUrl;
-
     /** 创建时间 */
-    @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createdAt;
-
     /** 更新时间 */
-    @TableField(fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updatedAt;
-
     /** 发布时间 */
     private LocalDateTime publishedAt;
 }
