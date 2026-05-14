@@ -1,0 +1,35 @@
+package com.yunbian27.article.model.entity;
+
+import com.baomidou.mybatisplus.annotation.*;
+import lombok.Data;
+
+import java.time.LocalDateTime;
+
+@Data
+@TableName("folders")
+public class Folder {
+
+    /** 主键 */
+    @TableId(type = IdType.AUTO)
+    private Long id;
+
+    /** 所属用户 */
+    private Long userId;
+
+    /** 父文件夹 ID，NULL 为一级文件夹 */
+    private Long parentId;
+
+    /** 文件夹名称 */
+    private String name;
+
+    /** 排序序号 */
+    private Integer sortOrder;
+
+    /** 创建时间 */
+    @TableField(fill = FieldFill.INSERT)
+    private LocalDateTime createdAt;
+
+    /** 更新时间 */
+    @TableField(fill = FieldFill.INSERT_UPDATE)
+    private LocalDateTime updatedAt;
+}

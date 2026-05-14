@@ -19,15 +19,13 @@
 *.tar.gz
 *.rar
 
-# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
+# virtual machine crash logs, see ttp://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
 replay_pid*
 
 # Claude Code
 .claude/
 
-# Project docs (personal)
-开发文档.md
 
 # 开发环境敏感配置
 application-dev.yml

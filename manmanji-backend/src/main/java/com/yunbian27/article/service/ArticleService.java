@@ -1,15 +1,16 @@
 package com.yunbian27.article.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.yunbian27.ai.mapper.LlmGlobalSettingMapper;
-import com.yunbian27.ai.model.LlmGlobalSettingEntity;
-import com.yunbian27.ai.utils.LlmProviderRegistry;
-import com.yunbian27.article.model.ArticleCreateDTO;
-import com.yunbian27.article.entity.Article;
-import com.yunbian27.article.entity.ArticleTag;
+import com.yunbian27.article.model.vo.ArticleVO;
+import com.yunbian27.llmprovider.mapper.LlmGlobalSettingMapper;
+import com.yunbian27.llmprovider.model.LlmGlobalSettingEntity;
+import com.yunbian27.llmprovider.utils.LlmProviderRegistry;
+import com.yunbian27.article.model.dto.ArticleCreateDTO;
+import com.yunbian27.article.model.entity.Article;
+import com.yunbian27.article.model.entity.ArticleTag;
 import com.yunbian27.article.mapper.ArticleMapper;
 import com.yunbian27.article.mapper.ArticleTagMapper;
-import com.yunbian27.common.SecurityUtils;
+import com.yunbian27.common.Utils.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
@@ -105,5 +106,14 @@ public class ArticleService {
                 .user(article)
                 .call()
                 .content();
+    }
+
+    /**
+     * 展示文章内容
+     * @param articleId
+     * @return
+     */
+    public ArticleVO showArticle(Long articleId) {
+        return null;
     }
 }

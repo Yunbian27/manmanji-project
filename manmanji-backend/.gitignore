@@ -44,3 +44,6 @@ src/main/resources/application-prod.yml
 
 ### JWT Keys ###
 src/main/resources/keys/
+
+docs/
+src/main/resources/static/

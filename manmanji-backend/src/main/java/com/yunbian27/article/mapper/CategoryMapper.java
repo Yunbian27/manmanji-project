@@ -1,7 +1,7 @@
 package com.yunbian27.article.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.yunbian27.article.entity.Category;
+import com.yunbian27.article.model.entity.Category;
 import org.apache.ibatis.annotations.Mapper;
 
 @Mapper
