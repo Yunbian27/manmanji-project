@@ -1,0 +1,102 @@
+:root {
+  /* Brand */
+  --primary: #faff69;
+  --primary-active: #e6eb52;
+  --primary-disabled: #3a3a1f;
+
+  /* Dark theme (default) */
+  --canvas: #0a0a0a;
+  --surface-soft: #121212;
+  --surface-card: #1a1a1a;
+  --surface-elevated: #242424;
+  --hairline: #2a2a2a;
+  --hairline-strong: #3a3a3a;
+  --ink: #ffffff;
+  --on-dark: #ffffff;
+  --body: #cccccc;
+  --body-strong: #e6e6e6;
+  --muted: #888888;
+  --muted-soft: #5a5a5a;
+
+  /* Semantic */
+  --accent-emerald: #22c55e;
+  --accent-rose: #ef4444;
+  --accent-blue: #3b82f6;
+  --success: #22c55e;
+  --error: #ef4444;
+  --warning: #f59e0b;
+
+  /* Typography */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  --text-display-sm: 32px;
+  --text-title-lg: 24px;
+  --text-title-md: 18px;
+  --text-title-sm: 16px;
+  --text-body: 16px;
+  --text-body-sm: 14px;
+  --text-caption: 13px;
+  --text-uppercase: 12px;
+  --text-code: 14px;
+  --text-code-inline: 13px;
+  --text-stat: 56px;
+
+  --weight-bold: 700;
+  --weight-semibold: 600;
+  --weight-medium: 500;
+  --weight-regular: 400;
+
+  --leading-tight: 1.2;
+  --leading-normal: 1.4;
+  --leading-relaxed: 1.55;
+
+  --tracking-tight: -1px;
+  --tracking-semi-tight: -0.3px;
+  --tracking-wide: 1.5px;
+
+  /* Spacing */
+  --space-xxs: 4px;
+  --space-xs: 8px;
+  --space-sm: 12px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-xxl: 48px;
+  --space-section: 96px;
+
+  /* Border radii */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-pill: 9999px;
+  --radius-full: 9999px;
+
+  /* Shadows (AI button only) */
+  --shadow-ai: 0 2px 16px rgba(250, 255, 105, 0.2);
+  --shadow-ai-hover: 0 4px 24px rgba(250, 255, 105, 0.3);
+
+  /* Layout */
+  --nav-height: 64px;
+  --sidebar-max: 280px;
+  --content-max: 1000px;
+  --right-sidebar-width: 220px;
+
+  /* Z-index */
+  --z-ai-panel: 89;
+  --z-ai-button: 90;
+  --z-nav: 100;
+  --z-modal: 200;
+
+  /* Scrollbar */
+  --scrollbar-width: 6px;
+  --scrollbar-track: #0a0a0a;
+  --scrollbar-thumb: #2a2a2a;
+  --scrollbar-thumb-hover: #3a3a3a;
+
+  /* Transitions */
+  --transition-theme: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+  --transition-hover: background-color 0.15s ease, color 0.15s ease;
+  --transition-collapse: max-height 0.25s ease;
+}

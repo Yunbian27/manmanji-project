@@ -1,0 +1,17 @@
+/* Folder collapse */
+.collapse-enter-active, .collapse-leave-active {
+  transition: max-height 0.25s ease, opacity 0.2s ease;
+  overflow: hidden;
+}
+.collapse-enter-from, .collapse-leave-to {
+  max-height: 0;
+  opacity: 0;
+}
+.collapse-enter-to, .collapse-leave-from {
+  max-height: 600px;
+  opacity: 1;
+}
+
+/* Chevron */
+.chevron { transition: transform 0.2s ease; }
+.chevron.open { transform: rotate(90deg); }
