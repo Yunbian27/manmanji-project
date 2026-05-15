@@ -24,6 +24,8 @@ public class ArticleCreateDTO {
 
     /** 封面图链接 */
     private String coverUrl;
+    /** 文件夹ID **/
+    private Long folderId;
     /** 分类ID */
     private Long categoryId;
     /** 标签ID列表 */

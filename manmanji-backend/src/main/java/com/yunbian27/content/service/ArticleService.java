@@ -32,26 +32,33 @@ public class ArticleService {
     private final LlmProviderRegistry providerRegistry;
     private final LlmGlobalSettingMapper llmGlobalSettingMapper;
 
+    private static final Long Temp_Folder = 10000L;
+
     @Transactional
-    public Long createArticle(ArticleCreateDTO req) {
+    public Long createArticle(ArticleCreateDTO dto) {
         Long authorId = SecurityUtils.getCurrentUserId();
 
         Article article = new Article();
-        BeanUtils.copyProperties(req, article);
+        BeanUtils.copyProperties(dto, article);
         article.setAuthorId(authorId);
-        article.setSlug(generateSlug(req.getTitle()));
+        article.setSlug(generateSlug(dto.getTitle()));
         article.setSourceType("MANUAL");
 
-        if ("PUBLISHED".equals(req.getStatus())) {
+        if ("PUBLISHED".equals(dto.getStatus())) {
             article.setPublishedAt(LocalDateTime.now());
         } else {
             article.setStatus("DRAFT");
         }
 
+        // 如果folderId为空，则放入待整理文件夹
+        if (dto.getFolderId() == null) {
+            article.setFolderId(Temp_Folder);
+        }
+
         articleMapper.insert(article);
 
-        if (req.getTagIds() != null && !req.getTagIds().isEmpty()) {
-            for (Long tagId : req.getTagIds()) {
+        if (dto.getTagIds() != null && !dto.getTagIds().isEmpty()) {
+            for (Long tagId : dto.getTagIds()) {
                 ArticleTag at = new ArticleTag();
                 at.setArticleId(article.getId());
                 at.setTagId(tagId);

@@ -4,8 +4,10 @@
   相当于 Spring Boot 的 main() 方法入口
 -->
 <template>
-  <!-- NuxtPage 是 Nuxt 内置组件，根据当前 URL 路由到 pages/ 下对应的页面 -->
-  <NuxtPage />
+  <!-- NuxtLayout 读取页面对应的布局文件（默认 layouts/default.vue），将页面注入到布局的 <slot /> -->
+  <NuxtLayout>
+    <NuxtPage />
+  </NuxtLayout>
 </template>
 
 <script setup lang="ts">

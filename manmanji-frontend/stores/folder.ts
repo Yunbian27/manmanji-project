@@ -1,29 +1,31 @@
-// ============================================================
-// stores/folder.ts — 文件夹树状态管理（Pinia Store）
-// 管理左侧栏的文件夹树数据，含 loading/error 状态
-//
-// 三种状态模式（项目所有异步数据都用这个模式）：
-// 1. loading = true  → 显示骨架屏/加载动画
-// 2. error != null   → 显示错误提示 + 重试按钮
-// 3. folders 有数据  → 正常渲染文件夹树
-// ============================================================
-
 import { defineStore } from 'pinia'
 import type { FolderTreeVO } from '~/types'
 
 export const useFolderStore = defineStore('folder', () => {
-  const folders = ref<FolderTreeVO[]>([])          // 文件夹树数据
-  const loading = ref(false)                       // 是否正在加载
-  const error = ref<string | null>(null)           // 错误信息
+  const folders = ref<FolderTreeVO[]>([])
+  const loading = ref(false)
+  const error = ref<string | null>(null)
+  const folderMap = shallowRef<Map<number, FolderTreeVO>>(new Map())
 
-  /** 从后端获取文件夹树 */
+  function buildFolderMap(tree: FolderTreeVO[]) {
+    const map = new Map<number, FolderTreeVO>()
+    function walk(list: FolderTreeVO[]) {
+      for (const f of list) {
+        map.set(f.id, f)
+        walk(f.children)
+      }
+    }
+    walk(tree)
+    folderMap.value = map
+  }
+
   async function fetchFolders() {
     loading.value = true
     error.value = null
     try {
-      // useFolder() 是 composables/useFolder.ts 中的 API 封装
       const { getFolders } = useFolder()
       folders.value = await getFolders()
+      buildFolderMap(folders.value)
     } catch (e) {
       error.value = e instanceof Error ? e.message : '加载文件夹失败'
     } finally {
@@ -31,5 +33,47 @@ export const useFolderStore = defineStore('folder', () => {
     }
   }
 
-  return { folders, loading, error, fetchFolders }
+  async function createFolder(name: string, parentId?: number) {
+    const { createFolder: apiCreate } = useFolder()
+    await apiCreate(name, parentId)
+    await fetchFolders()
+  }
+
+  async function renameFolder(id: number, name: string) {
+    const { renameFolder: apiRename } = useFolder()
+    await apiRename(id, name)
+    await fetchFolders()
+  }
+
+  async function deleteFolder(id: number) {
+    const { deleteFolder: apiDelete } = useFolder()
+    await apiDelete(id)
+    await fetchFolders()
+  }
+
+  async function renameArticle(id: number, title: string) {
+    const { renameArticle: apiRename } = useFolder()
+    await apiRename(id, title)
+    await fetchFolders()
+  }
+
+  async function deleteArticle(id: number) {
+    const { deleteArticle: apiDelete } = useFolder()
+    await apiDelete(id)
+    await fetchFolders()
+  }
+
+  async function moveFolder(id: number, newParentId: number | null, sortOrder: number) {
+    const { moveFolder: apiMove } = useFolder()
+    await apiMove(id, newParentId, sortOrder)
+    await fetchFolders()
+  }
+
+  async function moveArticle(id: number, newFolderId: number, sortOrder: number) {
+    const { moveArticle: apiMove } = useFolder()
+    await apiMove(id, newFolderId, sortOrder)
+    await fetchFolders()
+  }
+
+  return { folders, loading, error, folderMap, fetchFolders, createFolder, renameFolder, deleteFolder, renameArticle, deleteArticle, moveFolder, moveArticle }
 })

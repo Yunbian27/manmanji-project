@@ -80,5 +80,9 @@ export function useApi() {
       request<T>(url, { method: 'GET', auth }),
     post: <T>(url: string, body?: unknown, auth?: boolean) =>
       request<T>(url, { method: 'POST', body, auth }),
+    put: <T>(url: string, body?: unknown, auth?: boolean) =>
+      request<T>(url, { method: 'PUT', body, auth }),
+    delete: <T>(url: string, auth?: boolean) =>
+      request<T>(url, { method: 'DELETE', auth }),
   }
 }

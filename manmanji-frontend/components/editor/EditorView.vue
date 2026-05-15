@@ -40,6 +40,18 @@ const emit = defineEmits<{
 const editor = createEditorState()
 provideEditor(editor)
 
+const { content, title } = editor
+
+onBeforeRouteLeave((_to, _from, next) => {
+  if (content.value || title.value) {
+    if (!confirm('有未保存的内容，确定离开吗？')) {
+      next(false)
+      return
+    }
+  }
+  next()
+})
+
 const {
   viewMode, publishSettingsOpen, publishError,
   startAutoSave, stopAutoSave, loadDraft,
@@ -87,17 +99,19 @@ onUnmounted(() => {
 <style scoped>
 .editor-view {
   position: fixed;
-  inset: 0;
-  z-index: 50;
+  top: var(--nav-height);
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 40;
   background: var(--canvas);
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
 }
 
 .editor-main {
   flex: 1;
   display: grid;
-  height: calc(100vh - var(--nav-height));
   overflow: hidden;
 }
 

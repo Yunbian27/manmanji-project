@@ -12,7 +12,7 @@
 <template>
   <aside class="left-sidebar" :class="{ 'mobile-open': mobileOpen }">
     <!-- sidebar-inner: 内容右对齐容器，max-width 280px -->
-    <div class="sidebar-inner">
+    <div class="sidebar-inner" @contextmenu.prevent="onBlankContextMenu">
       <!-- 顶部：分类标题 + 新建按钮 -->
       <div class="sidebar-header">
         <h3 class="sidebar-title">文章分类</h3>
@@ -42,15 +42,26 @@
       </div>
 
       <!-- 状态4：正常 — 渲染文件夹树 -->
-      <ul v-else class="tree-list">
-        <TreeFolder
-          v-for="folder in folders"
-          :key="folder.id"
-          :folder="folder"
-          :current-article-id="currentArticleId"
-          @select-article="(id: number) => $emit('selectArticle', id)"
-        />
-      </ul>
+      <div v-else class="tree-list">
+        <draggable
+          tag="ul"
+          :list="folderStore.folders"
+          group="folders"
+          item-key="id"
+          class="root-folder-list"
+          ghost-class="sortable-ghost"
+          drag-class="sortable-drag"
+          @change="onRootFolderChange"
+        >
+          <template #item="{ element: folder }">
+            <TreeFolder
+              :folder="folder"
+              :current-article-id="currentArticleId"
+              @select-article="(id: number) => $emit('selectArticle', id)"
+            />
+          </template>
+        </draggable>
+      </div>
 
       <!-- 底部操作按钮 -->
       <div class="sidebar-footer">
@@ -62,6 +73,7 @@
 </template>
 
 <script setup lang="ts">
+import draggable from 'vuedraggable'
 import type { FolderTreeVO } from '~/types'
 
 defineProps<{
@@ -78,6 +90,33 @@ defineEmits<{
   newArticle: []
   retry: []
 }>()
+
+type OpenMenuFn = (event: MouseEvent, type: 'blank' | 'folder' | 'article', targetId?: number) => void
+const openMenu = inject<OpenMenuFn>('openContextMenu')
+
+function onBlankContextMenu(event: MouseEvent) {
+  // 只有右键目标确实是空白区域（非按钮/链接）时才触发
+  const target = event.target as HTMLElement
+  if (target.closest('.folder-toggle, .tree-article')) return
+  openMenu?.(event, 'blank')
+}
+
+// ---- 根级文件夹拖拽排序/移动 ----
+const folderStore = useFolderStore()
+
+function onRootFolderChange(evt: any) {
+  if (evt.moved) {
+    const { element, newIndex } = evt.moved
+    folderStore.moveFolder(element.id, null, newIndex).catch(() => {
+      folderStore.fetchFolders()
+    })
+  } else if (evt.added) {
+    const { element, newIndex } = evt.added
+    folderStore.moveFolder(element.id, null, newIndex).catch(() => {
+      folderStore.fetchFolders()
+    })
+  }
+}
 </script>
 
 <style scoped>
@@ -142,6 +181,25 @@ defineEmits<{
   flex: 1;
   overflow-y: auto;                   /* 文件夹多时滚动 */
   padding: var(--space-sm);
+}
+
+.root-folder-list {
+  min-height: 40px;                   /* 确保空列表也能接收拖入 */
+}
+
+/* 拖拽占位符：原位置的半透明占位 */
+.sortable-ghost {
+  opacity: 0.3;
+  background: var(--surface-elevated);
+  border-radius: var(--radius-md);
+}
+
+/* 拖拽中跟随鼠标的元素 */
+.sortable-drag {
+  opacity: 0.9;
+  background: var(--surface-card);
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
 }
 
 .sidebar-footer {

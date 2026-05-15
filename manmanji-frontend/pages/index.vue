@@ -16,15 +16,9 @@
 -->
 <template>
   <div class="page">
-    <!-- ===== 顶部导航栏 ===== -->
-    <TopNav @write-article="openEditor" />
-
-    <!-- ===== 全屏 Markdown 编辑器 ===== -->
-    <EditorView v-if="editorOpen" @close="closeEditor" @published="onPublished" />
-
     <!-- ===== 手机端汉堡菜单按钮 ===== -->
     <button
-      v-if="!editorOpen && isMobile && !mobileSidebarOpen"
+      v-if="isMobile && !mobileSidebarOpen"
       class="hamburger-btn"
       @click="mobileSidebarOpen = true"
     >
@@ -33,13 +27,13 @@
 
     <!-- ===== 手机端半透明遮罩层 ===== -->
     <div
-      v-if="!editorOpen && isMobile && mobileSidebarOpen"
+      v-if="isMobile && mobileSidebarOpen"
       class="mobile-overlay"
       @click="mobileSidebarOpen = false"
     />
 
     <!-- ===== 三栏布局容器 ===== -->
-    <AppLayout v-if="!editorOpen">
+    <AppLayout>
       <!-- 左侧栏 -->
       <template #left-sidebar>
         <LeftSidebar
@@ -133,7 +127,16 @@
     </AppLayout>
 
     <!-- AI 浮动助手 -->
-    <AiAssistant v-if="!editorOpen" />
+    <AiAssistant />
+
+    <!-- 右键上下文菜单 -->
+    <ContextMenu
+      :visible="contextVisible"
+      :items="contextItems"
+      :position="contextPosition"
+      @select="onContextSelect"
+      @close="contextVisible = false"
+    />
   </div>
 </template>
 
@@ -141,15 +144,164 @@
 import type { ArticleVO, TocItem, CommentVO } from '~/types'
 // 演示用 mock 数据 — 从独立文件导入，避免模板字面量与 Vue SFC 编译器的转义冲突
 import { mockArticle } from '~/data/mockArticle'
+import type { MenuItem } from '~/components/common/ContextMenu.vue'
 
 // ---- 设备检测（响应式） ----
 const { isMobile, isTablet } = useDevice()
 const mobileSidebarOpen = ref(false)
-const editorOpen = ref(false)
 
 // ---- Pinia 全局状态 ----
 const folderStore = useFolderStore()
 const authStore = useAuthStore()
+
+// ---- 右键上下文菜单状态 ----
+const contextVisible = ref(false)
+const contextPosition = ref({ x: 0, y: 0 })
+const contextItems = ref<MenuItem[]>([])
+let contextTargetId: number | undefined
+
+function openContextMenu(event: MouseEvent, type: 'blank' | 'folder' | 'article', targetId?: number) {
+  contextTargetId = targetId
+
+  switch (type) {
+    case 'blank':
+      contextItems.value = [
+        { key: 'new-folder', label: '新建文件夹' },
+        { key: 'new-article', label: '新建文章' },
+      ]
+      break
+    case 'folder':
+      contextItems.value = [
+        { key: 'new-subfolder', label: '新建子文件夹' },
+        { key: 'new-article-in-folder', label: '新建文章' },
+        { key: 'rename-folder', label: '重命名' },
+        { key: 'delete-folder', label: '删除', danger: true },
+      ]
+      break
+    case 'article':
+      contextItems.value = [
+        { key: 'rename-article', label: '重命名' },
+        { key: 'delete-article', label: '删除', danger: true },
+        { key: 'copy-link', label: '复制链接' },
+      ]
+      break
+  }
+
+  contextPosition.value = { x: event.clientX, y: event.clientY }
+  contextVisible.value = true
+}
+
+function onContextSelect(key: string) {
+  contextVisible.value = false
+
+  switch (key) {
+    case 'new-folder':
+      handleCreateFolder()
+      break
+    case 'new-subfolder':
+      handleCreateFolder(contextTargetId)
+      break
+    case 'new-article':
+      handleNewArticle()
+      break
+    case 'new-article-in-folder':
+      handleNewArticle(contextTargetId)
+      break
+    case 'rename-folder':
+      if (contextTargetId) handleRenameFolder(contextTargetId)
+      break
+    case 'rename-article':
+      if (contextTargetId) handleRenameArticle(contextTargetId)
+      break
+    case 'delete-folder':
+      if (contextTargetId) handleDeleteFolder(contextTargetId)
+      break
+    case 'delete-article':
+      if (contextTargetId) handleDeleteArticle(contextTargetId)
+      break
+    case 'copy-link':
+      if (contextTargetId) handleCopyLink(contextTargetId)
+      break
+  }
+}
+
+async function handleCreateFolder(parentId?: number) {
+  const name = window.prompt('输入文件夹名称:')
+  if (!name || !name.trim()) return
+  try {
+    await folderStore.createFolder(name.trim(), parentId)
+  } catch (e) {
+    alert(e instanceof Error ? e.message : '创建文件夹失败')
+  }
+}
+
+async function handleRenameFolder(id: number) {
+  const name = window.prompt('输入新名称:')
+  if (!name || !name.trim()) return
+  try {
+    await folderStore.renameFolder(id, name.trim())
+  } catch (e) {
+    alert(e instanceof Error ? e.message : '重命名失败')
+  }
+}
+
+async function handleDeleteFolder(id: number) {
+  if (!window.confirm('确定删除此文件夹？子文件夹和文章也会被删除。')) return
+  try {
+    await folderStore.deleteFolder(id)
+  } catch (e) {
+    alert(e instanceof Error ? e.message : '删除失败')
+  }
+}
+
+function handleNewArticle(folderId?: number) {
+  if (folderId) {
+    navigateTo(`/write?folderId=${folderId}`)
+  } else {
+    navigateTo('/write')
+  }
+}
+
+async function handleRenameArticle(id: number) {
+  const title = window.prompt('输入新标题:')
+  if (!title || !title.trim()) return
+  try {
+    await folderStore.renameArticle(id, title.trim())
+  } catch (e) {
+    alert(e instanceof Error ? e.message : '重命名失败')
+  }
+}
+
+async function handleDeleteArticle(id: number) {
+  if (!window.confirm('确定删除此文章？')) return
+  try {
+    await folderStore.deleteArticle(id)
+    if (currentArticleId.value === id) {
+      currentArticle.value = null
+      currentArticleId.value = undefined
+    }
+  } catch (e) {
+    alert(e instanceof Error ? e.message : '删除失败')
+  }
+}
+
+function handleCopyLink(articleId: number) {
+  const url = `${window.location.origin}?article=${articleId}`
+  navigator.clipboard.writeText(url).then(() => {
+    // 复制成功
+  }).catch(() => {
+    const ta = document.createElement('textarea')
+    ta.value = url
+    ta.style.position = 'fixed'
+    ta.style.opacity = '0'
+    document.body.appendChild(ta)
+    ta.select()
+    document.execCommand('copy')
+    document.body.removeChild(ta)
+  })
+}
+
+provide('openContextMenu', openContextMenu)
 
 // ---- 文章状态 ----
 const currentArticleId = ref<number | undefined>(undefined)
@@ -229,26 +381,11 @@ function scrollToComments() {
   document.getElementById('comments')?.scrollIntoView({ behavior: 'smooth' })
 }
 
-function onNewFolder() { /* TODO: 打开新建文件夹弹窗 */ }
-function onNewArticle() { openEditor() }
-
-function openEditor() {
-  editorOpen.value = true
-}
-
-function closeEditor() {
-  editorOpen.value = false
-}
-
-function onPublished(_articleId: number) {
-  editorOpen.value = false
-  // 刷新左侧文章列表
-  folderStore.fetchFolders()
-}
+function onNewFolder() { handleCreateFolder() }
+function onNewArticle() { navigateTo('/write') }
 </script>
 
 <style scoped>
-.page { min-height: 100vh; }
 
 /* === 手机端汉堡菜单按钮 === */
 .hamburger-btn {

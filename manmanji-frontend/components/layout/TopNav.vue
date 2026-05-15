@@ -51,7 +51,7 @@
         <AppButton variant="primary" @click="showRegister = true">注册</AppButton>
       </template>
       <template v-else>
-        <AppButton variant="secondary" @click="goWrite">写文章</AppButton>
+        <AppButton variant="secondary" @click="navigateTo('/write')">写文章</AppButton>
       </template>
 
       <ThemeToggle />
@@ -70,8 +70,6 @@
 <script setup lang="ts">
 const auth = useAuthStore()
 
-const emit = defineEmits<{ writeArticle: [] }>()
-
 const showLogin = ref(false)
 const showRegister = ref(false)
 
@@ -83,9 +81,6 @@ const navLinks = [
   { label: '关于', href: '#', active: false },
 ]
 
-function goWrite() {
-  emit('writeArticle')
-}
 </script>
 
 <style scoped>

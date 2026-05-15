@@ -22,62 +22,152 @@
       class="folder-toggle"
       :class="{ open: isOpen }"
       @click="isOpen = !isOpen"
+      @contextmenu.prevent.stop="openMenu?.($event, 'folder', folder.id)"
     >
       <!-- 箭头图标：展开后旋转 90deg -->
       <IconChevronRight :size="12" :class="['chevron', { open: isOpen }]" />
       <span class="folder-name">{{ folder.name }}</span>
       <!-- 数量标签（子文件夹数 + 文章数） -->
-      <span class="folder-count">{{ folder.children.length + folder.articles.length }}</span>
+      <span class="folder-count">{{ localChildren.length + localArticles.length }}</span>
     </button>
 
     <!-- Transition: Vue 内置动画组件，name="collapse" 对应 transitions.css 中的类名 -->
     <Transition name="collapse">
-      <ul v-show="isOpen" class="folder-children">
-        <!-- 递归！TreeFolder 嵌套自己渲染子文件夹 -->
-        <TreeFolder
-          v-for="child in folder.children"
-          :key="child.id"
-          :folder="child"
-          :current-article-id="currentArticleId"
-          @select-article="(id: number) => $emit('selectArticle', id)"
-        />
+      <div v-show="isOpen" class="folder-children">
+        <!-- 子文件夹列表：group="folders" 允许跨文件夹移动子文件夹 -->
+        <draggable
+          tag="ul"
+          :list="localChildren"
+          group="folders"
+          item-key="id"
+          class="subfolder-list"
+          ghost-class="sortable-ghost"
+          drag-class="sortable-drag"
+          @change="onFolderChildrenChange"
+        >
+          <template #item="{ element: child }">
+            <TreeFolder
+              :folder="child"
+              :current-article-id="currentArticleId"
+              @select-article="(id: number) => $emit('selectArticle', id)"
+            />
+          </template>
+        </draggable>
 
-        <!-- 当前文件夹下的文章列表 -->
-        <li v-for="article in folder.articles" :key="article.id">
-          <a
-            class="tree-article"
-            :class="{ active: article.id === currentArticleId }"
-            href="#"
-            @click.prevent="$emit('selectArticle', article.id)"
-          >
-            <!-- 小圆点指示器，选中时变黄 -->
-            <span class="dot" />
-            <span class="article-title">{{ article.title }}</span>
-            <!-- 草稿文章显示橙色标签 -->
-            <span v-if="article.status === 'DRAFT'" class="draft-tag">草稿</span>
-          </a>
-        </li>
-      </ul>
+        <!-- 文章列表：group="articles" 允许跨文件夹移动文章 -->
+        <draggable
+          tag="ul"
+          :list="localArticles"
+          group="articles"
+          item-key="id"
+          class="article-list"
+          ghost-class="sortable-ghost"
+          drag-class="sortable-drag"
+          @change="onArticleChildrenChange"
+        >
+          <template #item="{ element: article }">
+            <li>
+              <a
+                class="tree-article"
+                :class="{ active: article.id === currentArticleId }"
+                href="#"
+                @click.prevent="$emit('selectArticle', article.id)"
+                @contextmenu.prevent.stop="openMenu?.($event, 'article', article.id)"
+              >
+                <!-- 小圆点指示器，选中时变黄 -->
+                <span class="dot" />
+                <span class="article-title">{{ article.title }}</span>
+                <!-- 草稿文章显示橙色标签 -->
+                <span v-if="article.status === 'DRAFT'" class="draft-tag">草稿</span>
+              </a>
+            </li>
+          </template>
+        </draggable>
+      </div>
     </Transition>
   </li>
 </template>
 
 <script setup lang="ts">
-import type { FolderTreeVO } from '~/types'
+import draggable from 'vuedraggable'
+import type { FolderTreeVO, ArticleItem } from '~/types'
 
-// defineProps 声明组件接收的属性（带类型安全）
-defineProps<{
+const props = defineProps<{
   folder: FolderTreeVO            // 文件夹数据
   currentArticleId?: number       // ? 表示可选
 }>()
 
-// defineEmits 声明组件对外发送的事件
 defineEmits<{
   selectArticle: [id: number]     // 事件名 + 参数类型
 }>()
 
-// 每个文件夹独立管理自己的展开/折叠状态
-const isOpen = ref(true)          // 默认展开
+type OpenMenuFn = (event: MouseEvent, type: 'blank' | 'folder' | 'article', targetId?: number) => void
+const openMenu = inject<OpenMenuFn>('openContextMenu')
+
+const folderStore = useFolderStore()
+const isOpen = ref(true)
+
+// vuedraggable 需要直接修改数组，但 props 是只读的。
+// 因此维护本地可写副本，通过 sync 函数与 store 同步。
+const localChildren = ref<FolderTreeVO[]>([...props.folder.children])
+const localArticles = ref<ArticleItem[]>([...props.folder.articles])
+const isSyncing = ref(false)
+
+// 外部变化（props from store）→ 同步到本地 ref
+watch(
+  () => [props.folder.children, props.folder.articles],
+  () => {
+    if (isSyncing.value) return
+    localChildren.value = [...props.folder.children]
+    localArticles.value = [...props.folder.articles]
+  },
+  { deep: true },
+)
+
+// 本地 ref 变化（拖拽操作）→ 同步到 store 树
+function syncToStore() {
+  isSyncing.value = true
+  const folder = folderStore.folderMap.get(props.folder.id)
+  if (folder) {
+    folder.children.splice(0, folder.children.length, ...localChildren.value)
+    folder.articles.splice(0, folder.articles.length, ...localArticles.value)
+  }
+  nextTick(() => { isSyncing.value = false })
+}
+
+// ---- 拖拽排序/移动处理 ----
+
+function onFolderChildrenChange(evt: any) {
+  syncToStore()
+
+  if (evt.moved) {
+    const { element, newIndex } = evt.moved
+    folderStore.moveFolder(element.id, props.folder.id, newIndex).catch(() => {
+      folderStore.fetchFolders()
+    })
+  } else if (evt.added) {
+    const { element, newIndex } = evt.added
+    folderStore.moveFolder(element.id, props.folder.id, newIndex).catch(() => {
+      folderStore.fetchFolders()
+    })
+  }
+}
+
+function onArticleChildrenChange(evt: any) {
+  syncToStore()
+
+  if (evt.moved) {
+    const { element, newIndex } = evt.moved
+    folderStore.moveArticle(element.id, props.folder.id, newIndex).catch(() => {
+      folderStore.fetchFolders()
+    })
+  } else if (evt.added) {
+    const { element, newIndex } = evt.added
+    folderStore.moveArticle(element.id, props.folder.id, newIndex).catch(() => {
+      folderStore.fetchFolders()
+    })
+  }
+}
 </script>
 
 <style scoped>
@@ -101,8 +191,10 @@ const isOpen = ref(true)          // 默认展开
   transition: var(--transition-hover);
 }
 .folder-toggle:hover {
-  background: var(--surface-card);
+  background: rgba(250, 255, 105, 0.07);
   color: var(--ink);
+  border-left: 3px solid var(--primary);
+  padding-left: 9px; /* 原 12px 减 3px 抵消 border */
 }
 
 .folder-name { flex: 1; text-align: left; }
@@ -114,6 +206,19 @@ const isOpen = ref(true)          // 默认展开
 }
 
 .folder-children { padding-left: var(--space-md); }
+
+/* 拖拽容器最小高度，确保空容器也能作为拖放目标 */
+.subfolder-list,
+.article-list {
+  min-height: 4px;
+}
+
+/* 文件夹标题作为拖放悬停目标时的高亮 */
+.folder-toggle.drop-hover {
+  outline: 2px dashed var(--primary);
+  outline-offset: -2px;
+  border-radius: var(--radius-md);
+}
 
 /* 文章项：13px/400，padding 6px 8px 6px 20px，圆角 6px */
 .tree-article {
@@ -131,13 +236,18 @@ const isOpen = ref(true)          // 默认展开
   text-decoration: none;
 }
 .tree-article:hover {
-  background: var(--surface-card);
+  background: rgba(250, 255, 105, 0.07);
   color: var(--ink);
+  border-left: 3px solid var(--primary);
+  padding-left: 21px; /* 原 24px 减 3px 抵消 border */
+}
+.tree-article:hover .dot {
+  background: var(--primary);
 }
 
-/* 选中态：背景加深 + 文字变白 */
+/* 选中态：背景加深 + 文字变白 + 黄色圆点 */
 .tree-article.active {
-  background: var(--surface-card);
+  background: var(--surface-elevated);
   color: var(--ink);
 }
 

@@ -11,7 +11,7 @@ export function useMarkdownRenderer(content: ComputedRef<string> | Ref<string>) 
     html: false,
     linkify: true,
     typographer: true,
-    breaks: false,
+    breaks: true,
   })
 
   md.renderer.rules.fence = (tokens, idx) => {
