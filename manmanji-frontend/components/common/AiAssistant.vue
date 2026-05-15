@@ -1,12 +1,29 @@
+<!--
+  AiAssistant.vue — AI 浮动助手
+  右下角固定的悬浮按钮 + 可展开的对话面板
+
+  记住：这是整个项目中唯一使用 box-shadow 的地方！
+  设计规范明确禁止其他元素使用阴影。
+
+  两种状态：
+  - 关闭：右下角 48×48 黄色圆形按钮
+  - 打开：按钮上方弹出 400×560px 对话面板
+
+  消息类型：
+  - user: 右对齐，黄色气泡（#faff69 底 + 黑色字）
+  - bot:  左对齐，灰色气泡（#242424 底 + 白色字）
+  - typing: 三个跳动的小圆点动画
+-->
 <template>
   <div class="ai-assistant">
-    <!-- Floating trigger button -->
+    <!-- 触发按钮：48×48 圆形，黄色底 -->
     <button
       class="ai-trigger"
       :class="{ active: isOpen }"
       @click="isOpen = !isOpen"
       aria-label="AI 助手"
     >
+      <!-- 简单机器人 SVG 图标 -->
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M12 2a4 4 0 0 1 4 4v2a4 4 0 0 1-8 0V6a4 4 0 0 1 4-4z" />
         <path d="M16 14H8a6 6 0 0 0-6 6v1h20v-1a6 6 0 0 0-6-6z" />
@@ -14,9 +31,10 @@
       </svg>
     </button>
 
-    <!-- Chat panel -->
+    <!-- 对话面板：Transition 动画 -->
     <Transition name="ai-panel">
       <div v-if="isOpen" class="ai-panel">
+        <!-- 面板头部 -->
         <div class="ai-panel-header">
           <span class="ai-panel-title">AI 助手</span>
           <button class="ai-close" @click="isOpen = false" aria-label="关闭">
@@ -24,11 +42,15 @@
           </button>
         </div>
 
+        <!-- 消息列表：空状态 / 消息列表 / 打字动画 -->
         <div class="ai-messages" ref="msgContainer">
+          <!-- 空状态：引导文案 -->
           <div v-if="messages.length === 0" class="ai-empty">
             <p>你好！我是慢慢记的 AI 助手</p>
             <p class="ai-empty-hint">有什么我可以帮你的吗？</p>
           </div>
+
+          <!-- 聊天消息 -->
           <div
             v-for="(msg, i) in messages"
             :key="i"
@@ -37,11 +59,14 @@
           >
             {{ msg.content }}
           </div>
+
+          <!-- 打字中动画：三个小圆点 -->
           <div v-if="sending" class="ai-msg ai-msg--bot ai-typing">
             <span class="dot" /><span class="dot" /><span class="dot" />
           </div>
         </div>
 
+        <!-- 输入区域 -->
         <form class="ai-input-row" @submit.prevent="sendMsg">
           <input
             v-model="input"
@@ -60,39 +85,43 @@
 </template>
 
 <script setup lang="ts">
+// 消息类型定义
 interface ChatMessage {
   role: 'user' | 'bot'
   content: string
 }
 
-const isOpen = ref(false)
-const input = ref('')
-const messages = ref<ChatMessage[]>([])
-const sending = ref(false)
-const msgContainer = ref<HTMLElement | null>()
+const isOpen = ref(false)                    // 面板开关
+const input = ref('')                        // 输入框内容（v-model 绑定）
+const messages = ref<ChatMessage[]>([])      // 聊天记录
+const sending = ref(false)                   // 是否正在等待回复
+const msgContainer = ref<HTMLElement | null>() // 消息区域 DOM 引用（用于滚动到底部）
 
+/** 发送消息（演示用模拟回复） */
 function sendMsg() {
   const text = input.value.trim()
   if (!text || sending.value) return
 
-  messages.value.push({ role: 'user', content: text })
+  messages.value.push({ role: 'user', content: text })  // 添加用户消息
   input.value = ''
   sending.value = true
 
-  // Simulate AI response
+  // 模拟 AI 回复（实际应调用后端 SSE API）
   setTimeout(() => {
     messages.value.push({
       role: 'bot',
       content: '这是一个模拟的 AI 回复。在实际部署中，这里会连接到后端的 LLM 服务。',
     })
     sending.value = false
-    nextTick(() => {
-      if (msgContainer.value) {
-        msgContainer.value.scrollTop = msgContainer.value.scrollHeight
-      }
-    })
+    scrollToBottom()
   }, 1000)
 
+  scrollToBottom()
+}
+
+/** 新消息来时滚动到底部 */
+function scrollToBottom() {
+  // nextTick: 等 Vue DOM 更新完成后再执行
   nextTick(() => {
     if (msgContainer.value) {
       msgContainer.value.scrollTop = msgContainer.value.scrollHeight
@@ -100,36 +129,31 @@ function sendMsg() {
   })
 }
 
+// watch: 监听 isOpen 变化，打开时滚动到底部
 watch(isOpen, (val) => {
-  if (val) {
-    nextTick(() => {
-      if (msgContainer.value) {
-        msgContainer.value.scrollTop = msgContainer.value.scrollHeight
-      }
-    })
-  }
+  if (val) scrollToBottom()
 })
 </script>
 
 <style scoped>
+/* === 悬浮触发按钮 === */
 .ai-assistant {
   position: fixed;
-  bottom: var(--space-xl);
-  right: var(--space-xl);
-  z-index: var(--z-ai-button);
+  bottom: var(--space-xl);                  /* 距底部 32px */
+  right: var(--space-xl);                   /* 距右侧 32px */
+  z-index: var(--z-ai-button);             /* 90 */
 }
-
 .ai-trigger {
-  width: 48px;
-  height: 48px;
+  width: 48px; height: 48px;
   border-radius: var(--radius-full);
   border: none;
-  background: var(--primary);
+  background: var(--primary);              /* 黄色底 */
   color: #0a0a0a;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
+  /* 整个项目唯一使用 box-shadow 的地方 */
   box-shadow: var(--shadow-ai);
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
@@ -138,21 +162,21 @@ watch(isOpen, (val) => {
   box-shadow: var(--shadow-ai-hover);
 }
 
+/* === 对话面板 === */
 .ai-panel {
   position: fixed;
-  bottom: calc(var(--space-xl) + 56px);
+  bottom: calc(var(--space-xl) + 56px);    /* 按钮上方 56px */
   right: var(--space-xl);
   width: 400px;
   max-height: 560px;
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-lg);         /* 12px */
   background: var(--surface-card);
   border: 1px solid var(--hairline);
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  z-index: var(--z-ai-panel);
+  z-index: var(--z-ai-panel);             /* 89 — 比按钮低一级 */
 }
-
 .ai-panel-header {
   display: flex;
   align-items: center;
@@ -161,14 +185,9 @@ watch(isOpen, (val) => {
   border-bottom: 1px solid var(--hairline);
   flex-shrink: 0;
 }
-.ai-panel-title {
-  font-size: var(--text-body-sm);
-  font-weight: var(--weight-semibold);
-  color: var(--ink);
-}
+.ai-panel-title { font-size: var(--text-body-sm); font-weight: var(--weight-semibold); color: var(--ink); }
 .ai-close {
-  width: 28px;
-  height: 28px;
+  width: 28px; height: 28px;
   border-radius: var(--radius-sm);
   border: none;
   background: transparent;
@@ -180,6 +199,7 @@ watch(isOpen, (val) => {
 }
 .ai-close:hover { background: var(--surface-elevated); color: var(--ink); }
 
+/* === 消息列表 === */
 .ai-messages {
   flex: 1;
   overflow-y: auto;
@@ -189,10 +209,10 @@ watch(isOpen, (val) => {
   gap: var(--space-xs);
   max-height: 400px;
 }
-
 .ai-empty { text-align: center; color: var(--muted); margin-top: var(--space-lg); }
 .ai-empty-hint { font-size: var(--text-caption); color: var(--muted-soft); margin-top: var(--space-xxs); }
 
+/* === 聊天气泡 === */
 .ai-msg {
   max-width: 80%;
   padding: 10px 14px;
@@ -201,14 +221,14 @@ watch(isOpen, (val) => {
   line-height: var(--leading-relaxed);
   word-break: break-word;
 }
-
+/* 用户消息：右对齐 + 黄色背景 + 黑色字 */
 .ai-msg--user {
   align-self: flex-end;
   background: var(--primary);
   color: #0a0a0a;
-  border-bottom-right-radius: var(--radius-xs);
+  border-bottom-right-radius: var(--radius-xs);  /* 右下角收窄（气泡尾巴效果） */
 }
-
+/* 机器人消息：左对齐 + 深灰背景 */
 .ai-msg--bot {
   align-self: flex-start;
   background: var(--surface-elevated);
@@ -216,12 +236,13 @@ watch(isOpen, (val) => {
   border-bottom-left-radius: var(--radius-xs);
 }
 
+/* === 打字指示器（三个跳动圆点） === */
 .ai-typing { display: flex; gap: 4px; padding: 14px; }
 .ai-typing .dot {
-  width: 6px;
-  height: 6px;
+  width: 6px; height: 6px;
   border-radius: 50%;
   background: var(--muted-soft);
+  /* animation: 无限循环，每个圆点有不同延迟产生波浪效果 */
   animation: typing 1.4s infinite ease-in-out both;
 }
 .ai-typing .dot:nth-child(1) { animation-delay: 0s; }
@@ -233,6 +254,7 @@ watch(isOpen, (val) => {
   40% { transform: scale(1); opacity: 1; }
 }
 
+/* === 输入区 === */
 .ai-input-row {
   display: flex;
   gap: var(--space-xs);
@@ -254,11 +276,10 @@ watch(isOpen, (val) => {
 .ai-input:focus { outline: none; border-color: var(--primary); }
 .ai-input::placeholder { color: var(--muted-soft); }
 .ai-send-btn {
-  width: 40px;
-  height: 40px;
+  width: 40px; height: 40px;
   border-radius: var(--radius-md);
   border: none;
-  background: var(--primary);
+  background: var(--primary);              /* 黄色发送按钮 */
   color: #0a0a0a;
   cursor: pointer;
   display: flex;
@@ -270,12 +291,13 @@ watch(isOpen, (val) => {
 .ai-send-btn:hover:not(:disabled) { background: var(--primary-active); }
 .ai-send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-/* Panel transitions */
+/* === 面板过渡动画 === */
 .ai-panel-enter-active { transition: all 0.2s ease; }
 .ai-panel-leave-active { transition: all 0.15s ease; }
 .ai-panel-enter-from { opacity: 0; transform: translateY(12px) scale(0.96); }
 .ai-panel-leave-to { opacity: 0; transform: translateY(8px) scale(0.98); }
 
+/* 手机端面板占满宽度 */
 @media (max-width: 480px) {
   .ai-panel { width: calc(100vw - 32px); right: 16px; }
 }

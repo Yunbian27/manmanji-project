@@ -1,8 +1,25 @@
+<!--
+  pages/index.vue — 主页面（文章阅读页）
+  Nuxt 根据文件名自动路由：pages/index.vue → URL "/"
+
+  这是整个项目最复杂的组件，负责：
+  1. 组合所有子组件形成完整页面
+  2. 管理五层状态（loading / error / empty / data / mobile toggle）
+  3. 协调组件间通信（选文章 → 更新 TOC → 更新右侧栏）
+
+  Vue 3 关键概念在本文件中的应用：
+  - <template> 中使用 v-if / v-else-if / v-else 条件渲染
+  - <script setup> 中使用 ref / computed / onMounted / watch
+  - 组件通过 props 向下传数据，通过 events 向上传事件
+  - 命名 slot (#left-sidebar, #right-sidebar) 向 AppLayout 传递内容
+  - Pinia store (useAuthStore, useFolderStore) 全局状态共享
+-->
 <template>
   <div class="page">
+    <!-- ===== 顶部导航栏 ===== -->
     <TopNav />
 
-    <!-- Mobile hamburger -->
+    <!-- ===== 手机端汉堡菜单按钮 ===== -->
     <button
       v-if="isMobile && !mobileSidebarOpen"
       class="hamburger-btn"
@@ -11,14 +28,16 @@
       <IconMenu :size="24" />
     </button>
 
-    <!-- Mobile overlay -->
+    <!-- ===== 手机端半透明遮罩层 ===== -->
     <div
       v-if="isMobile && mobileSidebarOpen"
       class="mobile-overlay"
       @click="mobileSidebarOpen = false"
     />
 
+    <!-- ===== 三栏布局容器 ===== -->
     <AppLayout>
+      <!-- 左侧栏 -->
       <template #left-sidebar>
         <LeftSidebar
           :folders="folderStore.folders"
@@ -32,7 +51,9 @@
         />
       </template>
 
-      <!-- Main content area -->
+      <!-- === 主内容区：五层条件渲染 === -->
+
+      <!-- 状态1：加载中 — 骨架屏 -->
       <template v-if="articleLoading">
         <div class="skeleton-article">
           <div class="skeleton-title-bar" />
@@ -41,6 +62,7 @@
         </div>
       </template>
 
+      <!-- 状态2：加载出错 — 错误 + 重试按钮 -->
       <template v-else-if="articleError">
         <div class="error-state">
           <p class="error-msg">{{ articleError }}</p>
@@ -48,6 +70,7 @@
         </div>
       </template>
 
+      <!-- 状态3：正常 — 渲染完整文章 -->
       <template v-else-if="currentArticle">
         <ArticleHeader
           :title="currentArticle.title"
@@ -80,7 +103,7 @@
         />
       </template>
 
-      <!-- Empty state -->
+      <!-- 状态4：空 — 未选择文章 -->
       <template v-else>
         <div class="empty-state">
           <div class="empty-icon">
@@ -96,6 +119,7 @@
         </div>
       </template>
 
+      <!-- 右侧目录栏：平板以下隐藏 -->
       <template #right-sidebar>
         <RightSidebar
           v-if="!isTablet"
@@ -105,155 +129,55 @@
       </template>
     </AppLayout>
 
+    <!-- AI 浮动助手 -->
     <AiAssistant />
   </div>
 </template>
 
 <script setup lang="ts">
 import type { ArticleVO, TocItem, CommentVO } from '~/types'
+// 演示用 mock 数据 — 从独立文件导入，避免模板字面量与 Vue SFC 编译器的转义冲突
+import { mockArticle } from '~/data/mockArticle'
 
+// ---- 设备检测（响应式） ----
 const { isMobile, isTablet } = useDevice()
 const mobileSidebarOpen = ref(false)
 
+// ---- Pinia 全局状态 ----
 const folderStore = useFolderStore()
 const authStore = useAuthStore()
 
-// Article
+// ---- 文章状态 ----
 const currentArticleId = ref<number | undefined>(undefined)
 const currentArticle = ref<ArticleVO | null>(null)
 const articleLoading = ref(false)
 const articleError = ref<string | null>(null)
 
-// TOC
+// ---- TOC 目录（由 ArticleBody emit 更新） ----
 const tocItems = ref<TocItem[]>([])
 const activeSectionId = ref<string | undefined>()
 
-// Comments
+// ---- 评论（前端模拟，后端控制器暂未实现） ----
 const comments = ref<CommentVO[]>([])
 
-// Read time estimate
+// ---- 计算属性 ----
+/** 预估阅读时长 = 总字符数 / 500（中文平均阅读速度），最少显示 1 分钟 */
 const readTime = computed(() => {
   if (!currentArticle.value?.content) return 0
-  const wordCount = currentArticle.value.content.length
-  return Math.max(1, Math.round(wordCount / 500))
+  return Math.max(1, Math.round(currentArticle.value.content.length / 500))
 })
 
-// Mock data for initial display
-const mockArticle: ArticleVO = {
-  id: 1,
-  title: 'Java 21 虚拟线程实战：从入门到性能调优',
-  slug: 'java-virtual-threads',
-  content: `## 引言
-
-Java 21 正式发布了虚拟线程（Virtual Threads），这是 Project Loom 的核心成果。虚拟线程为 Java 生态带来了**轻量级并发**的全新范式。
-
-## 什么是虚拟线程
-
-虚拟线程是 JVM 管理的轻量级线程，**不直接映射到操作系统线程**。它们由 JVM 在少量 OS 线程（称为载体线程）上调度。
-
-> 虚拟线程的核心优势在于：当你需要处理百万级并发连接时，不需要创建百万个平台线程。每个虚拟线程的内存开销仅几百字节，而平台线程则需要约 1MB。
-
-## 创建虚拟线程
-
-### 基本用法
-
-以下是创建虚拟线程的几种方式：
-
-\`\`\`java
-// 方式一：通过 Thread.ofVirtual()
-Thread vThread = Thread.ofVirtual()
-    .name("virtual-worker")
-    .start(() -> {
-        System.out.println("Running in virtual thread");
-    });
-
-// 方式二：通过 Executors
-try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
-    executor.submit(() -> fetchData());
-}
-\`\`\`
-
-### 与平台线程的对比
-
-\`\`\`java
-// 平台线程（传统方式）
-ExecutorService pool = Executors.newFixedThreadPool(200);
-for (int i = 0; i < 10000; i++) {
-    pool.submit(() -> process());
-}
-
-// 虚拟线程（新方式）
-ExecutorService vPool = Executors.newVirtualThreadPerTaskExecutor();
-for (int i = 0; i < 10000; i++) {
-    vPool.submit(() -> process());
-}
-\`\`\`
-
-## 性能测试
-
-| 指标 | 平台线程(200) | 虚拟线程(10000) |
-|------|--------------|-----------------|
-| QPS | 12,400 | 126,000 |
-| P99 延迟 | 450ms | 12ms |
-| 内存占用 | 1.2GB | 280MB |
-| 线程创建耗时 | 2.1s | 0.3s |
-
-## 最佳实践
-
-1. **不要池化虚拟线程** — 用完即弃
-2. **避免长时间持有 synchronized** — 会 pin 住载体线程
-3. **使用 \`Semaphore\` 限流** — 控制并发数
-4. **监控载体线程** — 使用 JFR 观察行为
-
-### 限流示例
-
-\`\`\`java
-Semaphore semaphore = new Semaphore(100);
-try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
-    for (int i = 0; i < 100000; i++) {
-        executor.submit(() -> {
-            semaphore.acquire();
-            try {
-                callExternalApi();
-            } finally {
-                semaphore.release();
-            }
-        });
-    }
-}
-\`\`\`
-
-## 总结
-
-虚拟线程让 Java 的并发编程变得更加简单。\`newFixedThreadPool(n)\` 变成了 \`newVirtualThreadPerTaskExecutor()\`，这就是 Java 并发的未来。`,
-  summary: 'Java 21 虚拟线程实战指南，从基本用法到性能调优',
-  coverUrl: null,
-  authorId: 1,
-  folderId: 1,
-  categoryId: null,
-  status: 'PUBLISHED',
-  sourceType: 'MANUAL',
-  sourcePrompt: null,
-  viewCount: 2300,
-  likeCount: 186,
-  commentCount: 12,
-  bookmarkCount: 45,
-  isOriginal: true,
-  sourceUrl: null,
-  createdAt: '2026-05-10 10:30:00',
-  updatedAt: '2026-05-12 14:20:00',
-  publishedAt: '2026-05-10 10:30:00',
-}
-
-// Load mock data
+// ---- 生命周期 ----
 onMounted(() => {
   authStore.hydrate()
   folderStore.fetchFolders()
-  // Load mock article for demonstration
+  // 加载演示文章（实际应用中应根据路由参数加载）
   currentArticle.value = mockArticle
   currentArticleId.value = mockArticle.id
 })
 
+// ---- 事件处理 ----
+/** 用户点击左侧栏某篇文章 */
 async function selectArticle(id: number) {
   currentArticleId.value = id
   mobileSidebarOpen.value = false
@@ -263,7 +187,6 @@ async function selectArticle(id: number) {
     const { getArticle } = useArticle()
     currentArticle.value = await getArticle(id)
   } catch {
-    // Use mock article as fallback
     if (id === mockArticle.id) {
       currentArticle.value = mockArticle
     } else {
@@ -278,10 +201,11 @@ function retryLoad() {
   if (currentArticleId.value) selectArticle(currentArticleId.value)
 }
 
-function onLike() { /* TODO */ }
-function onBookmark() { /* TODO */ }
-function onShare() { /* TODO */ }
+function onLike() { /* TODO: 调用后端点赞 API */ }
+function onBookmark() { /* TODO: 调用后端收藏 API */ }
+function onShare() { /* TODO: 调用浏览器分享 API 或复制链接 */ }
 
+/** 添加评论（前端模拟，实际应调用后端 API） */
 function onAddComment(content: string) {
   comments.value.push({
     id: Date.now(),
@@ -296,25 +220,26 @@ function onAddComment(content: string) {
 
 function onReply(_commentId: number) { /* TODO */ }
 
+/** 滚动到评论区（由 ArticleActions 的 @comment-click 触发） */
 function scrollToComments() {
   document.getElementById('comments')?.scrollIntoView({ behavior: 'smooth' })
 }
 
-function onNewFolder() { /* TODO */ }
-function onNewArticle() { /* TODO */ }
+function onNewFolder() { /* TODO: 打开新建文件夹弹窗 */ }
+function onNewArticle() { /* TODO: 跳转到写文章页面 */ }
 </script>
 
 <style scoped>
 .page { min-height: 100vh; }
 
+/* === 手机端汉堡菜单按钮 === */
 .hamburger-btn {
   display: none;
   position: fixed;
   top: calc(var(--nav-height) + 8px);
   left: 12px;
   z-index: calc(var(--z-nav) + 1);
-  width: 36px;
-  height: 36px;
+  width: 36px; height: 36px;
   border-radius: var(--radius-md);
   border: 1px solid var(--hairline);
   background: var(--surface-card);
@@ -338,7 +263,7 @@ function onNewArticle() { /* TODO */ }
   .mobile-overlay { display: block; }
 }
 
-/* Skeleton loading */
+/* === 骨架屏（loading 状态） === */
 .skeleton-article { max-width: 780px; }
 .skeleton-title-bar {
   height: 36px;
@@ -361,7 +286,7 @@ function onNewArticle() { /* TODO */ }
   margin-bottom: var(--space-md);
 }
 
-/* States */
+/* === 错误状态 === */
 .error-state {
   display: flex;
   flex-direction: column;
@@ -373,6 +298,7 @@ function onNewArticle() { /* TODO */ }
 }
 .error-msg { color: var(--muted); font-size: var(--text-body); }
 
+/* === 空状态（未选文章） === */
 .empty-state {
   display: flex;
   flex-direction: column;
@@ -383,6 +309,13 @@ function onNewArticle() { /* TODO */ }
   text-align: center;
 }
 .empty-icon { margin-bottom: var(--space-md); color: var(--muted-soft); }
-.empty-state h3 { font-size: var(--text-title-md); color: var(--ink); margin-bottom: var(--space-xs); }
-.empty-state p { font-size: var(--text-caption); color: var(--muted-soft); }
+.empty-state h3 {
+  font-size: var(--text-title-md);
+  color: var(--ink);
+  margin-bottom: var(--space-xs);
+}
+.empty-state p {
+  font-size: var(--text-caption);
+  color: var(--muted-soft);
+}
 </style>

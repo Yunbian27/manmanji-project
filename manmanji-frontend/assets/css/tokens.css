@@ -1,61 +1,75 @@
+/* ============================================================
+ * tokens.css — 设计令牌（CSS 自定义属性）
+ * 整个项目的设计系统集中管理，所有颜色、字号、间距、圆角
+ * 都在这里定义一次，其他地方通过 var(--xxx) 引用
+ * 相当于 Java 中的常量类/枚举
+ * ============================================================ */
+
 :root {
-  /* Brand */
+  /* === 品牌色 === */
+  /* 主色 #faff69（电光黄）在深色和浅色主题中保持不变 */
   --primary: #faff69;
-  --primary-active: #e6eb52;
-  --primary-disabled: #3a3a1f;
+  --primary-active: #e6eb52;        /* hover/按下时的深黄色 */
+  --primary-disabled: #3a3a1f;      /* 禁用态暗黄色 */
 
-  /* Dark theme (default) */
-  --canvas: #0a0a0a;
-  --surface-soft: #121212;
-  --surface-card: #1a1a1a;
-  --surface-elevated: #242424;
-  --hairline: #2a2a2a;
-  --hairline-strong: #3a3a3a;
-  --ink: #ffffff;
-  --on-dark: #ffffff;
-  --body: #cccccc;
-  --body-strong: #e6e6e6;
-  --muted: #888888;
-  --muted-soft: #5a5a5a;
+  /* === 深色主题（默认） === */
+  /* 遵循 ClickHouse 设计语言：极黑底色 + 黄色点缀 */
+  --canvas: #0a0a0a;                /* 页面底色（画布） */
+  --surface-soft: #121212;          /* 引用块底色、表格 hover */
+  --surface-card: #1a1a1a;          /* 卡片、代码块、输入框背景 */
+  --surface-elevated: #242424;      /* 嵌套卡片、头像、hover 加深 */
+  --hairline: #2a2a2a;              /* 1px 边框、分割线 */
+  --hairline-strong: #3a3a3a;       /* 加粗分割线、输入框底线 */
+  --ink: #ffffff;                   /* 标题、重要文字（白墨） */
+  --on-dark: #ffffff;               /* 深色表面的文字颜色 */
+  --body: #cccccc;                  /* 正文颜色 */
+  --body-strong: #e6e6e6;           /* 强调文字、strong */
+  --muted: #888888;                 /* 次要文字、导航链接 */
+  --muted-soft: #5a5a5a;            /* 三级文字、placeholder */
 
-  /* Semantic */
-  --accent-emerald: #22c55e;
-  --accent-rose: #ef4444;
-  --accent-blue: #3b82f6;
+  /* === 语义色 === */
+  --accent-emerald: #22c55e;        /* 成功、代码函数名（翠绿） */
+  --accent-rose: #ef4444;           /* 错误（玫红） */
+  --accent-blue: #3b82f6;           /* 信息、代码关键字（蓝） */
   --success: #22c55e;
   --error: #ef4444;
-  --warning: #f59e0b;
+  --warning: #f59e0b;               /* 警告、代码数字（琥珀） */
 
-  /* Typography */
+  /* === 字体 === */
+  /* Inter 用于正文和 UI，JetBrains Mono 用于代码 */
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
 
-  --text-display-sm: 32px;
-  --text-title-lg: 24px;
-  --text-title-md: 18px;
-  --text-title-sm: 16px;
-  --text-body: 16px;
-  --text-body-sm: 14px;
-  --text-caption: 13px;
-  --text-uppercase: 12px;
-  --text-code: 14px;
-  --text-code-inline: 13px;
-  --text-stat: 56px;
+  /* === 字号（基于 4px 网格系统） === */
+  --text-display-sm: 32px;          /* 文章标题 */
+  --text-title-lg: 24px;            /* h2 */
+  --text-title-md: 18px;            /* h3 */
+  --text-title-sm: 16px;            /* h4 */
+  --text-body: 16px;                /* 正文 */
+  --text-body-sm: 14px;             /* 评论、导航、按钮 */
+  --text-caption: 13px;             /* 面包屑、标签、目录 */
+  --text-uppercase: 12px;           /* 分类标题（全大写） */
+  --text-code: 14px;                /* 代码块 */
+  --text-code-inline: 13px;         /* 内联代码 */
+  --text-stat: 56px;                /* 统计数字 */
 
+  /* === 字重 === */
   --weight-bold: 700;
   --weight-semibold: 600;
   --weight-medium: 500;
   --weight-regular: 400;
 
-  --leading-tight: 1.2;
-  --leading-normal: 1.4;
-  --leading-relaxed: 1.55;
+  /* === 行高 === */
+  --leading-tight: 1.2;             /* 标题 */
+  --leading-normal: 1.4;            /* UI 文字 */
+  --leading-relaxed: 1.55;          /* 正文（更松散易读） */
 
-  --tracking-tight: -1px;
-  --tracking-semi-tight: -0.3px;
-  --tracking-wide: 1.5px;
+  /* === 字间距 === */
+  --tracking-tight: -1px;           /* 大标题收紧 */
+  --tracking-semi-tight: -0.3px;    /* h2 微收 */
+  --tracking-wide: 1.5px;           /* 全大写标签加宽 */
 
-  /* Spacing */
+  /* === 间距（4px 基准） === */
   --space-xxs: 4px;
   --space-xs: 8px;
   --space-sm: 12px;
@@ -65,37 +79,38 @@
   --space-xxl: 48px;
   --space-section: 96px;
 
-  /* Border radii */
+  /* === 圆角 === */
   --radius-xs: 4px;
   --radius-sm: 6px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-  --radius-pill: 9999px;
-  --radius-full: 9999px;
+  --radius-md: 8px;                 /* 标准按钮 */
+  --radius-lg: 12px;                /* 卡片、代码块 */
+  --radius-pill: 9999px;            /* 标签药丸 */
+  --radius-full: 9999px;            /* 头像圆形 */
 
-  /* Shadows (AI button only) */
+  /* === 阴影（唯一使用：AI 浮动按钮） === */
   --shadow-ai: 0 2px 16px rgba(250, 255, 105, 0.2);
   --shadow-ai-hover: 0 4px 24px rgba(250, 255, 105, 0.3);
 
-  /* Layout */
-  --nav-height: 64px;
-  --sidebar-max: 280px;
-  --content-max: 1000px;
-  --right-sidebar-width: 220px;
+  /* === 布局尺寸 === */
+  --nav-height: 64px;               /* 顶部导航高度 */
+  --sidebar-max: 280px;             /* 左侧栏内部最大宽度 */
+  --content-max: 1000px;            /* 文章区最大宽度 */
+  --right-sidebar-width: 220px;     /* 右侧目录栏宽度 */
 
-  /* Z-index */
-  --z-ai-panel: 89;
-  --z-ai-button: 90;
-  --z-nav: 100;
-  --z-modal: 200;
+  /* === z-index 层级 === */
+  --z-ai-panel: 89;                 /* AI 面板 */
+  --z-ai-button: 90;               /* AI 触发按钮 */
+  --z-nav: 100;                     /* 顶部导航 */
+  --z-modal: 200;                   /* 模态框 */
 
-  /* Scrollbar */
+  /* === 滚动条 === */
   --scrollbar-width: 6px;
   --scrollbar-track: #0a0a0a;
   --scrollbar-thumb: #2a2a2a;
   --scrollbar-thumb-hover: #3a3a3a;
 
-  /* Transitions */
+  /* === 过渡动画 === */
+  /* 所有颜色相关属性使用 300ms 缓动，hover 使用 150ms */
   --transition-theme: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
   --transition-hover: background-color 0.15s ease, color 0.15s ease;
   --transition-collapse: max-height 0.25s ease;

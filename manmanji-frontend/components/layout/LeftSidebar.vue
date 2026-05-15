@@ -1,6 +1,19 @@
+<!--
+  LeftSidebar.vue — 左侧文件夹分类栏
+  布局：flex:1（填充左侧剩余空间），内部 sidebar-inner 右对齐
+  包含：分类标题 + 新建按钮 + 文件夹树 + 底部操作按钮
+
+  四种状态：
+  - loading: 骨架屏占位
+  - error: 错误信息 + 重试按钮
+  - empty: "暂无分类" 提示
+  - data: 渲染 TreeFolder 递归树
+-->
 <template>
   <aside class="left-sidebar" :class="{ 'mobile-open': mobileOpen }">
+    <!-- sidebar-inner: 内容右对齐容器，max-width 280px -->
     <div class="sidebar-inner">
+      <!-- 顶部：分类标题 + 新建按钮 -->
       <div class="sidebar-header">
         <h3 class="sidebar-title">文章分类</h3>
         <button class="sidebar-new-btn" @click="$emit('newFolder')" aria-label="新建文件夹">
@@ -8,26 +21,27 @@
         </button>
       </div>
 
-      <!-- Loading -->
+      <!-- v-if / v-else-if / v-else: Vue 的条件渲染链 -->
+      <!-- 状态1：加载中 — 骨架屏 -->
       <div v-if="loading" class="sidebar-loading">
         <div v-for="i in 4" :key="i" class="skeleton-folder">
           <div class="skeleton-line w-60" />
         </div>
       </div>
 
-      <!-- Error -->
+      <!-- 状态2：加载出错 — 提示 + 重试 -->
       <div v-else-if="error" class="sidebar-error">
         <p>{{ error }}</p>
-        <button class="retry-btn" @click="retry">重试</button>
+        <button class="retry-btn" @click="$emit('retry')">重试</button>
       </div>
 
-      <!-- Empty -->
+      <!-- 状态3：空数据 — 引导提示 -->
       <div v-else-if="folders.length === 0" class="sidebar-empty">
         <p>暂无分类</p>
         <p class="hint">创建你的第一个文件夹</p>
       </div>
 
-      <!-- Tree -->
+      <!-- 状态4：正常 — 渲染文件夹树 -->
       <ul v-else class="tree-list">
         <TreeFolder
           v-for="folder in folders"
@@ -38,13 +52,10 @@
         />
       </ul>
 
+      <!-- 底部操作按钮 -->
       <div class="sidebar-footer">
-        <AppButton variant="primary" @click="$emit('newFolder')">
-          新建文件夹
-        </AppButton>
-        <AppButton variant="secondary" @click="$emit('newArticle')">
-          新文章
-        </AppButton>
+        <AppButton variant="primary" @click="$emit('newFolder')">新建文件夹</AppButton>
+        <AppButton variant="secondary" @click="$emit('newArticle')">新文章</AppButton>
       </div>
     </div>
   </aside>
@@ -53,12 +64,12 @@
 <script setup lang="ts">
 import type { FolderTreeVO } from '~/types'
 
-const props = defineProps<{
+defineProps<{
   folders: FolderTreeVO[]
   loading?: boolean
   error?: string | null
   currentArticleId?: number
-  mobileOpen?: boolean
+  mobileOpen?: boolean            // 移动端侧边栏是否打开
 }>()
 
 defineEmits<{
@@ -67,28 +78,26 @@ defineEmits<{
   newArticle: []
   retry: []
 }>()
-
-function retry() {
-  // handled by parent
-}
 </script>
 
 <style scoped>
+/* 左侧栏：flex:1 填充空间，min/max 约束宽度范围 */
 .left-sidebar {
   flex: 1;
   min-width: 240px;
   max-width: 400px;
-  flex-shrink: 0;
+  flex-shrink: 0;                     /* 不会被压缩 */
   background: var(--canvas);
   border-right: 1px solid var(--hairline);
   display: flex;
   flex-direction: column;
-  position: sticky;
-  top: var(--nav-height);
-  height: calc(100vh - var(--nav-height));
+  position: sticky;                   /* 跟随滚动吸顶 */
+  top: var(--nav-height);             /* 吸在导航栏下方 */
+  height: calc(100vh - var(--nav-height));  /* 全屏减去导航高度 */
   overflow: hidden;
 }
 
+/* 内容右对齐：max-width 280px + margin-left: auto */
 .sidebar-inner {
   max-width: var(--sidebar-max);
   margin-left: auto;
@@ -99,6 +108,7 @@ function retry() {
   overflow: hidden;
 }
 
+/* 标题区：12px/600/全大写，底边分割线 */
 .sidebar-header {
   display: flex;
   align-items: center;
@@ -107,19 +117,15 @@ function retry() {
   border-bottom: 1px solid var(--hairline);
   flex-shrink: 0;
 }
-
 .sidebar-title {
   font-size: var(--text-uppercase);
   font-weight: var(--weight-semibold);
-  line-height: var(--leading-normal);
   letter-spacing: var(--tracking-wide);
   text-transform: uppercase;
   color: var(--muted);
 }
-
 .sidebar-new-btn {
-  width: 28px;
-  height: 28px;
+  width: 28px; height: 28px;
   border-radius: var(--radius-sm);
   border: none;
   background: transparent;
@@ -130,15 +136,11 @@ function retry() {
   justify-content: center;
   transition: var(--transition-hover);
 }
-
-.sidebar-new-btn:hover {
-  background: var(--surface-card);
-  color: var(--ink);
-}
+.sidebar-new-btn:hover { background: var(--surface-card); color: var(--ink); }
 
 .tree-list {
   flex: 1;
-  overflow-y: auto;
+  overflow-y: auto;                   /* 文件夹多时滚动 */
   padding: var(--space-xs);
 }
 
@@ -150,18 +152,13 @@ function retry() {
   flex-shrink: 0;
 }
 
-.sidebar-footer :deep(.app-btn) {
-  flex: 1;
-  height: 36px;
-  font-size: 13px;
-}
-
-/* States */
+/* 骨架屏（loading 状态） */
 .sidebar-loading { padding: var(--space-md); }
 .skeleton-folder { padding: 6px 8px; }
 .skeleton-line { height: 14px; background: var(--surface-elevated); border-radius: 4px; }
-.skeleton-line.w-60 { width: 60%; }
+.w-60 { width: 60%; }
 
+/* 错误/空状态 */
 .sidebar-error { padding: var(--space-md); text-align: center; color: var(--muted); }
 .retry-btn {
   margin-top: var(--space-xs);
@@ -171,14 +168,15 @@ function retry() {
   border: none;
   cursor: pointer;
 }
-
 .sidebar-empty { padding: var(--space-md); text-align: center; color: var(--muted); }
 .sidebar-empty .hint { font-size: var(--text-caption); color: var(--muted-soft); margin-top: var(--space-xxs); }
 
+/* 响应式 */
 @media (max-width: 1200px) {
   .left-sidebar { min-width: 200px; max-width: 280px; }
 }
 @media (max-width: 768px) {
+  /* 手机端：隐藏为全屏抽屉，通过 .mobile-open 显示 */
   .left-sidebar {
     display: none;
     position: fixed;
@@ -187,8 +185,7 @@ function retry() {
     bottom: 0;
     width: 280px;
     z-index: var(--z-nav);
-    min-width: unset;
-    max-width: unset;
+    min-width: unset; max-width: unset;
   }
   .left-sidebar.mobile-open { display: flex; }
 }

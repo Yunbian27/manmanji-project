@@ -1,10 +1,16 @@
+<!--
+  CommentSection.vue — 评论区组件
+  组合 CommentForm + CommentCard，管理评论列表
+
+  四种状态（统一模式）：
+  - loading: 骨架屏占位（3 条评论占位）
+  - error: 错误信息
+  - empty: "暂无评论" 引导（但表单仍可输入）
+  - data: 评论卡片列表
+-->
 <template>
   <section class="comment-section" id="comments">
-    <h3 class="comment-title">评论 ({{ comments.length }})</h3>
-
-    <CommentForm @submit="addComment" />
-
-    <!-- Loading -->
+    <!-- 状态1：加载中 -->
     <div v-if="loading" class="comment-loading">
       <div v-for="i in 3" :key="i" class="skeleton-comment">
         <div class="skeleton-avatar" />
@@ -15,23 +21,27 @@
       </div>
     </div>
 
-    <!-- Error -->
+    <!-- 状态2：加载出错 -->
     <div v-else-if="error" class="comment-error">
       <p>{{ error }}</p>
     </div>
 
-    <!-- Empty -->
-    <div v-else-if="comments.length === 0" class="comment-empty">
-      <p>暂无评论，来抢沙发吧</p>
-    </div>
-
-    <!-- List -->
-    <CommentCard
-      v-for="comment in comments"
-      :key="comment.id"
-      :comment="comment"
-      @reply="onReply"
-    />
+    <!-- 状态3&4：正常 — 标题和表单始终显示 -->
+    <template v-else>
+      <h3 class="comment-title">评论 ({{ comments.length }})</h3>
+      <CommentForm @submit="(content: string) => $emit('addComment', content)" />
+      <!-- 无评论时显示引导文案 -->
+      <div v-if="comments.length === 0" class="comment-empty">
+        <p>暂无评论，来抢沙发吧</p>
+      </div>
+      <!-- 评论列表 -->
+      <CommentCard
+        v-for="comment in comments"
+        :key="comment.id"
+        :comment="comment"
+        @reply="(id: number) => $emit('reply', id)"
+      />
+    </template>
   </section>
 </template>
 
@@ -44,33 +54,23 @@ defineProps<{
   error?: string | null
 }>()
 
-const emit = defineEmits<{
+defineEmits<{
   addComment: [content: string]
   reply: [commentId: number]
 }>()
-
-function addComment(content: string) {
-  emit('addComment', content)
-}
-
-function onReply(id: number) {
-  emit('reply', id)
-}
 </script>
 
 <style scoped>
-.comment-section {
-  margin-top: var(--space-xxl);
-}
+.comment-section { margin-top: var(--space-xxl); }
 
 .comment-title {
-  font-size: var(--text-title-md);
+  font-size: var(--text-title-md);        /* 18px */
   font-weight: var(--weight-semibold);
   color: var(--ink);
   margin-bottom: var(--space-lg);
 }
 
-/* Loading skeleton */
+/* 骨架屏 */
 .comment-loading { display: flex; flex-direction: column; gap: var(--space-sm); }
 .skeleton-comment {
   display: flex;
@@ -81,22 +81,20 @@ function onReply(id: number) {
   border: 1px solid var(--hairline);
 }
 .skeleton-avatar {
-  width: 32px;
-  height: 32px;
+  width: 32px; height: 32px;
   border-radius: var(--radius-full);
   background: var(--surface-elevated);
   flex-shrink: 0;
 }
 .skeleton-lines { flex: 1; display: flex; flex-direction: column; gap: var(--space-xs); }
 .skeleton-line { height: 12px; background: var(--surface-elevated); border-radius: 4px; }
-.skeleton-line.w-40 { width: 40%; }
-.skeleton-line.w-90 { width: 90%; }
+.w-40 { width: 40%; }
+.w-90 { width: 90%; }
 
-/* States */
 .comment-error { text-align: center; padding: var(--space-xl); color: var(--error); }
 .comment-empty {
   text-align: center;
-  padding: var(--space-xxl);
+  padding: var(--space-lg);
   color: var(--muted);
   font-size: var(--text-body-sm);
 }

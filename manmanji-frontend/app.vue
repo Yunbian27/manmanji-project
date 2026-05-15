@@ -1,8 +1,16 @@
+<!--
+  app.vue — Nuxt 应用的根组件
+  Nuxt 的入口点，所有页面都在 <NuxtPage /> 中渲染
+  相当于 Spring Boot 的 main() 方法入口
+-->
 <template>
+  <!-- NuxtPage 是 Nuxt 内置组件，根据当前 URL 路由到 pages/ 下对应的页面 -->
   <NuxtPage />
 </template>
 
 <script setup lang="ts">
+// useHead: Nuxt 的 SEO 工具，设置 <head> 标签内容
+// 影响搜索引擎收录和浏览器标签页显示
 useHead({
   title: '慢慢记 — 反内卷技术知识平台',
   meta: [

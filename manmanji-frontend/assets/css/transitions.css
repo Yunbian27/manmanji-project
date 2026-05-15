@@ -1,4 +1,11 @@
-/* Folder collapse */
+/* ============================================================
+ * transitions.css — Vue 过渡动画
+ * 配合 Vue 的 <Transition> 组件使用
+ * 类名前缀对应 Transition 组件的 name 属性
+ * ============================================================ */
+
+/* --- 文件夹折叠/展开动画 --- */
+/* Vue 自动添加这些类名：进入时加 enter-from → enter-to，离开时加 leave-from → leave-to */
 .collapse-enter-active, .collapse-leave-active {
   transition: max-height 0.25s ease, opacity 0.2s ease;
   overflow: hidden;
@@ -12,6 +19,11 @@
   opacity: 1;
 }
 
-/* Chevron */
-.chevron { transition: transform 0.2s ease; }
-.chevron.open { transform: rotate(90deg); }
+/* --- 折叠箭头旋转 --- */
+/* open 类由 TreeFolder 组件动态添加/移除 */
+.chevron {
+  transition: transform 0.2s ease;
+}
+.chevron.open {
+  transform: rotate(90deg);         /* 展开时箭头指向下方 */
+}

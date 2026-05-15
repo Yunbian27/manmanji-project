@@ -1,10 +1,19 @@
+/* ============================================================
+ * light-theme.css — 浅色主题颜色覆盖
+ * 通过 [data-theme="light"] 选择器覆盖 tokens.css 中的颜色
+ * 只覆盖颜色相关的变量，其他（字号、间距、圆角）不变
+ * ============================================================ */
+
 [data-theme="light"] {
+  /* 底色从极黑变为纯白 */
   --canvas: #ffffff;
   --surface-soft: #f8f9fa;
   --surface-card: #f9fafb;
   --surface-elevated: #f3f4f6;
   --hairline: #e5e7eb;
   --hairline-strong: #d1d5db;
+
+  /* 文字从白色变为黑色 */
   --ink: #0a0a0a;
   --on-dark: #0a0a0a;
   --body: #1a1a1a;
@@ -12,12 +21,15 @@
   --muted: #6b7280;
   --muted-soft: #9ca3af;
 
+  /* 部分语义色在浅色下更暗 */
   --accent-blue: #2563eb;
   --accent-emerald: #16a34a;
 
+  /* AI 浮动按钮阴影改为暗色 */
   --shadow-ai: 0 2px 16px rgba(0, 0, 0, 0.12);
   --shadow-ai-hover: 0 4px 24px rgba(0, 0, 0, 0.18);
 
+  /* 滚动条改为浅色 */
   --scrollbar-track: #f3f4f6;
   --scrollbar-thumb: #d1d5db;
   --scrollbar-thumb-hover: #9ca3af;

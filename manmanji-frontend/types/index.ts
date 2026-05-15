@@ -1,49 +1,62 @@
-// === API Response Wrapper ===
+// ============================================================
+// types/index.ts — TypeScript 类型定义
+// 把后端 Java 的 DTO/VO 类映射为前端 TS 接口，编译时类型检查
+// 相当于 Java 的 model/dto/ 和 model/vo/ 包
+// ============================================================
+
+// ---------- API 响应包装 ----------
+// 对应后端的 Result<T> 类：{ code: 200, message: "success", data: {...} }
 export interface ApiResult<T> {
   code: number
   message: string
   data: T
 }
 
-// === Auth ===
+// ---------- 认证模块 (auth) ----------
+// 登录请求体
 export interface LoginDTO {
   username: string
   password: string
 }
 
+// 注册请求体
 export interface RegisterDTO {
   username: string
   email: string
   password: string
-  nickname?: string
+  nickname?: string            // ? 表示可选字段，对应 Java 的 @Nullable
 }
 
+// 刷新令牌请求体
 export interface RefreshDTO {
   refreshToken: string
 }
 
+// 登录/注册/刷新成功后统一返回此结构
 export interface LoginVO {
-  accessToken: string
-  refreshToken: string
-  expiresIn: number
-  user: UserInfo
+  accessToken: string          // JWT，15 分钟有效
+  refreshToken: string         // JWT，7 天有效
+  expiresIn: number            // 过期时间（秒）
+  user: UserInfo               // 嵌套用户信息
 }
 
+// 用户公开信息
 export interface UserInfo {
   id: number
   username: string
   email: string
   nickname: string
-  avatarUrl: string | null
-  role: 'USER' | 'ADMIN'
+  avatarUrl: string | null     // TypeScript 联合类型：字符串或null
+  role: 'USER' | 'ADMIN'       // 字面量联合类型：只能是这两个值
 }
 
-// === Article ===
+// ---------- 文章模块 (article) ----------
+// 文章基本数据（对应 /api/articles/{id} 返回）
 export interface ArticleVO {
   id: number
   title: string
-  slug: string
-  content: string
+  slug: string                 // URL 友好的标题（如 java-virtual-threads）
+  content: string              // Markdown 格式
   summary: string | null
   coverUrl: string | null
   authorId: number
@@ -63,6 +76,7 @@ export interface ArticleVO {
   publishedAt: string | null
 }
 
+// 创建文章提交的数据
 export interface ArticleCreateDTO {
   title: string
   content: string
@@ -75,6 +89,7 @@ export interface ArticleCreateDTO {
   status?: 'DRAFT' | 'PUBLISHED'
 }
 
+// 文章详情（含嵌套的作者、分类、标签信息）
 export interface ArticleDetailVO {
   id: number
   title: string
@@ -82,9 +97,9 @@ export interface ArticleDetailVO {
   content: string
   summary: string | null
   coverUrl: string | null
-  author: AuthorInfo
+  author: AuthorInfo           // 嵌套对象，非扁平字段
   category: CategoryInfo | null
-  tags: TagInfo[]
+  tags: TagInfo[]              // 数组类型
   status: string
   sourceType: string
   sourcePrompt: string | null
@@ -94,8 +109,8 @@ export interface ArticleDetailVO {
   bookmarkCount: number
   isOriginal: boolean | null
   sourceUrl: string | null
-  liked: boolean
-  bookmarked: boolean
+  liked: boolean               // 当前用户是否已点赞
+  bookmarked: boolean          // 当前用户是否已收藏
   publishedAt: string | null
   createdAt: string
   updatedAt: string
@@ -118,15 +133,16 @@ export interface TagInfo {
   id: number
   name: string
   slug: string
-  color: string | null
+  color: string | null         // 标签颜色（如 #FF6600）
 }
 
-// === Folder Tree ===
+// ---------- 文件夹树 (user) ----------
+// 文件夹树节点，children 是自身类型的数组 → 递归结构
 export interface FolderTreeVO {
   id: number
   name: string
-  children: FolderTreeVO[]
-  articles: ArticleItem[]
+  children: FolderTreeVO[]     // 递归：子文件夹
+  articles: ArticleItem[]      // 该文件夹下的文章
 }
 
 export interface ArticleItem {
@@ -135,7 +151,7 @@ export interface ArticleItem {
   status: 'DRAFT' | 'PUBLISHED'
 }
 
-// === LLM Provider ===
+// ---------- LLM Provider ----------
 export interface LlmProviderVO {
   id: string
   baseUrl: string
@@ -146,7 +162,7 @@ export interface LlmProviderVO {
   temperature: number | null
   enabled: boolean
   builtin: boolean
-  hasApiKey: boolean
+  hasApiKey: boolean           // API Key 是否已存储（不暴露具体值）
   createdAt: string
   updatedAt: string
 }
@@ -162,28 +178,30 @@ export interface CreateProviderDTO {
   temperature?: number
 }
 
-// === Pagination ===
+// ---------- 分页 ----------
+// 泛型接口：<T> 表示 records 可以是任意类型的数组
 export interface PageDTO<T> {
   total: number
   page: number
   size: number
-  records: T[]
+  records: T[]                 // T 由调用方指定，如 PageDTO<ArticleVO>
 }
 
-// === TOC ===
+// ---------- 目录导航 ----------
+// 从文章 Markdown 中提取的 h2/h3/h4 标题列表
 export interface TocItem {
-  id: string
-  text: string
-  level: 2 | 3 | 4
+  id: string                   // 锚点 id，如 "heading-0"
+  text: string                 // 标题文字
+  level: 2 | 3 | 4             // 标题级别
 }
 
-// === Comment (mock until backend implements controller) ===
+// ---------- 评论（mock 类型，后端控制器暂未实现） ----------
 export interface CommentVO {
   id: number
   articleId: number
   author: AuthorInfo
   content: string
-  parentId: number | null
+  parentId: number | null      // 父评论 id，null 表示顶层评论
   likeCount: number
   createdAt: string
 }
