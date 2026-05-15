@@ -61,18 +61,20 @@
         {{ auth.user?.nickname?.charAt(0) || '用' }}
       </div>
     </div>
+
+    <!-- 登录弹窗 -->
+    <LoginModal v-model:visible="showLogin" />
   </header>
 </template>
 
 <script setup lang="ts">
-// 直接使用 useAuthStore() —— Nuxt 自动从 stores/ 导入
 const auth = useAuthStore()
 
-// ref: Vue 3 响应式基础。值变化时自动更新模板中使用它的地方
+const emit = defineEmits<{ writeArticle: [] }>()
+
 const showLogin = ref(false)
 const showRegister = ref(false)
 
-// 导航链接数据（响应式，但目前是静态的）
 const navLinks = [
   { label: '首页', href: '/', active: true },
   { label: '博客', href: '#', active: false },
@@ -82,7 +84,7 @@ const navLinks = [
 ]
 
 function goWrite() {
-  // TODO: 跳转到写文章页面
+  emit('writeArticle')
 }
 </script>
 

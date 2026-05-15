@@ -1,10 +1,10 @@
 package com.yunbian27.user.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.yunbian27.article.mapper.ArticleMapper;
-import com.yunbian27.article.mapper.FolderMapper;
-import com.yunbian27.article.model.entity.Article;
-import com.yunbian27.article.model.entity.Folder;
+import com.yunbian27.content.mapper.ArticleMapper;
+import com.yunbian27.content.mapper.FolderMapper;
+import com.yunbian27.content.model.entity.Article;
+import com.yunbian27.content.model.entity.Folder;
 import com.yunbian27.common.Utils.SecurityUtils;
 import com.yunbian27.user.model.vo.FolderTreeVO;
 import lombok.RequiredArgsConstructor;

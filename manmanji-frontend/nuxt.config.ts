@@ -56,6 +56,7 @@ export default defineNuxtConfig({
     { path: '~/components/layout', prefix: '' },
     { path: '~/components/article', prefix: '' },
     { path: '~/components/ui', prefix: '' },
+    { path: '~/components/editor', prefix: '' },
   ],
 
   // --------------------------------------------------

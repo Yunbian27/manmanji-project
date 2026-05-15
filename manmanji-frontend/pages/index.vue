@@ -17,11 +17,14 @@
 <template>
   <div class="page">
     <!-- ===== 顶部导航栏 ===== -->
-    <TopNav />
+    <TopNav @write-article="openEditor" />
+
+    <!-- ===== 全屏 Markdown 编辑器 ===== -->
+    <EditorView v-if="editorOpen" @close="closeEditor" @published="onPublished" />
 
     <!-- ===== 手机端汉堡菜单按钮 ===== -->
     <button
-      v-if="isMobile && !mobileSidebarOpen"
+      v-if="!editorOpen && isMobile && !mobileSidebarOpen"
       class="hamburger-btn"
       @click="mobileSidebarOpen = true"
     >
@@ -30,13 +33,13 @@
 
     <!-- ===== 手机端半透明遮罩层 ===== -->
     <div
-      v-if="isMobile && mobileSidebarOpen"
+      v-if="!editorOpen && isMobile && mobileSidebarOpen"
       class="mobile-overlay"
       @click="mobileSidebarOpen = false"
     />
 
     <!-- ===== 三栏布局容器 ===== -->
-    <AppLayout>
+    <AppLayout v-if="!editorOpen">
       <!-- 左侧栏 -->
       <template #left-sidebar>
         <LeftSidebar
@@ -130,7 +133,7 @@
     </AppLayout>
 
     <!-- AI 浮动助手 -->
-    <AiAssistant />
+    <AiAssistant v-if="!editorOpen" />
   </div>
 </template>
 
@@ -142,6 +145,7 @@ import { mockArticle } from '~/data/mockArticle'
 // ---- 设备检测（响应式） ----
 const { isMobile, isTablet } = useDevice()
 const mobileSidebarOpen = ref(false)
+const editorOpen = ref(false)
 
 // ---- Pinia 全局状态 ----
 const folderStore = useFolderStore()
@@ -226,7 +230,21 @@ function scrollToComments() {
 }
 
 function onNewFolder() { /* TODO: 打开新建文件夹弹窗 */ }
-function onNewArticle() { /* TODO: 跳转到写文章页面 */ }
+function onNewArticle() { openEditor() }
+
+function openEditor() {
+  editorOpen.value = true
+}
+
+function closeEditor() {
+  editorOpen.value = false
+}
+
+function onPublished(_articleId: number) {
+  editorOpen.value = false
+  // 刷新左侧文章列表
+  folderStore.fetchFolders()
+}
 </script>
 
 <style scoped>
