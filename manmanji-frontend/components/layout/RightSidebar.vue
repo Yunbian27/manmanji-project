@@ -11,26 +11,24 @@
 -->
 <template>
   <aside class="right-sidebar">
-    <div class="toc-sticky">
-      <!-- 目录标题：12px/600/全大写 -->
-      <h4 class="toc-title">目录</h4>
+    <!-- 目录标题：12px/600/全大写 -->
+    <h4 class="toc-title">本页目录</h4>
 
-      <!-- 有目录时渲染链接列表 -->
-      <nav v-if="tocItems.length > 0" class="toc-list">
-        <a
-          v-for="item in tocItems"
-          :key="item.id"
-          :class="['toc-link', { active: item.id === activeSectionId }, item.level === 3 ? 'indent' : '']"
-          @click.prevent="scrollTo(item.id)"
-        >
-          {{ item.text }}
-        </a>
-      </nav>
+    <!-- 有目录时渲染链接列表 -->
+    <nav v-if="tocItems.length > 0" class="toc-list">
+      <a
+        v-for="item in tocItems"
+        :key="item.id"
+        :class="['toc-link', `level-${item.level}`, { active: item.id === activeSectionId }]"
+        @click.prevent="scrollTo(item.id)"
+      >
+        {{ item.text }}
+      </a>
+    </nav>
 
-      <p v-else class="toc-empty">暂无标题</p>
+    <p v-else class="toc-empty">暂无标题</p>
 
-      <button class="back-top" @click="scrollToTop">回到顶部</button>
-    </div>
+    <button class="back-top" @click="scrollToTop">回到顶部</button>
   </aside>
 </template>
 
@@ -62,18 +60,16 @@ function scrollToTop() {
 
 <style scoped>
 .right-sidebar {
-  width: var(--right-sidebar-width);    /* 220px */
+  flex: 1;
+  min-width: 160px;
   flex-shrink: 0;
   background: var(--canvas);
-  border-left: 1px solid var(--hairline);
   position: sticky;
   top: var(--nav-height);
   height: calc(100vh - var(--nav-height));
   overflow-y: auto;
-  padding: var(--space-lg) var(--space-md);
+  padding: var(--space-lg) calc(var(--space-xl) * 5) var(--space-lg) var(--space-lg);
 }
-
-.toc-sticky { position: sticky; top: var(--space-lg); }
 
 /* 目录标题：12px/600/全大写 */
 .toc-title {
@@ -85,34 +81,78 @@ function scrollToTop() {
   margin-bottom: var(--space-md);
 }
 
-/* 目录链接列表 */
-.toc-list { display: flex; flex-direction: column; gap: 2px; }
+/* 目录链接列表 + 垂直引导线 */
+.toc-list {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+.toc-list::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--hairline);
+}
 
-/* 目录链接：13px/400，左侧 2px 透明边框 */
+/* 目录链接 — H2 一级：主色、中等字重、无缩进 */
 .toc-link {
+  position: relative;
+  z-index: 1;
   display: block;
-  padding: 6px 0;
+  padding: var(--space-xs) var(--space-sm);
+  margin-bottom: 2px;
   border-left: 2px solid transparent;
-  padding-left: var(--space-sm);
+  border-radius: var(--radius-sm);
   font-size: var(--text-caption);
-  font-weight: var(--weight-regular);
-  color: var(--muted);
+  font-weight: var(--weight-medium);
+  color: var(--body);
   transition: var(--transition-hover);
   text-decoration: none;
 }
-.toc-link:hover { color: var(--ink); }
+.toc-link:hover {
+  background: var(--surface-card);
+  color: var(--ink);
+}
 
-/* 激活态：左边框变黄 + 字体加粗 */
+/* 激活态：左边框变黄 + 背景加深 + 字体加粗 */
 .toc-link.active {
   border-left-color: var(--primary);
+  background: var(--surface-card);
   color: var(--ink);
   font-weight: var(--weight-medium);
 }
 
-/* h3 缩进：左边距 22px + 字号缩小 */
-.toc-link.indent {
-  padding-left: 22px;
+/* H3：左缩进 24px，次要色、常规字重、小字号 */
+.toc-link.level-3 {
+  padding-left: 24px;
   font-size: var(--text-uppercase);
+  font-weight: var(--weight-regular);
+  color: var(--muted);
+}
+
+/* H4：更深缩进 36px，更淡的字色 */
+.toc-link.level-4 {
+  padding-left: 36px;
+  font-size: var(--text-uppercase);
+  font-weight: var(--weight-regular);
+  color: var(--muted-soft);
+}
+
+/* H5/H6：最深缩进 48px/60px */
+.toc-link.level-5 {
+  padding-left: 48px;
+  font-size: var(--text-uppercase);
+  font-weight: var(--weight-regular);
+  color: var(--muted-soft);
+}
+.toc-link.level-6 {
+  padding-left: 60px;
+  font-size: var(--text-uppercase);
+  font-weight: var(--weight-regular);
+  color: var(--muted-soft);
 }
 
 .toc-empty { font-size: var(--text-caption); color: var(--muted-soft); }

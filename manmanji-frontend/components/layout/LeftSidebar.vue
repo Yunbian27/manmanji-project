@@ -87,8 +87,8 @@ defineEmits<{
   min-width: 240px;
   max-width: 400px;
   flex-shrink: 0;                     /* 不会被压缩 */
-  background: var(--canvas);
-  border-right: 1px solid var(--hairline);
+  background: var(--surface-soft);
+  border-right: 1px solid var(--hairline-strong);
   display: flex;
   flex-direction: column;
   position: sticky;                   /* 跟随滚动吸顶 */
@@ -113,7 +113,7 @@ defineEmits<{
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
   border-bottom: 1px solid var(--hairline);
   flex-shrink: 0;
 }
@@ -141,13 +141,13 @@ defineEmits<{
 .tree-list {
   flex: 1;
   overflow-y: auto;                   /* 文件夹多时滚动 */
-  padding: var(--space-xs);
+  padding: var(--space-sm);
 }
 
 .sidebar-footer {
   display: flex;
   gap: var(--space-xs);
-  padding: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
   border-top: 1px solid var(--hairline);
   flex-shrink: 0;
 }

@@ -32,23 +32,23 @@ export function useMarkdownRenderer(content: ComputedRef<string> | Ref<string>) 
 
   const renderedHtml = computed(() => {
     let html = md.render(unref(content))
-    html = html.replace(/<(h[234])>/g, (_, tag) => {
-      const level = parseInt(tag[1]!) as 2 | 3 | 4
+    html = html.replace(/<(h[23456])>/g, (_, tag) => {
+      const level = parseInt(tag[1]!) as 2 | 3 | 4 | 5 | 6
       const id = `heading-${tocIndex[level - 2]!++}`
       return `<${tag} id="${id}">`
     })
     return html
   })
 
-  const tocIndex = [0, 0, 0]
+  const tocIndex = [0, 0, 0, 0, 0]
 
   const tocItems = computed<TocItem[]>(() => {
     const items: TocItem[] = []
-    const regex = /<(h[234])[^>]*id="([^"]*)"[^>]*>(.*?)<\/h[234]>/gi
+    const regex = /<(h[23456])[^>]*id="([^"]*)"[^>]*>(.*?)<\/h[23456]>/gi
     let match: RegExpExecArray | null
     const html = renderedHtml.value
     while ((match = regex.exec(html)) !== null) {
-      const level = parseInt(match[1]![1]!) as 2 | 3 | 4
+      const level = parseInt(match[1]![1]!) as 2 | 3 | 4 | 5 | 6
       const id = match[2]!
       const text = match[3]!.replace(/<[^>]*>/g, '')
       items.push({ id, text, level })

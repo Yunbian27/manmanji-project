@@ -87,7 +87,8 @@ const isOpen = ref(true)          // 默认展开
   align-items: center;
   gap: var(--space-xs);
   width: 100%;
-  padding: 6px 8px;
+  padding: var(--space-xs) var(--space-sm);
+  margin-bottom: 2px;
   border-radius: var(--radius-md);
   border: none;
   background: transparent;
@@ -119,7 +120,8 @@ const isOpen = ref(true)          // 默认展开
   display: flex;
   align-items: center;
   gap: var(--space-xs);
-  padding: 6px 8px 6px 20px;           /* 左缩进 20px */
+  padding: var(--space-xs) var(--space-sm) var(--space-xs) 24px;           /* 左缩进 24px */
+  margin-bottom: 2px;
   border-radius: var(--radius-sm);
   color: var(--muted);
   font-size: var(--text-caption);

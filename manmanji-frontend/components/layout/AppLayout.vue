@@ -34,6 +34,7 @@
 .app-layout {
   display: flex;
   min-height: calc(100vh - var(--nav-height));
+  background: var(--canvas);
 }
 
 /* 主内容区：不参与 flex 拉伸（flex: 0 0 auto），固定最大宽度并居中 */
@@ -41,15 +42,21 @@
   flex: 0 0 auto;
   max-width: var(--content-max);        /* 1000px */
   width: 100%;
-  padding: var(--space-xxl) 56px;       /* 48px 上下，56px 左右 */
+  padding: var(--space-xxl) var(--space-xxl);       /* 48px 上下，48px 左右 */
   overflow-y: auto;                      /* 内容区独立滚动 */
   height: calc(100vh - var(--nav-height));
+  scrollbar-width: auto;
+  scrollbar-color: auto;
 }
+.main-content::-webkit-scrollbar { width: auto; }
+.main-content::-webkit-scrollbar-track { background: initial; }
+.main-content::-webkit-scrollbar-thumb { background: initial; border-radius: initial; }
+.main-content::-webkit-scrollbar-thumb:hover { background: initial; }
 
 /* 响应式断点 */
 @media (max-width: 1200px) {
   /* 中屏：主内容缩窄 */
-  .main-content { max-width: 860px; padding: var(--space-xl) 40px; }
+  .main-content { max-width: 860px; padding: var(--space-xl) var(--space-xl); }
 }
 @media (max-width: 1024px) {
   /* 平板：主内容 100% 宽度 */

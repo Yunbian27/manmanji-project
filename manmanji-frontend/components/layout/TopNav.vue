@@ -96,7 +96,8 @@ function goWrite() {
   z-index: var(--z-nav);               /* 100 — 始终在页面之上 */
   background: var(--canvas);
   border-bottom: 1px solid var(--hairline);
-  padding: 0 var(--space-xl);           /* 左右 32px */
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
+  padding: 0 var(--space-xxl);          /* 左右 48px */
   display: flex;
   align-items: center;
   justify-content: space-between;       /* 两端对齐 */
@@ -137,7 +138,7 @@ function goWrite() {
   letter-spacing: -0.3px;
 }
 
-.nav-links { display: flex; gap: var(--space-xxs); list-style: none; }
+.nav-links { display: flex; gap: var(--space-sm); list-style: none; }
 
 /* 导航链接：14px/500，padding 8px 14px，圆角 8px */
 .nav-link {
@@ -176,7 +177,7 @@ function goWrite() {
   width: 100%;
   height: 40px;
   border-radius: var(--radius-md);
-  border: 1px solid var(--hairline);
+  border: 1px solid var(--hairline-strong);
   background: var(--surface-card);
   color: var(--ink);
   padding: 0 14px 0 38px;               /* 左侧留 38px 给图标 */

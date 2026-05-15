@@ -192,7 +192,7 @@ export interface PageDTO<T> {
 export interface TocItem {
   id: string                   // 锚点 id，如 "heading-0"
   text: string                 // 标题文字
-  level: 2 | 3 | 4             // 标题级别
+  level: 2 | 3 | 4 | 5 | 6       // 标题级别
 }
 
 // ---------- 评论（mock 类型，后端控制器暂未实现） ----------
