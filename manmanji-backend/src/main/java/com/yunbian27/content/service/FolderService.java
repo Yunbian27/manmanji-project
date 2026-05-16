@@ -2,14 +2,12 @@ package com.yunbian27.content.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
-import com.yunbian27.common.Utils.SecurityUtils;
+import com.yunbian27.common.utils.SecurityUtils;
 import com.yunbian27.common.exception.BusinessException;
-import com.yunbian27.common.exception.ErrorCode;
 import com.yunbian27.content.mapper.ArticleMapper;
 import com.yunbian27.content.mapper.FolderMapper;
 import com.yunbian27.content.model.dto.CreateFolderDTO;
 import com.yunbian27.content.model.dto.MoveFolderDTO;
-import com.yunbian27.content.model.entity.Article;
 import com.yunbian27.content.model.entity.Folder;
 import com.yunbian27.content.model.vo.FolderTreeVO;
 import lombok.RequiredArgsConstructor;

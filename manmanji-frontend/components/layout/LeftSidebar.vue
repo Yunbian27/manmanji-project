@@ -51,10 +51,14 @@
           class="root-folder-list"
           ghost-class="sortable-ghost"
           drag-class="sortable-drag"
+          chosen-class="sortable-chosen"
+          :force-fallback="true"
           :scroll="true"
           :scroll-sensitivity="50"
           :scroll-speed="15"
           :bubble-scroll="true"
+          @start="onDragStart"
+          @end="onDragEnd"
           @change="onRootFolderChange"
         >
           <template #item="{ element: folder }">
@@ -107,7 +111,38 @@ function onBlankContextMenu(event: MouseEvent) {
 
 // ---- 根级文件夹拖拽移动 ----
 const folderStore = useFolderStore()
-const collator = new Intl.Collator('zh-CN')
+const collator = new Intl.Collator('zh-CN', { numeric: true })
+
+let cursorCleanup: (() => void) | null = null
+
+function onDragStart(evt: any) {
+  const icon = document.createElement('div')
+  icon.className = 'drag-cursor-icon'
+  icon.setAttribute('data-drag-type', 'folder')
+  icon.style.cssText = 'position:fixed;width:32px;height:32px;pointer-events:none;z-index:99999'
+  document.body.appendChild(icon)
+
+  const onMove = (e: MouseEvent) => {
+    icon.style.left = (e.clientX - 16) + 'px'
+    icon.style.top = (e.clientY - 16) + 'px'
+  }
+  const onEnd = () => {
+    document.removeEventListener('mousemove', onMove)
+    document.removeEventListener('mouseup', onEnd)
+    icon.remove()
+    cursorCleanup = null
+  }
+  cursorCleanup = onEnd
+  document.addEventListener('mousemove', onMove)
+  document.addEventListener('mouseup', onEnd)
+
+  const native = evt.originalEvent as MouseEvent
+  onMove(native || evt)
+}
+
+function onDragEnd() {
+  cursorCleanup?.()
+}
 
 function onRootFolderChange(evt: any) {
   if (evt.moved) {
@@ -197,12 +232,14 @@ function onRootFolderChange(evt: any) {
   border-radius: var(--radius-md);
 }
 
-/* 拖拽中跟随鼠标的元素 */
+/* mirror 隐身 — 只做 SortableJS 的拖拽载体，实际图标由 JS 追踪光标渲染 */
 .sortable-drag {
-  opacity: 0.9;
-  background: var(--surface-card);
-  border-radius: var(--radius-md);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  opacity: 0 !important;
+}
+
+/* chosenClass 加在原始元素上 — 仅半透明 */
+.sortable-chosen {
+  opacity: 0.4;
 }
 
 .sidebar-footer {
@@ -249,5 +286,32 @@ function onRootFolderChange(evt: any) {
     min-width: unset; max-width: unset;
   }
   .left-sidebar.mobile-open { display: flex; }
+}
+</style>
+
+<style>
+.drag-cursor-icon {
+  border-radius: 8px;
+  background-color: var(--surface-card);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.drag-cursor-icon::before {
+  content: '';
+  display: block;
+  width: 20px;
+  height: 20px;
+}
+.drag-cursor-icon[data-drag-type="folder"]::before {
+  background-color: var(--primary);
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z'/%3E%3C/svg%3E");
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z'/%3E%3C/svg%3E");
+}
+.drag-cursor-icon[data-drag-type="article"]::before {
+  background-color: var(--muted);
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z'/%3E%3Cpolyline points='14 2 14 8 20 8'/%3E%3C/svg%3E");
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z'/%3E%3Cpolyline points='14 2 14 8 20 8'/%3E%3C/svg%3E");
 }
 </style>

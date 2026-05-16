@@ -16,7 +16,7 @@
   - 草稿文章 → 显示橙色"草稿"标签
 -->
 <template>
-  <li class="tree-folder">
+  <li class="tree-folder" data-drag-type="folder">
     <!-- 文件夹标题按钮 -->
     <button
       class="folder-toggle"
@@ -43,10 +43,14 @@
           class="subfolder-list"
           ghost-class="sortable-ghost"
           drag-class="sortable-drag"
+          chosen-class="sortable-chosen"
+          :force-fallback="true"
           :scroll="true"
           :scroll-sensitivity="50"
           :scroll-speed="15"
           :bubble-scroll="true"
+          @start="onDragStart"
+          @end="onDragEnd"
           @change="onFolderChildrenChange"
         >
           <template #item="{ element: child }">
@@ -67,14 +71,18 @@
           class="article-list"
           ghost-class="sortable-ghost"
           drag-class="sortable-drag"
+          chosen-class="sortable-chosen"
+          :force-fallback="true"
           :scroll="true"
           :scroll-sensitivity="50"
           :scroll-speed="15"
           :bubble-scroll="true"
+          @start="onDragStart"
+          @end="onDragEnd"
           @change="onArticleChildrenChange"
         >
           <template #item="{ element: article }">
-            <li>
+            <li data-drag-type="article">
               <a
                 class="tree-article"
                 :class="{ active: article.id === currentArticleId }"
@@ -115,7 +123,7 @@ const openMenu = inject<OpenMenuFn>('openContextMenu')
 const folderStore = useFolderStore()
 const isOpen = ref(true)
 
-const collator = new Intl.Collator('zh-CN')
+const collator = new Intl.Collator('zh-CN', { numeric: true })
 
 // vuedraggable 需要可写数组，props 是只读的，维护本地副本
 const localChildren = ref<FolderTreeVO[]>(sorted([...props.folder.children]))
@@ -132,6 +140,40 @@ watch(() => props.folder.id, () => {
 })
 
 // ---- 拖拽移动处理 ----
+
+let cursorCleanup: (() => void) | null = null
+
+function onDragStart(evt: any) {
+  const el = evt.item as HTMLElement
+  const isFolder = el.dataset.dragType === 'folder'
+
+  const icon = document.createElement('div')
+  icon.className = 'drag-cursor-icon'
+  icon.setAttribute('data-drag-type', isFolder ? 'folder' : 'article')
+  icon.style.cssText = 'position:fixed;width:32px;height:32px;pointer-events:none;z-index:99999'
+  document.body.appendChild(icon)
+
+  const onMove = (e: MouseEvent) => {
+    icon.style.left = (e.clientX - 16) + 'px'
+    icon.style.top = (e.clientY - 16) + 'px'
+  }
+  const onEnd = () => {
+    document.removeEventListener('mousemove', onMove)
+    document.removeEventListener('mouseup', onEnd)
+    icon.remove()
+    cursorCleanup = null
+  }
+  cursorCleanup = onEnd
+  document.addEventListener('mousemove', onMove)
+  document.addEventListener('mouseup', onEnd)
+
+  const native = evt.originalEvent as MouseEvent
+  onMove(native || evt)
+}
+
+function onDragEnd() {
+  cursorCleanup?.()
+}
 
 function onFolderChildrenChange(evt: any) {
   if (evt.moved) {
@@ -200,6 +242,16 @@ function onArticleChildrenChange(evt: any) {
   min-height: 4px;
 }
 
+/* mirror 隐身 — 只做 SortableJS 的拖拽载体，实际图标由 JS 追踪光标渲染 */
+.sortable-drag {
+  opacity: 0 !important;
+}
+
+/* chosenClass 加在原始元素上 — 仅半透明 */
+.sortable-chosen {
+  opacity: 0.4;
+}
+
 /* 文件夹标题作为拖放悬停目标时的高亮 */
 .folder-toggle.drop-hover {
   outline: 2px dashed var(--primary);
@@ -258,5 +310,32 @@ function onArticleChildrenChange(evt: any) {
   padding: 1px 6px;
   border-radius: var(--radius-xs);
   flex-shrink: 0;
+}
+</style>
+
+<style>
+.drag-cursor-icon {
+  border-radius: 8px;
+  background-color: var(--surface-card);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.drag-cursor-icon::before {
+  content: '';
+  display: block;
+  width: 20px;
+  height: 20px;
+}
+.drag-cursor-icon[data-drag-type="folder"]::before {
+  background-color: var(--primary);
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z'/%3E%3C/svg%3E");
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z'/%3E%3C/svg%3E");
+}
+.drag-cursor-icon[data-drag-type="article"]::before {
+  background-color: var(--muted);
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z'/%3E%3Cpolyline points='14 2 14 8 20 8'/%3E%3C/svg%3E");
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z'/%3E%3Cpolyline points='14 2 14 8 20 8'/%3E%3C/svg%3E");
 }
 </style>

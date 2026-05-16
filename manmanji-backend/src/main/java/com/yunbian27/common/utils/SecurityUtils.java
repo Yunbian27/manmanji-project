@@ -1,4 +1,4 @@
-package com.yunbian27.common.Utils;
+package com.yunbian27.common.utils;
 
 import com.yunbian27.common.exception.BusinessException;
 import com.yunbian27.common.exception.ErrorCode;

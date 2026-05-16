@@ -1,4 +1,4 @@
-package com.yunbian27.common.Utils;
+package com.yunbian27.common.utils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
