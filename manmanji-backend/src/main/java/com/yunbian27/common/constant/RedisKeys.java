@@ -7,9 +7,14 @@ public final class RedisKeys {
 
     private RedisKeys() {}
 
+    public static final String PROJECT = "manmanji:";
+
     // ===== Token =====
-    public static final String REFRESH_TOKEN = "auth:refresh_token:%s";       // userId
-    public static final String ACCESS_TOKEN_BLACKLIST = "auth:access_blacklist:%s"; // tokenId
+    public static final String REFRESH_TOKEN = "auth:refresh_token:";       // userId
+    public static final String ACCESS_TOKEN_BLACKLIST = "auth:access_blacklist:"; // tokenId
+
+    // 文章缓存
+    public static final String ARTICLE_CACHE_PREFIX = PROJECT + "article:";
 
     // ===== 签到 =====
     public static final String CHECK_IN_BITMAP = "checkin:bitmap:%d:%d";      // year:month

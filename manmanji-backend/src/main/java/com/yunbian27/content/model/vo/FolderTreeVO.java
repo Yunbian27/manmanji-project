@@ -10,14 +10,15 @@ public class FolderTreeVO {
     private Long id;
     private String name;
     private List<FolderTreeVO> children;
-    private List<ArticleItem> articles;
+    private List<ArticleBasic> articles;
 
     @Data
     @Builder
-    public static class ArticleItem {
+    public static class ArticleBasic {
         private Long id;
         private String title;
-        private String status;      //未发布或已发布
+        private String status; //未发布或已发布
+        private Long folderId;
     }
 }
 

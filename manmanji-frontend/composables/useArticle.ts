@@ -8,9 +8,9 @@ import type { ArticleVO, ArticleCreateDTO } from '~/types'
 export function useArticle() {
   const api = useApi()
 
-  /** 获取单篇文章（公开接口，无需认证） */
+  /** 获取单篇文章 */
   function getArticle(id: number): Promise<ArticleVO> {
-    return api.get<ArticleVO>(`/api/articles/${id}`, false)
+    return api.get<ArticleVO>(`/api/articles/${id}`)
   }
 
   /** 创建文章（需要登录） */

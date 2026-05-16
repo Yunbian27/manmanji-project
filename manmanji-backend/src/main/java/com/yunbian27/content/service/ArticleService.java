@@ -2,6 +2,10 @@ package com.yunbian27.content.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.yunbian27.common.Utils.JsonUtils;
+import com.yunbian27.common.constant.RedisKeys;
+import com.yunbian27.common.constant.RedisTTL;
 import com.yunbian27.common.exception.BusinessException;
 import com.yunbian27.common.exception.ErrorCode;
 import com.yunbian27.content.model.dto.MoveArticleDTO;
@@ -20,12 +24,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.beans.BeanUtils;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Service
@@ -39,15 +45,17 @@ public class ArticleService {
     private final LlmProviderRegistry providerRegistry;
     private final LlmGlobalSettingMapper llmGlobalSettingMapper;
 
+    private final StringRedisTemplate stringRedisTemplate;
+
     private static final Long Temp_Folder = 10000L;
 
     @Transactional
     public Long createArticle(ArticleCreateDTO dto) {
-        Long authorId = SecurityUtils.getCurrentUserId();
+        Long userId = SecurityUtils.getCurrentUserId();
 
         Article article = new Article();
         BeanUtils.copyProperties(dto, article);
-        article.setAuthorId(authorId);
+        article.setUserId(userId);
         article.setSlug(generateSlug(dto.getTitle()));
         article.setSourceType("MANUAL");
 
@@ -128,9 +136,21 @@ public class ArticleService {
      * @return
      */
     public ArticleVO showArticle(Long articleId) {
-        ArticleVO articleVO = new ArticleVO();
+        // 1、查缓存
+        String key = RedisKeys.ARTICLE_CACHE_PREFIX + articleId;
+        String json = stringRedisTemplate.opsForValue().get(key);
+        if (json != null) {
+            return JsonUtils.toBean(json, ArticleVO.class);
+        }
+        // 2、查库
         Article article = articleMapper.selectById(articleId);
+        if (article == null) {
+            throw new BusinessException("文章不存在");
+        }
+        ArticleVO articleVO = new ArticleVO();
         BeanUtils.copyProperties(article, articleVO);
+        // 3、写缓存
+        stringRedisTemplate.opsForValue().set(key, JsonUtils.toJson(articleVO), RedisTTL.ARTICLE);
         return articleVO;
     }
 

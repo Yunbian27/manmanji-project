@@ -60,7 +60,7 @@ CREATE TABLE IF NOT EXISTS articles (
     summary         VARCHAR(500),                                            -- 文章摘要，feed 列表展示用
     cover_url       VARCHAR(500),                                            -- 封面图链接
 
-    author_id       BIGINT NOT NULL,                                         -- 作者用户 ID
+    user_id       BIGINT NOT NULL,                                         -- 用户 ID
     folder_id       BIGINT,                                                  -- 个人文件夹 ID（个人博客侧分类）
     category_id     BIGINT,                                                  -- 社区分类 ID（社区页分类筛选）
 

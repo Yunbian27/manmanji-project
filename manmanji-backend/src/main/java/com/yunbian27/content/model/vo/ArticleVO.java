@@ -20,7 +20,7 @@ public class ArticleVO {
     /** 封面图 */
     private String coverUrl;
     /** 作者用户ID */
-    private Long authorId;
+    private Long userId;
     /** 个人文件夹ID */
     private Long folderId;
     /** 分类ID */

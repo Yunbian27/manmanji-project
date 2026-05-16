@@ -44,7 +44,6 @@ public class SecurityConfig {
                 // 公开接口
                 .requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/refresh").permitAll()
                 .requestMatchers(HttpMethod.GET,
-                    "/api/articles/**",
                     "/api/users/*",
                     "/api/rankings/**",
                     "/api/flash-sales/**",

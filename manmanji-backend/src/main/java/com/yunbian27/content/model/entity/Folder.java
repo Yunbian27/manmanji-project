@@ -1,11 +1,13 @@
 package com.yunbian27.content.model.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
+import lombok.Builder;
 import lombok.Data;
 
 import java.time.LocalDateTime;
 
 @Data
+@Builder
 @TableName("folders")
 public class Folder {
 
