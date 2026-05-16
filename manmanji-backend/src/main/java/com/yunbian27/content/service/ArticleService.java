@@ -167,4 +167,42 @@ public class ArticleService {
                 .eq(Article::getId, dto.getArticleId()));
         return folderService.show();
     }
+
+    public List<FolderTreeVO> rename(Long id, String title) {
+        if (id == null) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST);
+        }
+        if (title == null || title.trim().isEmpty()) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST);
+        }
+        Long userId = SecurityUtils.getCurrentUserId();
+        Article article = articleMapper.selectById(id);
+        if (article == null || !userId.equals(article.getUserId())) {
+            throw new BusinessException("文章不存在");
+        }
+        String newSlug = generateSlug(title.trim());
+        articleMapper.update(new LambdaUpdateWrapper<Article>()
+                .set(Article::getTitle, title.trim())
+                .set(Article::getSlug, newSlug)
+                .eq(Article::getId, id));
+        stringRedisTemplate.delete(RedisKeys.ARTICLE_CACHE_PREFIX + id);
+        return folderService.show();
+    }
+
+    @Transactional
+    public List<FolderTreeVO> delete(Long id) {
+        if (id == null) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST);
+        }
+        Long userId = SecurityUtils.getCurrentUserId();
+        Article article = articleMapper.selectById(id);
+        if (article == null || !userId.equals(article.getUserId())) {
+            throw new BusinessException("文章不存在");
+        }
+        articleTagMapper.delete(new LambdaQueryWrapper<ArticleTag>()
+                .eq(ArticleTag::getArticleId, id));
+        articleMapper.deleteById(id);
+        stringRedisTemplate.delete(RedisKeys.ARTICLE_CACHE_PREFIX + id);
+        return folderService.show();
+    }
 }

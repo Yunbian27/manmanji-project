@@ -8,11 +8,13 @@ import com.yunbian27.content.mapper.ArticleMapper;
 import com.yunbian27.content.mapper.FolderMapper;
 import com.yunbian27.content.model.dto.CreateFolderDTO;
 import com.yunbian27.content.model.dto.MoveFolderDTO;
+import com.yunbian27.content.model.entity.Article;
 import com.yunbian27.content.model.entity.Folder;
 import com.yunbian27.content.model.vo.FolderTreeVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -120,5 +122,59 @@ public class FolderService {
                 .name(dto.getFolderName())
                 .build());
         return show();
+    }
+
+    public List<FolderTreeVO> rename(Long id, String name) {
+        if (id == null) {
+            throw new BusinessException("缺少文件夹ID");
+        }
+        if (name == null || name.trim().isEmpty()) {
+            throw new BusinessException("文件夹名称不能为空");
+        }
+        Long userId = SecurityUtils.getCurrentUserId();
+        Folder folder = folderMapper.selectById(id);
+        if (folder == null || !userId.equals(folder.getUserId())) {
+            throw new BusinessException("文件夹不存在");
+        }
+        folderMapper.update(new LambdaUpdateWrapper<Folder>()
+                .set(Folder::getName, name.trim())
+                .eq(Folder::getId, id));
+        return show();
+    }
+
+    @Transactional
+    public List<FolderTreeVO> delete(Long id) {
+        if (id == null) {
+            throw new BusinessException("缺少文件夹ID");
+        }
+        if (id == 10000L) {
+            throw new BusinessException("无法删除未分类文件夹");
+        }
+        Long userId = SecurityUtils.getCurrentUserId();
+        Folder folder = folderMapper.selectById(id);
+        if (folder == null || !userId.equals(folder.getUserId())) {
+            throw new BusinessException("文件夹不存在");
+        }
+
+        List<Folder> allFolders = folderMapper.selectList(new LambdaQueryWrapper<Folder>()
+                .eq(Folder::getUserId, userId));
+        List<Long> idsToDelete = new ArrayList<>();
+        idsToDelete.add(id);
+        collectDescendantIds(id, allFolders, idsToDelete);
+
+        articleMapper.delete(new LambdaQueryWrapper<Article>()
+                .in(Article::getFolderId, idsToDelete));
+
+        folderMapper.deleteBatchIds(idsToDelete);
+        return show();
+    }
+
+    private void collectDescendantIds(Long parentId, List<Folder> allFolders, List<Long> result) {
+        for (Folder f : allFolders) {
+            if (parentId.equals(f.getParentId())) {
+                result.add(f.getId());
+                collectDescendantIds(f.getId(), allFolders, result);
+            }
+        }
     }
 }

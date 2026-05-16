@@ -8,7 +8,7 @@ export function useFolder() {
   }
 
   function createFolder(name: string, parentId?: number): Promise<FolderTreeVO> {
-    return api.post<FolderTreeVO>('/api/folders', { name, parentId })
+    return api.post<FolderTreeVO>('/api/folders', { folderName: name, parentId })
   }
 
   function renameFolder(id: number, name: string): Promise<void> {

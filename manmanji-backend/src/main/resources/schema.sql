@@ -82,6 +82,18 @@ CREATE TABLE IF NOT EXISTS articles (
 );
 
 -- ============================================
+-- 6. 文章-标签关联
+-- ============================================
+
+CREATE TABLE IF NOT EXISTS article_tags (
+                                            article_id      BIGINT NOT NULL REFERENCES articles(id) ON DELETE CASCADE,
+    tag_id          BIGINT NOT NULL REFERENCES tags(id) ON DELETE CASCADE,
+    PRIMARY KEY (article_id, tag_id)
+    );
+
+CREATE INDEX IF NOT EXISTS idx_article_tags_tag ON article_tags(tag_id);
+
+-- ============================================
 -- 2. 关注关系
 -- ============================================
 
@@ -124,20 +136,6 @@ CREATE TABLE IF NOT EXISTS tags (
     color           VARCHAR(7),
     created_at      TIMESTAMP NOT NULL DEFAULT NOW()
 );
-
-
-
--- ============================================
--- 6. 文章-标签关联
--- ============================================
-
-CREATE TABLE IF NOT EXISTS article_tags (
-    article_id      BIGINT NOT NULL REFERENCES articles(id) ON DELETE CASCADE,
-    tag_id          BIGINT NOT NULL REFERENCES tags(id) ON DELETE CASCADE,
-    PRIMARY KEY (article_id, tag_id)
-);
-
-CREATE INDEX IF NOT EXISTS idx_article_tags_tag ON article_tags(tag_id);
 
 -- ============================================
 -- 7. 文章版本历史
