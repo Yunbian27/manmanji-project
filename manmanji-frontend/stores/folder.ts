@@ -5,18 +5,15 @@ export const useFolderStore = defineStore('folder', () => {
   const folders = ref<FolderTreeVO[]>([])
   const loading = ref(false)
   const error = ref<string | null>(null)
-  const folderMap = shallowRef<Map<number, FolderTreeVO>>(new Map())
+  const collator = new Intl.Collator('zh-CN')
 
-  function buildFolderMap(tree: FolderTreeVO[]) {
-    const map = new Map<number, FolderTreeVO>()
-    function walk(list: FolderTreeVO[]) {
-      for (const f of list) {
-        map.set(f.id, f)
-        walk(f.children)
-      }
+  function sortTree(tree: FolderTreeVO[]) {
+    tree.sort((a, b) => collator.compare(a.name, b.name))
+    for (const f of tree) {
+      f.children.sort((a, b) => collator.compare(a.name, b.name))
+      f.articles.sort((a, b) => collator.compare(a.title, b.title))
+      sortTree(f.children)
     }
-    walk(tree)
-    folderMap.value = map
   }
 
   async function fetchFolders() {
@@ -25,7 +22,7 @@ export const useFolderStore = defineStore('folder', () => {
     try {
       const { getFolders } = useFolder()
       folders.value = await getFolders()
-      buildFolderMap(folders.value)
+      sortTree(folders.value)
     } catch (e) {
       error.value = e instanceof Error ? e.message : '加载文件夹失败'
     } finally {
@@ -63,17 +60,17 @@ export const useFolderStore = defineStore('folder', () => {
     await fetchFolders()
   }
 
-  async function moveFolder(id: number, newParentId: number | null, sortOrder: number) {
+  async function moveFolder(id: number, newParentId: number | null) {
     const { moveFolder: apiMove } = useFolder()
-    await apiMove(id, newParentId, sortOrder)
-    await fetchFolders()
+    folders.value = await apiMove(id, newParentId)
+    sortTree(folders.value)
   }
 
-  async function moveArticle(id: number, newFolderId: number, sortOrder: number) {
+  async function moveArticle(id: number, newFolderId: number | null) {
     const { moveArticle: apiMove } = useFolder()
-    await apiMove(id, newFolderId, sortOrder)
-    await fetchFolders()
+    folders.value = await apiMove(id, newFolderId)
+    sortTree(folders.value)
   }
 
-  return { folders, loading, error, folderMap, fetchFolders, createFolder, renameFolder, deleteFolder, renameArticle, deleteArticle, moveFolder, moveArticle }
+  return { folders, loading, error, fetchFolders, createFolder, renameFolder, deleteFolder, renameArticle, deleteArticle, moveFolder, moveArticle }
 })

@@ -22,9 +22,6 @@ public class Folder {
     /** 文件夹名称 */
     private String name;
 
-    /** 排序序号 */
-    private Integer sortOrder;
-
     /** 创建时间 */
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createdAt;

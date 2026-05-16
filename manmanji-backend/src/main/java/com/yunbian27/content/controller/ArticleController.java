@@ -1,13 +1,17 @@
 package com.yunbian27.content.controller;
 
 import com.yunbian27.content.model.dto.ArticleCreateDTO;
+import com.yunbian27.content.model.dto.MoveArticleDTO;
 import com.yunbian27.content.model.vo.ArticleVO;
+import com.yunbian27.content.model.vo.FolderTreeVO;
 import com.yunbian27.content.service.ArticleService;
 import com.yunbian27.common.Result;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 /**
  * 文章控制器
@@ -47,4 +51,15 @@ public class ArticleController {
     public Result<ArticleVO> article(@PathVariable Long articleId) {
         return Result.success(articleService.showArticle(articleId));
     }
+
+    /**
+     * 根据id更新文件夹树
+     * @return
+     */
+    @PutMapping("/move")
+    public Result<List<FolderTreeVO>> move(@RequestBody MoveArticleDTO dto) {
+        return Result.success(articleService.move(dto));
+    }
+
+
 }

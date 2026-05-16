@@ -40,7 +40,6 @@ CREATE TABLE IF NOT EXISTS folders (
     user_id     BIGINT NOT NULL,                                 -- 所属用户
     parent_id   BIGINT,                                          -- 父文件夹 ID，NULL 表示一级文件夹
     name        VARCHAR(50) NOT NULL,                             -- 文件夹名称
-    sort_order  INT DEFAULT 0,                                   -- 排序序号
     created_at  TIMESTAMP DEFAULT NOW(),
     updated_at  TIMESTAMP DEFAULT NOW(),
     UNIQUE(user_id, parent_id, name)                             -- 同一用户同一层级下文件夹名不重名

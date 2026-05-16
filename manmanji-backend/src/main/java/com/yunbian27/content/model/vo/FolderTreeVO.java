@@ -1,4 +1,4 @@
-package com.yunbian27.user.model.vo;
+package com.yunbian27.content.model.vo;
 
 import lombok.Builder;
 import lombok.Data;
@@ -20,3 +20,5 @@ public class FolderTreeVO {
         private String status;      //未发布或已发布
     }
 }
+
+

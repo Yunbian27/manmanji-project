@@ -51,6 +51,10 @@
           class="root-folder-list"
           ghost-class="sortable-ghost"
           drag-class="sortable-drag"
+          :scroll="true"
+          :scroll-sensitivity="50"
+          :scroll-speed="15"
+          :bubble-scroll="true"
           @change="onRootFolderChange"
         >
           <template #item="{ element: folder }">
@@ -101,18 +105,17 @@ function onBlankContextMenu(event: MouseEvent) {
   openMenu?.(event, 'blank')
 }
 
-// ---- 根级文件夹拖拽排序/移动 ----
+// ---- 根级文件夹拖拽移动 ----
 const folderStore = useFolderStore()
+const collator = new Intl.Collator('zh-CN')
 
 function onRootFolderChange(evt: any) {
   if (evt.moved) {
-    const { element, newIndex } = evt.moved
-    folderStore.moveFolder(element.id, null, newIndex).catch(() => {
-      folderStore.fetchFolders()
-    })
+    // 同级重排 → 恢复名称排序，不调 API
+    folderStore.folders.sort((a, b) => collator.compare(a.name, b.name))
   } else if (evt.added) {
-    const { element, newIndex } = evt.added
-    folderStore.moveFolder(element.id, null, newIndex).catch(() => {
+    const { element } = evt.added
+    folderStore.moveFolder(element.id, null).catch(() => {
       folderStore.fetchFolders()
     })
   }

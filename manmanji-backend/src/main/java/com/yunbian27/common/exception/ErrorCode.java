@@ -20,18 +20,18 @@ public enum ErrorCode {
     USER_NOT_FOUND(400, "用户不存在"),
     USER_BANNED(400, "用户已被禁用"),
 
-    // ========== Provider管理模块错误 11xxx ==========
-    PROVIDER_NOT_FOUND(11001, "LLM Provider 不存在"),
-    PROVIDER_ALREADY_EXISTS(11002, "LLM Provider 已存在"),
-    PROVIDER_CONFIG_READ_FAILED(11004, "读取 Provider 配置失败"),
-    PROVIDER_CONFIG_WRITE_FAILED(11005, "写入 Provider 配置失败"),
-    PROVIDER_TEST_FAILED(11006, "Provider 连通性测试失败"),
-    PROVIDER_DEFAULT_CANNOT_DELETE(11007, "默认 Provider 不可删除"),
-    MODULE_NOT_FOUND(11008, "模块不存在"),
-    ;
-
+    // ========== Provider管理模块错误 1xxx ==========
+    PROVIDER_NOT_FOUND(1001, "LLM Provider 不存在"),
+    PROVIDER_ALREADY_EXISTS(1002, "LLM Provider 已存在"),
+    PROVIDER_CONFIG_READ_FAILED(1004, "读取 Provider 配置失败"),
+    PROVIDER_CONFIG_WRITE_FAILED(1005, "写入 Provider 配置失败"),
+    PROVIDER_TEST_FAILED(1006, "Provider 连通性测试失败"),
+    PROVIDER_DEFAULT_CANNOT_DELETE(1007, "默认 Provider 不可删除"),
+    MODULE_NOT_FOUND(1008, "模块不存在");
 
 
     private final int code;
     private final String message;
+
+
 }

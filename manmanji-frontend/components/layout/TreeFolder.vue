@@ -43,6 +43,10 @@
           class="subfolder-list"
           ghost-class="sortable-ghost"
           drag-class="sortable-drag"
+          :scroll="true"
+          :scroll-sensitivity="50"
+          :scroll-speed="15"
+          :bubble-scroll="true"
           @change="onFolderChildrenChange"
         >
           <template #item="{ element: child }">
@@ -63,6 +67,10 @@
           class="article-list"
           ghost-class="sortable-ghost"
           drag-class="sortable-drag"
+          :scroll="true"
+          :scroll-sensitivity="50"
+          :scroll-speed="15"
+          :bubble-scroll="true"
           @change="onArticleChildrenChange"
         >
           <template #item="{ element: article }">
@@ -107,63 +115,42 @@ const openMenu = inject<OpenMenuFn>('openContextMenu')
 const folderStore = useFolderStore()
 const isOpen = ref(true)
 
-// vuedraggable 需要直接修改数组，但 props 是只读的。
-// 因此维护本地可写副本，通过 sync 函数与 store 同步。
-const localChildren = ref<FolderTreeVO[]>([...props.folder.children])
-const localArticles = ref<ArticleItem[]>([...props.folder.articles])
-const isSyncing = ref(false)
+const collator = new Intl.Collator('zh-CN')
 
-// 外部变化（props from store）→ 同步到本地 ref
-watch(
-  () => [props.folder.children, props.folder.articles],
-  () => {
-    if (isSyncing.value) return
-    localChildren.value = [...props.folder.children]
-    localArticles.value = [...props.folder.articles]
-  },
-  { deep: true },
-)
+// vuedraggable 需要可写数组，props 是只读的，维护本地副本
+const localChildren = ref<FolderTreeVO[]>(sorted([...props.folder.children]))
+const localArticles = ref<ArticleItem[]>(sorted([...props.folder.articles]))
 
-// 本地 ref 变化（拖拽操作）→ 同步到 store 树
-function syncToStore() {
-  isSyncing.value = true
-  const folder = folderStore.folderMap.get(props.folder.id)
-  if (folder) {
-    folder.children.splice(0, folder.children.length, ...localChildren.value)
-    folder.articles.splice(0, folder.articles.length, ...localArticles.value)
-  }
-  nextTick(() => { isSyncing.value = false })
+function sorted<T extends FolderTreeVO[] | ArticleItem[]>(list: T): T {
+  return list.sort((a, b) => collator.compare('name' in a ? a.name : a.title, 'name' in b ? b.name : b.title)) as T
 }
 
-// ---- 拖拽排序/移动处理 ----
+// 文件夹切换时重新同步（浅监听 id 足矣，fetchFolders 会替换整个对象）
+watch(() => props.folder.id, () => {
+  localChildren.value = sorted([...props.folder.children])
+  localArticles.value = sorted([...props.folder.articles])
+})
+
+// ---- 拖拽移动处理 ----
 
 function onFolderChildrenChange(evt: any) {
-  syncToStore()
-
   if (evt.moved) {
-    const { element, newIndex } = evt.moved
-    folderStore.moveFolder(element.id, props.folder.id, newIndex).catch(() => {
-      folderStore.fetchFolders()
-    })
+    // 同级重排 → 恢复名称排序，不调 API
+    localChildren.value = sorted([...localChildren.value])
   } else if (evt.added) {
-    const { element, newIndex } = evt.added
-    folderStore.moveFolder(element.id, props.folder.id, newIndex).catch(() => {
+    const { element } = evt.added
+    folderStore.moveFolder(element.id, props.folder.id).catch(() => {
       folderStore.fetchFolders()
     })
   }
 }
 
 function onArticleChildrenChange(evt: any) {
-  syncToStore()
-
   if (evt.moved) {
-    const { element, newIndex } = evt.moved
-    folderStore.moveArticle(element.id, props.folder.id, newIndex).catch(() => {
-      folderStore.fetchFolders()
-    })
+    localArticles.value = sorted([...localArticles.value])
   } else if (evt.added) {
-    const { element, newIndex } = evt.added
-    folderStore.moveArticle(element.id, props.folder.id, newIndex).catch(() => {
+    const { element } = evt.added
+    folderStore.moveArticle(element.id, props.folder.id).catch(() => {
       folderStore.fetchFolders()
     })
   }

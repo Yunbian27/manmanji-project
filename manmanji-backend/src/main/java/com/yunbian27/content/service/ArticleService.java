@@ -1,6 +1,10 @@
 package com.yunbian27.content.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.yunbian27.common.exception.BusinessException;
+import com.yunbian27.common.exception.ErrorCode;
+import com.yunbian27.content.model.dto.MoveArticleDTO;
 import com.yunbian27.content.model.vo.ArticleVO;
 import com.yunbian27.ai.mapper.LlmGlobalSettingMapper;
 import com.yunbian27.ai.model.LlmGlobalSettingEntity;
@@ -11,6 +15,7 @@ import com.yunbian27.content.model.entity.ArticleTag;
 import com.yunbian27.content.mapper.ArticleMapper;
 import com.yunbian27.content.mapper.ArticleTagMapper;
 import com.yunbian27.common.Utils.SecurityUtils;
+import com.yunbian27.content.model.vo.FolderTreeVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
@@ -19,6 +24,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Slf4j
@@ -28,6 +34,7 @@ public class ArticleService {
 
     private final ArticleMapper articleMapper;
     private final ArticleTagMapper articleTagMapper;
+    private final FolderService folderService;
 
     private final LlmProviderRegistry providerRegistry;
     private final LlmGlobalSettingMapper llmGlobalSettingMapper;
@@ -50,11 +57,10 @@ public class ArticleService {
             article.setStatus("DRAFT");
         }
 
-        // 如果folderId为空，则放入待整理文件夹
+        // 如果文章folder_id为null,则固定放入未分类文件夹
         if (dto.getFolderId() == null) {
             article.setFolderId(Temp_Folder);
         }
-
         articleMapper.insert(article);
 
         if (dto.getTagIds() != null && !dto.getTagIds().isEmpty()) {
@@ -126,5 +132,21 @@ public class ArticleService {
         Article article = articleMapper.selectById(articleId);
         BeanUtils.copyProperties(article, articleVO);
         return articleVO;
+    }
+
+    public List<FolderTreeVO> move(MoveArticleDTO dto) {
+        if (dto == null) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST);
+        }
+        if (dto.getFolderId() == null) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST);
+        }
+        if (dto.getArticleId() == null) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST);
+        }
+        articleMapper.update(new LambdaUpdateWrapper<Article>()
+                .set(Article::getFolderId, dto.getFolderId())
+                .eq(Article::getId, dto.getArticleId()));
+        return folderService.show();
     }
 }
