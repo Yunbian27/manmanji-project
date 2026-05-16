@@ -137,6 +137,30 @@
       @select="onContextSelect"
       @close="contextVisible = false"
     />
+
+    <!-- 文本输入弹窗（新建文件夹 / 重命名文件夹 / 重命名文章） -->
+    <PromptModal
+      :visible="prompt.visible"
+      :title="prompt.title"
+      :placeholder="prompt.placeholder"
+      :confirm-text="prompt.confirmText"
+      :loading="prompt.loading"
+      :error="prompt.error"
+      @confirm="onPromptConfirm"
+      @cancel="onPromptCancel"
+    />
+
+    <!-- 确认删除弹窗 -->
+    <ConfirmModal
+      :visible="confirm.visible"
+      :title="confirm.title"
+      :message="confirm.message"
+      :confirm-text="confirm.confirmText"
+      :loading="confirm.loading"
+      :error="confirm.error"
+      @confirm="onConfirmConfirm"
+      @cancel="onConfirmCancel"
+    />
   </div>
 </template>
 
@@ -225,32 +249,112 @@ function onContextSelect(key: string) {
   }
 }
 
+// ---- 文本输入弹窗状态 ----
+const prompt = reactive({
+  visible: false,
+  title: '',
+  placeholder: '',
+  confirmText: '确定',
+  loading: false,
+  error: null as string | null,
+})
+
+let promptResolve: ((value: string | null) => void) | null = null
+
+function showPrompt(config: { title: string; placeholder: string; confirmText?: string }): Promise<string | null> {
+  prompt.title = config.title
+  prompt.placeholder = config.placeholder
+  prompt.confirmText = config.confirmText || '确定'
+  prompt.loading = false
+  prompt.error = null
+  prompt.visible = true
+  return new Promise((resolve) => {
+    promptResolve = resolve
+  })
+}
+
+function onPromptConfirm(value: string) {
+  promptResolve?.(value)
+}
+
+function onPromptCancel() {
+  promptResolve?.(null)
+  prompt.visible = false
+}
+
+// ---- 确认弹窗状态 ----
+const confirm = reactive({
+  visible: false,
+  title: '',
+  message: '',
+  confirmText: '删除',
+  loading: false,
+  error: null as string | null,
+})
+
+let confirmResolve: (() => void) | null = null
+
+function showConfirmDialog(config: { title: string; message: string; confirmText?: string }): Promise<void> {
+  confirm.title = config.title
+  confirm.message = config.message
+  confirm.confirmText = config.confirmText || '删除'
+  confirm.loading = false
+  confirm.error = null
+  confirm.visible = true
+  return new Promise((resolve) => {
+    confirmResolve = resolve
+  })
+}
+
+function onConfirmConfirm() {
+  confirmResolve?.()
+}
+
+function onConfirmCancel() {
+  confirm.visible = false
+}
+
 async function handleCreateFolder(parentId?: number) {
-  const name = window.prompt('输入文件夹名称:')
-  if (!name || !name.trim()) return
+  const name = await showPrompt({ title: '新建文件夹', placeholder: '输入文件夹名称' })
+  if (!name) return
+  prompt.loading = true
+  prompt.error = null
   try {
-    await folderStore.createFolder(name.trim(), parentId)
+    await folderStore.createFolder(name, parentId)
+    prompt.visible = false
   } catch (e) {
-    alert(e instanceof Error ? e.message : '创建文件夹失败')
+    prompt.error = e instanceof Error ? e.message : '创建文件夹失败'
+  } finally {
+    prompt.loading = false
   }
 }
 
 async function handleRenameFolder(id: number) {
-  const name = window.prompt('输入新名称:')
-  if (!name || !name.trim()) return
+  const name = await showPrompt({ title: '重命名文件夹', placeholder: '输入新名称' })
+  if (!name) return
+  prompt.loading = true
+  prompt.error = null
   try {
-    await folderStore.renameFolder(id, name.trim())
+    await folderStore.renameFolder(id, name)
+    prompt.visible = false
   } catch (e) {
-    alert(e instanceof Error ? e.message : '重命名失败')
+    prompt.error = e instanceof Error ? e.message : '重命名失败'
+  } finally {
+    prompt.loading = false
   }
 }
 
 async function handleDeleteFolder(id: number) {
-  if (!window.confirm('确定删除此文件夹？子文件夹和文章也会被删除。')) return
+  await showConfirmDialog({ title: '删除文件夹', message: '确定删除此文件夹？子文件夹和文章也会被删除。' })
+  confirm.loading = true
+  confirm.error = null
   try {
     await folderStore.deleteFolder(id)
+    confirm.visible = false
   } catch (e) {
-    alert(e instanceof Error ? e.message : '删除失败')
+    confirm.error = e instanceof Error ? e.message : '删除失败'
+  } finally {
+    confirm.loading = false
   }
 }
 
@@ -263,25 +367,35 @@ function handleNewArticle(folderId?: number) {
 }
 
 async function handleRenameArticle(id: number) {
-  const title = window.prompt('输入新标题:')
-  if (!title || !title.trim()) return
+  const title = await showPrompt({ title: '重命名文章', placeholder: '输入新标题' })
+  if (!title) return
+  prompt.loading = true
+  prompt.error = null
   try {
-    await folderStore.renameArticle(id, title.trim())
+    await folderStore.renameArticle(id, title)
+    prompt.visible = false
   } catch (e) {
-    alert(e instanceof Error ? e.message : '重命名失败')
+    prompt.error = e instanceof Error ? e.message : '重命名失败'
+  } finally {
+    prompt.loading = false
   }
 }
 
 async function handleDeleteArticle(id: number) {
-  if (!window.confirm('确定删除此文章？')) return
+  await showConfirmDialog({ title: '删除文章', message: '确定删除此文章？' })
+  confirm.loading = true
+  confirm.error = null
   try {
     await folderStore.deleteArticle(id)
+    confirm.visible = false
     if (currentArticleId.value === id) {
       currentArticle.value = null
       currentArticleId.value = undefined
     }
   } catch (e) {
-    alert(e instanceof Error ? e.message : '删除失败')
+    confirm.error = e instanceof Error ? e.message : '删除失败'
+  } finally {
+    confirm.loading = false
   }
 }
 
