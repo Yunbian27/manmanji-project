@@ -5,6 +5,7 @@ export const useFolderStore = defineStore('folder', () => {
   const folders = ref<FolderTreeVO[]>([])
   const loading = ref(false)
   const error = ref<string | null>(null)
+  const expandedIds = ref<number[]>([])
   const collator = new Intl.Collator('zh-CN')
 
   function sortTree(tree: FolderTreeVO[]) {
@@ -72,5 +73,5 @@ export const useFolderStore = defineStore('folder', () => {
     sortTree(folders.value)
   }
 
-  return { folders, loading, error, fetchFolders, createFolder, renameFolder, deleteFolder, renameArticle, deleteArticle, moveFolder, moveArticle }
+  return { folders, loading, error, expandedIds, fetchFolders, createFolder, renameFolder, deleteFolder, renameArticle, deleteArticle, moveFolder, moveArticle }
 })

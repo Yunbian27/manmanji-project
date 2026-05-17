@@ -1,5 +1,6 @@
 package com.yunbian27.user.security;
 
+import com.yunbian27.common.constant.RedisKeys;
 import com.yunbian27.user.service.JwtService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -11,6 +12,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -30,6 +32,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     private static final String BEARER_PREFIX = "Bearer ";
 
     private final JwtService jwtService;
+    private final StringRedisTemplate stringRedisTemplate;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -49,6 +52,15 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             // refresh token 不能用于 API 访问
             if ("refresh".equals(claims.get("type"))) {
                 filterChain.doFilter(request, response);
+                return;
+            }
+
+            // === 黑名单检查插在这里 ===
+            String jti = claims.getId();
+            String blacklisted = stringRedisTemplate.opsForValue()
+                    .get(RedisKeys.ACCESS_TOKEN_BLACKLIST_PREFIX + jti);
+            if (blacklisted != null) {
+                filterChain.doFilter(request, response);  // 拒绝，当没认证
                 return;
             }
 

@@ -15,9 +15,9 @@ npx nuxi typecheck   # TypeScript type check
 
 **Stack**: Nuxt 4.1 + Vue 3.5 (Composition API, `<script setup>`) + TypeScript + Pinia 3
 
-**Backend**: Java Spring Boot at `localhost:8080`. During dev, Nitro proxies `/api/*` → `http://localhost:8080` (configured in `nuxt.config.ts`). No Nitro server routes exist — all API goes to the Java backend.
+**Backend**: Java Spring Boot at `localhost:8080`. During dev, Nitro proxies `/api/*` → `http://localhost:8080` (configured in `nuxt.config.ts`). No Nitro server routes exist — all API goes to the Java backend. Backend architecture details in `../docs/CLAUDE.md`.
 
-**Theme**: Dark-first design with electric yellow (`#faff69`) as the sole brand accent. All colors/spacing/radii/shadow tokens are in `assets/css/tokens.css`. Light theme overrides in `assets/css/light-theme.css`. Theme stored as `mannote-theme` in localStorage; inline script in `nuxt.config.ts` sets `data-theme` attr before Vue mounts to prevent FOUC.
+**Design system**: ClickHouse-inspired dark-first design with electric yellow (`#faff69`) as the sole brand accent. The authoritative design spec is `../docs/DESIGN.md` — all UI changes must reference it. Key constraints: no drop shadows, `round-md`(8px) for buttons, `round-lg`(12px) for cards, yellow scarce (primary CTAs + focus borders only), Inter 700/600/400 as the only font family. All tokens are in `assets/css/tokens.css`. Light theme overrides in `assets/css/light-theme.css`. Theme stored as `mannote-theme` in localStorage; inline script in `nuxt.config.ts` sets `data-theme` attr before Vue mounts to prevent FOUC.
 
 **CSS loading order** (defined in `nuxt.config.ts`): tokens.css → base.css → transitions.css → light-theme.css
 
@@ -34,7 +34,7 @@ Nuxt auto-imports all Vue composables (`ref`, `computed`, `watch`, `provide`, `i
 - Components from all subdirectories under `components/` are globally available **without prefix** (e.g., `<TopNav />`, `<AppButton />`, `<TreeFolder />`)
 - Stores from `stores/` are auto-imported (e.g., `useAuthStore()` can be called without importing)
 
-The `defineStore` function however is NOT auto-imported — each store file must `import { defineStore } from 'pinia'`.
+The `defineStore` function is NOT auto-imported — each store file must `import { defineStore } from 'pinia'`.
 
 ### Key Patterns
 
@@ -43,21 +43,52 @@ The `defineStore` function however is NOT auto-imported — each store file must
 loading → skeleton | error → message + retry | data → render
 ```
 
-**API layer**: `composables/useApi.ts` wraps `fetch` with JWT injection and `ApiResult<T>` unwrapping. Domain composables (`useAuth`, `useArticle`, `useFolder`) delegate to `useApi()` and return typed promises.
+**API layer**: `composables/useApi.ts` wraps `fetch` with JWT injection and `ApiResult<T>` unwrapping. Domain composables delegate to `useApi()` and return typed promises:
+- `useAuth()` — login, register, refresh
+- `useArticle()` — get/create article, AI polish
+- `useFolder()` — folder tree, create/rename/delete/move folders **and** rename/delete/move articles (article mutations live here because they return the refreshed folder tree)
 
-**Editor state**: The markdown editor (`/write`) uses `provide/inject` (Symbol key `EDITOR_KEY`) rather than Pinia. `createEditorState()` in `composables/useArticleEditor.ts` creates the full state object; `provideEditor()` / `injectEditor()` wire it through the component tree. The editor is a single-instance feature.
+**Context menu**: `ContextMenu.vue` renders via `<Teleport>` to `body`. `pages/index.vue` `provide('openContextMenu', handler)` — the handler builds menu items by right-click target type (`blank`/`folder`/`article`). `LeftSidebar.vue` and `TreeFolder.vue` `inject` it and call on `@contextmenu`. Selection dispatches to `handleCreateFolder`, `handleRenameFolder`, `handleDeleteFolder`, `handleRenameArticle`, `handleDeleteArticle`.
 
-**Drag-and-drop**: `vuedraggable` (SortableJS) handles folder tree reordering in `TreeFolder.vue`. Since Vue 3 props are readonly, TreeFolder maintains local writable refs synced to the Pinia `folderStore` via a `folderMap` (shallowRef Map for O(1) folder lookup). Changes trigger `moveFolder`/`moveArticle` store actions → backend API → `fetchFolders()` refresh.
+**Modals (PromptModal / ConfirmModal)**: Custom modals replace browser-native `window.prompt()`/`window.confirm()`/`window.alert()`. Both use `<Teleport to="body">` + `<Transition name="modal">` (matching `LoginModal.vue` pattern). State is managed via `reactive()` objects + Promise resolve pattern in `pages/index.vue`:
+```ts
+const prompt = reactive({ visible, title, placeholder, confirmText, loading, error })
+let promptResolve: ((value: string | null) => void) | null = null
 
-**Context menu**: `components/common/ContextMenu.vue` renders via `<Teleport>` to `body`. Handler function is `provide('openContextMenu')` from `pages/index.vue`, injected by `LeftSidebar.vue` and `TreeFolder.vue`. Menu items are built dynamically based on right-click target type (blank/folder/article).
+function showPrompt(config): Promise<string | null> {
+  // set config fields, set visible=true
+  return new Promise(resolve => { promptResolve = resolve })
+}
+// Handler calls: const name = await showPrompt(...)
+// If name is null → user cancelled
+// If name is set → set loading=true, call API, on success close modal, on error set prompt.error
+```
+Same pattern for `ConfirmModal` with `confirm` reactive state + `showConfirmDialog()`.
+
+**Drag-and-drop**: `vuedraggable` (SortableJS with `:force-fallback="true"`) handles folder/article reordering. Mirror element is fully transparent (`opacity:0`); a custom `drag-cursor-icon` div tracks the mouse via `mousemove` listener in `onDragStart`, cleaned up in `onDragEnd`. Two sort groups: `"folders"` and `"articles"` — folders and articles cannot cross-sort.
+
+**Editor state**: The markdown editor (`/write`) uses `provide/inject` (Symbol key `EDITOR_KEY`) rather than Pinia. `createEditorState()` in `composables/useArticleEditor.ts` creates the full state; `provideEditor()` / `injectEditor()` wire it. Single-instance feature.
+
+### Component Inventory
+
+| Component | Purpose |
+|-----------|---------|
+| `PromptModal` | Text input dialog (create/rename folder, rename article). Follows `text-input` + `button-primary` specs |
+| `ConfirmModal` | Delete confirmation dialog. Red danger button (`error` bg), no input |
+| `LoginModal` | Auth: username + password + submit |
+| `ContextMenu` | Right-click menu, positioned absolutely, auto-adjusts to viewport |
+| `LeftSidebar` | Folder tree sidebar with loading/error/empty/data states + root-level draggable |
+| `TreeFolder` | Recursive folder tree node with child folders draggable + articles draggable |
+| `AppLayout` | Three-column flex layout with `#left-sidebar` / default / `#right-sidebar` slots |
 
 ### Type System
 
 All TypeScript interfaces are in `types/index.ts`, mapping Java backend DTOs/VOs:
-- `ApiResult<T>` — unified response wrapper `{ code, message, data }`
+- `ApiResult<T>` — `{ code, message, data }`
 - `FolderTreeVO` — recursive: `{ id, name, children: FolderTreeVO[], articles: ArticleItem[] }`
 - `ArticleItem` — `{ id, title, status: 'DRAFT' | 'PUBLISHED' }`
 - `ArticleVO` — full article with all metadata fields
+- `ArticleCreateDTO` — `{ title, content, summary?, coverUrl?, folderId?, categoryId?, tagIds?, isOriginal?, sourceUrl?, status? }`
 - `TocItem` — `{ id, text, level: 2|3|4|5|6 }`
 - `PageDTO<T>` — `{ total, page, size, records }`
 
@@ -68,4 +99,4 @@ All TypeScript interfaces are in `types/index.ts`, mapping Java backend DTOs/VOs
 - `isTablet`: < 1024px — right sidebar hidden, left sidebar narrowed
 - `isDesktop`: ≥ 1024px
 
-Three-column layout (`AppLayout.vue`) uses flexbox with named slots: `#left-sidebar`, default (main), `#right-sidebar`.
+Three-column layout (`AppLayout.vue`) uses flexbox with named slots.

@@ -10,15 +10,15 @@ public final class RedisKeys {
     public static final String PROJECT = "manmanji:";
 
     // ===== Token =====
-    public static final String REFRESH_TOKEN = "auth:refresh_token:";       // userId
-    public static final String ACCESS_TOKEN_BLACKLIST = "auth:access_blacklist:"; // tokenId
+    public static final String REFRESH_TOKEN_PREFIX = PROJECT + "auth:refresh_token:";       // userId
+    public static final String ACCESS_TOKEN_BLACKLIST_PREFIX = PROJECT + "auth:access_blacklist:"; // tokenId
 
     // 文章缓存
     public static final String ARTICLE_CACHE_PREFIX = PROJECT + "article:";
 
     // ===== 签到 =====
-    public static final String CHECK_IN_BITMAP = "checkin:bitmap:%d:%d";      // year:month
-    public static final String CHECK_IN_LOCK = "checkin:lock:%s";             // userId
+    public static final String CHECK_IN_BITMAP = PROJECT + "checkin:bitmap:%d:%d";      // year:month
+    public static final String CHECK_IN_LOCK = PROJECT + "checkin:lock:%s";             // userId
 
     // ===== 互动计数 =====
     public static final String LIKE_SET = "like:article:%d";                  // articleId

@@ -48,7 +48,7 @@
       <!-- v-if: 根据登录状态切换显示内容 -->
       <template v-if="!auth.isAuthenticated">
         <AppButton variant="secondary" @click="showLogin = true">登录</AppButton>
-        <AppButton variant="primary" @click="showRegister = true">注册</AppButton>
+        <AppButton variant="primary" @click="showLogin = true">注册</AppButton>
       </template>
       <template v-else>
         <AppButton variant="secondary" @click="navigateTo('/write')">写文章</AppButton>
@@ -71,7 +71,6 @@
 const auth = useAuthStore()
 
 const showLogin = ref(false)
-const showRegister = ref(false)
 
 const navLinks = [
   { label: '首页', href: '/', active: true },

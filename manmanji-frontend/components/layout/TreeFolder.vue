@@ -121,7 +121,18 @@ type OpenMenuFn = (event: MouseEvent, type: 'blank' | 'folder' | 'article', targ
 const openMenu = inject<OpenMenuFn>('openContextMenu')
 
 const folderStore = useFolderStore()
-const isOpen = ref(true)
+const isOpen = computed({
+  get: () => folderStore.expandedIds.includes(props.folder.id),
+  set: (val: boolean) => {
+    if (val) {
+      if (!folderStore.expandedIds.includes(props.folder.id)) {
+        folderStore.expandedIds = [...folderStore.expandedIds, props.folder.id]
+      }
+    } else {
+      folderStore.expandedIds = folderStore.expandedIds.filter(id => id !== props.folder.id)
+    }
+  }
+})
 
 const collator = new Intl.Collator('zh-CN', { numeric: true })
 
@@ -252,13 +263,6 @@ function onArticleChildrenChange(evt: any) {
   opacity: 0.4;
 }
 
-/* 文件夹标题作为拖放悬停目标时的高亮 */
-.folder-toggle.drop-hover {
-  outline: 2px dashed var(--primary);
-  outline-offset: -2px;
-  border-radius: var(--radius-md);
-}
-
 /* 文章项：13px/400，padding 6px 8px 6px 20px，圆角 6px */
 .tree-article {
   display: flex;
@@ -310,32 +314,5 @@ function onArticleChildrenChange(evt: any) {
   padding: 1px 6px;
   border-radius: var(--radius-xs);
   flex-shrink: 0;
-}
-</style>
-
-<style>
-.drag-cursor-icon {
-  border-radius: 8px;
-  background-color: var(--surface-card);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.drag-cursor-icon::before {
-  content: '';
-  display: block;
-  width: 20px;
-  height: 20px;
-}
-.drag-cursor-icon[data-drag-type="folder"]::before {
-  background-color: var(--primary);
-  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z'/%3E%3C/svg%3E");
-  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z'/%3E%3C/svg%3E");
-}
-.drag-cursor-icon[data-drag-type="article"]::before {
-  background-color: var(--muted);
-  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z'/%3E%3Cpolyline points='14 2 14 8 20 8'/%3E%3C/svg%3E");
-  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z'/%3E%3Cpolyline points='14 2 14 8 20 8'/%3E%3C/svg%3E");
 }
 </style>

@@ -33,9 +33,9 @@ public class ArticleController {
         return Result.success(articleService.improve(article));
     }
 
-    @GetMapping("/{articleId}")
-    public Result<ArticleVO> article(@PathVariable Long articleId) {
-        return Result.success(articleService.showArticle(articleId));
+    @GetMapping("/{id}")
+    public Result<ArticleVO> article(@PathVariable Long id) {
+        return Result.success(articleService.showArticle(id));
     }
 
     @PutMapping("/move")

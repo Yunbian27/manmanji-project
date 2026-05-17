@@ -1,6 +1,9 @@
 package com.yunbian27.user.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.yunbian27.common.constant.RedisKeys;
+import com.yunbian27.common.constant.RedisTTL;
+import com.yunbian27.user.config.JwtProperties;
 import com.yunbian27.user.model.dto.LoginDTO;
 import com.yunbian27.user.model.vo.LoginVO;
 import com.yunbian27.user.model.dto.RegisterDTO;
@@ -10,12 +13,16 @@ import com.yunbian27.common.exception.BusinessException;
 import com.yunbian27.common.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.time.Duration;
+import java.util.Date;
 
 @Slf4j
 @Service
@@ -26,6 +33,8 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
+    private final StringRedisTemplate stringRedisTemplate;
+    private final JwtProperties jwtProperties;
 
     public LoginVO register(RegisterDTO req) {
         boolean exists = userMapper.exists(new LambdaQueryWrapper<User>()
@@ -91,7 +100,25 @@ public class AuthService {
 
     public LoginVO refreshAccessToken(String refreshTokenStr) {
         Long userId = jwtService.getUserIdFromToken(refreshTokenStr);
+        // 获取轮回id
+        String incomingJti = jwtService.parseToken(refreshTokenStr).getId();
 
+        // 查询reids中的刷新token的id是否匹配
+        String key = RedisKeys.REFRESH_TOKEN_PREFIX + userId;
+        String storedJti = stringRedisTemplate.opsForValue().get(key);
+
+        if (storedJti == null) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED);
+        }
+
+        if (!storedJti.equals(incomingJti)) {
+            // 重用检测：有人拿着已失效的 Token 来刷新
+            stringRedisTemplate.delete(key); // 全部作废
+            log.warn("检测到 Refresh Token 被重用！userId={}", userId);
+            throw new BusinessException(ErrorCode.UNAUTHORIZED); // 强制重新登录
+        }
+
+        // 查库，校验当前用户状态
         User user = userMapper.selectById(userId);
         if (user == null) {
             throw new BusinessException(ErrorCode.USER_NOT_FOUND);
@@ -103,12 +130,28 @@ public class AuthService {
         String newAccessToken = jwtService.generateAccessToken(user.getId(), user.getRole());
         String newRefreshToken = jwtService.generateRefreshToken(user.getId());
 
+        // 构建新的Jti
+        String newRefreshTokenJti = jwtService.parseToken(newRefreshToken).getId();
+        stringRedisTemplate.opsForValue().set(key, newRefreshTokenJti, Duration.ofSeconds(jwtProperties.getRefreshTokenExpire()));
+
         return LoginVO.builder()
                 .accessToken(newAccessToken)
                 .refreshToken(newRefreshToken)
                 .expiresIn(jwtService.getAccessTokenExpire())
                 .user(toUserInfo(user))
                 .build();
+    }
+
+    public void logout(Long userId, String accessTokenJti, Date accessTokenExp) {
+        // 删除 Refresh Token 存根
+        stringRedisTemplate.delete(RedisKeys.REFRESH_TOKEN_PREFIX + userId);
+        // Access Token 加入黑名单，TTL = 剩余有效时间
+        long ttl = (accessTokenExp.getTime() - System.currentTimeMillis()) / 1000;
+        if (ttl > 0) {
+            stringRedisTemplate.opsForValue().set(
+                    RedisKeys.ACCESS_TOKEN_BLACKLIST_PREFIX + accessTokenJti,
+                    "1", Duration.ofSeconds(ttl));
+        }
     }
 
     private LoginVO.UserInfo toUserInfo(User user) {

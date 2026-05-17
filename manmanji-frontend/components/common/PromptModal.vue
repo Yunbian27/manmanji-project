@@ -220,25 +220,4 @@ watch(() => props.visible, (v) => {
 .btn-confirm:hover:not(:disabled) { background: var(--primary-active); }
 .btn-confirm:disabled { background: var(--primary-disabled); color: var(--muted); cursor: not-allowed; }
 
-/* ========== Vue Transition: modal ========== */
-.modal-enter-active,
-.modal-leave-active {
-  transition: opacity 0.2s ease;
-}
-.modal-enter-active .modal-card,
-.modal-leave-active .modal-card {
-  transition: transform 0.2s ease, opacity 0.2s ease;
-}
-.modal-enter-from,
-.modal-leave-to {
-  opacity: 0;
-}
-.modal-enter-from .modal-card {
-  transform: scale(0.95) translateY(-8px);
-  opacity: 0;
-}
-.modal-leave-to .modal-card {
-  transform: scale(0.95) translateY(-8px);
-  opacity: 0;
-}
 </style>

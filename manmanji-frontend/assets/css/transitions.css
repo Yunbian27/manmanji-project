@@ -27,3 +27,25 @@
 .chevron.open {
   transform: rotate(90deg);         /* 展开时箭头指向下方 */
 }
+
+/* --- 模态框过渡动画 --- */
+.modal-enter-active,
+.modal-leave-active {
+  transition: opacity 0.2s ease;
+}
+.modal-enter-active .modal-card,
+.modal-leave-active .modal-card {
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+.modal-enter-from,
+.modal-leave-to {
+  opacity: 0;
+}
+.modal-enter-from .modal-card {
+  transform: scale(0.95) translateY(-8px);
+  opacity: 0;
+}
+.modal-leave-to .modal-card {
+  transform: scale(0.95) translateY(-8px);
+  opacity: 0;
+}
