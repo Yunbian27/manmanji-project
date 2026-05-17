@@ -11,6 +11,8 @@
 </template>
 
 <script setup lang="ts">
+definePageMeta({ middleware: 'auth-client' })
+
 const router = useRouter()
 
 function handleClose() {

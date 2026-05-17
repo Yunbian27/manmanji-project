@@ -170,13 +170,14 @@ import type { ArticleVO, TocItem, CommentVO } from '~/types'
 import { mockArticle } from '~/data/mockArticle'
 import type { MenuItem } from '~/components/common/ContextMenu.vue'
 
+definePageMeta({ middleware: 'auth-client' })
+
 // ---- 设备检测（响应式） ----
 const { isMobile, isTablet } = useDevice()
 const mobileSidebarOpen = ref(false)
 
 // ---- Pinia 全局状态 ----
 const folderStore = useFolderStore()
-const authStore = useAuthStore()
 
 // ---- 右键上下文菜单状态 ----
 const contextVisible = ref(false)
@@ -439,7 +440,6 @@ const readTime = computed(() => {
 
 // ---- 生命周期 ----
 onMounted(() => {
-  authStore.hydrate()
   folderStore.fetchFolders()
   // 加载演示文章（实际应用中应根据路由参数加载）
   currentArticle.value = mockArticle

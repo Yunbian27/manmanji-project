@@ -47,8 +47,8 @@
 
       <!-- v-if: 根据登录状态切换显示内容 -->
       <template v-if="!auth.isAuthenticated">
-        <AppButton variant="secondary" @click="showLogin = true">登录</AppButton>
-        <AppButton variant="primary" @click="showLogin = true">注册</AppButton>
+        <AppButton variant="secondary" @click="navigateTo('/login')">登录</AppButton>
+        <AppButton variant="primary" @click="navigateTo('/login')">注册</AppButton>
       </template>
       <template v-else>
         <AppButton variant="secondary" @click="navigateTo('/write')">写文章</AppButton>
@@ -56,21 +56,46 @@
 
       <ThemeToggle />
 
-      <!-- 用户头像：36×36 圆形，取昵称首字 -->
-      <div v-if="auth.isAuthenticated" class="nav-avatar" :title="auth.user?.nickname">
-        {{ auth.user?.nickname?.charAt(0) || '用' }}
+      <!-- 用户头像：36×36 圆形 + 下拉菜单 -->
+      <div v-if="auth.isAuthenticated" ref="avatarContainer" class="avatar-wrapper">
+        <div class="nav-avatar" :title="auth.user?.nickname" @click="showDropdown = !showDropdown">
+          {{ auth.user?.nickname?.charAt(0) || '用' }}
+        </div>
+        <Transition name="dropdown">
+          <div v-if="showDropdown" class="avatar-dropdown">
+            <div class="dropdown-user">
+              <p class="dropdown-nickname">{{ auth.user?.nickname }}</p>
+              <p class="dropdown-username">{{ auth.user?.username }}</p>
+            </div>
+            <div class="dropdown-divider" />
+            <button class="dropdown-item dropdown-item-danger" @click="handleLogout">
+              退出登录
+            </button>
+          </div>
+        </Transition>
       </div>
     </div>
-
-    <!-- 登录弹窗 -->
-    <LoginModal v-model:visible="showLogin" />
   </header>
 </template>
 
 <script setup lang="ts">
+import { onClickOutside } from '@vueuse/core'
+
 const auth = useAuthStore()
 
-const showLogin = ref(false)
+const showDropdown = ref(false)
+const avatarContainer = ref<HTMLElement | null>(null)
+
+onClickOutside(avatarContainer, () => {
+  showDropdown.value = false
+})
+
+async function handleLogout() {
+  const { logout } = useAuth()
+  await logout()
+  showDropdown.value = false
+  navigateTo('/login')
+}
 
 const navLinks = [
   { label: '首页', href: '/', active: true },
@@ -182,6 +207,12 @@ const navLinks = [
 .search-input::placeholder { color: var(--muted-soft); }
 .search-input:focus { outline: none; border-color: var(--primary); }
 
+/* 头像 wrapper */
+.avatar-wrapper {
+  position: relative;
+  flex-shrink: 0;
+}
+
 /* 头像圆形 */
 .nav-avatar {
   width: 36px; height: 36px;
@@ -194,6 +225,81 @@ const navLinks = [
   font-size: var(--text-body-sm);
   font-weight: var(--weight-semibold);
   flex-shrink: 0;
+  cursor: pointer;
+  transition: var(--transition-hover);
+}
+.nav-avatar:hover { background: var(--surface-elevated); }
+
+/* 下拉菜单容器 */
+.avatar-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 160px;
+  padding: var(--space-xs);
+  background: var(--surface-card);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-md);
+}
+
+/* 用户信息区 */
+.dropdown-user {
+  padding: 8px 12px;
+}
+
+.dropdown-nickname {
+  font-size: var(--text-body-sm);
+  font-weight: var(--weight-medium);
+  color: var(--ink);
+  margin: 0;
+  line-height: var(--leading-normal);
+}
+
+.dropdown-username {
+  font-size: var(--text-caption);
+  color: var(--muted);
+  margin: 2px 0 0;
+  line-height: var(--leading-normal);
+}
+
+/* 分割线 */
+.dropdown-divider {
+  height: 1px;
+  background: var(--hairline);
+  margin: 4px 0;
+}
+
+/* 菜单项 */
+.dropdown-item {
+  display: block;
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--on-dark);
+  font-family: var(--font-sans);
+  font-size: var(--text-body-sm);
+  font-weight: var(--weight-regular);
+  line-height: var(--leading-normal);
+  text-align: left;
+  cursor: pointer;
+  transition: var(--transition-hover);
+}
+.dropdown-item:hover { background: var(--surface-elevated); }
+
+/* 危险操作（退出登录） */
+.dropdown-item-danger:hover { color: var(--error); }
+
+/* 下拉菜单过渡动画 */
+.dropdown-enter-active,
+.dropdown-leave-active {
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+.dropdown-enter-from,
+.dropdown-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
 }
 
 /* 手机端隐藏导航链接和搜索框（可以用汉堡菜单替代） */

@@ -41,7 +41,12 @@ export function useAuth() {
   }
 
   /** 退出登录，清除本地状态 */
-  function logout() {
+  async function logout() {
+    try {
+      await api.post('/api/auth/logout', {})
+    } catch {
+      // 即使后端调用失败，也清除本地状态
+    }
     store.clearSession()
   }
 
