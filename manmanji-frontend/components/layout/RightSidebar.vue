@@ -11,24 +11,24 @@
 -->
 <template>
   <aside class="right-sidebar">
-    <!-- 目录标题：12px/600/全大写 -->
-    <h4 class="toc-title">本页目录</h4>
+    <div class="right-sidebar-inner">
+      <h4 class="toc-title">本页目录</h4>
 
-    <!-- 有目录时渲染链接列表 -->
-    <nav v-if="tocItems.length > 0" class="toc-list">
-      <a
-        v-for="item in tocItems"
-        :key="item.id"
-        :class="['toc-link', `level-${item.level}`, { active: item.id === activeSectionId }]"
-        @click.prevent="scrollTo(item.id)"
-      >
-        {{ item.text }}
-      </a>
-    </nav>
+      <nav v-if="tocItems.length > 0" class="toc-list">
+        <a
+          v-for="item in tocItems"
+          :key="item.id"
+          :class="['toc-link', `level-${item.level}`, { active: item.id === activeSectionId }]"
+          @click.prevent="scrollTo(item.id)"
+        >
+          {{ item.text }}
+        </a>
+      </nav>
 
-    <p v-else class="toc-empty">暂无标题</p>
+      <p v-else class="toc-empty">暂无标题</p>
 
-    <button class="back-top" @click="scrollToTop">回到顶部</button>
+      <button class="back-top" @click="scrollToTop">回到顶部</button>
+    </div>
   </aside>
 </template>
 
@@ -66,18 +66,18 @@ function scrollToTop() {
   background: var(--canvas);
   position: sticky;
   top: var(--nav-height);
-  height: calc(100vh - var(--nav-height));
-  overflow-y: auto;
-  padding: var(--space-lg) calc(var(--space-xl) * 5) var(--space-lg) var(--space-lg);
+  align-self: flex-start;
+}
+.right-sidebar-inner {
+  max-width: var(--right-sidebar-width);  /* 220px — 内容约束 (BLUEPRINT) */
+  padding: var(--space-xxl) var(--space-lg) var(--space-lg) var(--space-lg);
 }
 
-/* 目录标题：12px/600/全大写 */
+/* 目录标题：16px/500 (BLUEPRINT 215) */
 .toc-title {
-  font-size: var(--text-uppercase);
-  font-weight: var(--weight-semibold);
-  letter-spacing: var(--tracking-wide);
-  text-transform: uppercase;
-  color: var(--muted);
+  font-size: var(--text-body-md-strong);
+  font-weight: var(--weight-medium);
+  color: var(--ink);
   margin-bottom: var(--space-md);
 }
 
@@ -97,7 +97,7 @@ function scrollToTop() {
   background: var(--hairline);
 }
 
-/* 目录链接 — H2 一级：主色、中等字重、无缩进 */
+/* 目录链接：14px/400/hairline-mid (BLUEPRINT 218) */
 .toc-link {
   position: relative;
   z-index: 1;
@@ -105,52 +105,51 @@ function scrollToTop() {
   padding: var(--space-xs) var(--space-sm);
   margin-bottom: 2px;
   border-left: 2px solid transparent;
-  border-radius: var(--radius-sm);
-  font-size: var(--text-caption);
-  font-weight: var(--weight-medium);
-  color: var(--body);
+  font-size: var(--text-body-sm);       /* 14px */
+  font-weight: var(--weight-regular);   /* 400 */
+  color: var(--muted-soft);
   transition: var(--transition-hover);
   text-decoration: none;
 }
 .toc-link:hover {
-  background: var(--surface-card);
+  background: var(--canvas-soft);
   color: var(--ink);
 }
 
-/* 激活态：左边框变黄 + 背景加深 + 字体加粗 */
+/* 激活态：左边框变黑 + 浅灰背景 */
 .toc-link.active {
   border-left-color: var(--primary);
-  background: var(--surface-card);
+  background: var(--canvas-softer);
   color: var(--ink);
   font-weight: var(--weight-medium);
 }
 
-/* H3：左缩进 24px，次要色、常规字重、小字号 */
+/* H3：左缩进 32px (BLUEPRINT 221) */
 .toc-link.level-3 {
-  padding-left: 24px;
-  font-size: var(--text-uppercase);
+  padding-left: 32px;
+  font-size: var(--text-caption);
   font-weight: var(--weight-regular);
   color: var(--muted);
 }
 
-/* H4：更深缩进 36px，更淡的字色 */
+/* H4：左缩进 44px */
 .toc-link.level-4 {
-  padding-left: 36px;
-  font-size: var(--text-uppercase);
+  padding-left: 44px;
+  font-size: var(--text-caption);
   font-weight: var(--weight-regular);
   color: var(--muted-soft);
 }
 
-/* H5/H6：最深缩进 48px/60px */
+/* H5/H6：左缩进 56px/68px */
 .toc-link.level-5 {
-  padding-left: 48px;
-  font-size: var(--text-uppercase);
+  padding-left: 56px;
+  font-size: var(--text-caption);
   font-weight: var(--weight-regular);
   color: var(--muted-soft);
 }
 .toc-link.level-6 {
-  padding-left: 60px;
-  font-size: var(--text-uppercase);
+  padding-left: 68px;
+  font-size: var(--text-caption);
   font-weight: var(--weight-regular);
   color: var(--muted-soft);
 }
@@ -167,10 +166,10 @@ function scrollToTop() {
   padding: 0;
   transition: var(--transition-hover);
 }
-.back-top:hover { color: var(--primary); }
+.back-top:hover { color: var(--ink); }
 
-/* 平板以下隐藏 */
-@media (max-width: 1024px) {
+/* 平板以下隐藏 (BLUEPRINT: ≤1119px) */
+@media (max-width: 1119px) {
   .right-sidebar { display: none; }
 }
 </style>

@@ -12,6 +12,7 @@
   "dependencies": {
     "@vueuse/core": "^13.1.0",
     "@vueuse/nuxt": "^13.1.0",
+    "highlight.js": "^11.11.1",
     "markdown-it": "^14.1.0",
     "nuxt": "^4.1.0",
     "pinia": "^3.0.2",

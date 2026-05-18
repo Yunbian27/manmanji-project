@@ -1,8 +1,10 @@
 <template>
   <div class="editor-view">
-    <EditorNav @close="handleClose" />
+    <EditorTopNav />
+    <div class="editor-body">
+      <EditorNav @close="handleClose" @insert-markdown="onInsertMarkdown" />
 
-    <div :class="['editor-main', `editor-main--${viewMode}`]">
+      <div :class="['editor-main', `editor-main--${viewMode}`]">
       <EditorTextarea
         v-if="viewMode !== 'preview'"
         ref="textareaRef"
@@ -16,11 +18,7 @@
         @toc-updated="() => {}"
       />
     </div>
-
-    <EditorPublishSettings
-      :open="publishSettingsOpen"
-      @close="publishSettingsOpen = false"
-    />
+    </div>
 
     <div v-if="publishError" class="editor-toast error">
       {{ publishError }}
@@ -53,16 +51,17 @@ onBeforeRouteLeave((_to, _from, next) => {
 })
 
 const {
-  viewMode, publishSettingsOpen, publishError,
+  viewMode, publishError,
   startAutoSave, stopAutoSave, loadDraft,
 } = editor
 
-interface Scrollable {
+interface TextareaExposed {
   syncScroll: (ratio: number) => void
+  insertAtCursor: (before: string, after: string, placeholder: string) => void
 }
 
-const textareaRef = ref<Scrollable | null>(null)
-const previewRef = ref<Scrollable | null>(null)
+const textareaRef = ref<TextareaExposed | null>(null)
+const previewRef = ref<{ syncScroll: (ratio: number) => void } | null>(null)
 
 let isTextareaDriven = false
 let isPreviewDriven = false
@@ -79,6 +78,10 @@ function onPreviewScroll(ratio: number) {
   isPreviewDriven = true
   textareaRef.value?.syncScroll(ratio)
   requestAnimationFrame(() => { isPreviewDriven = false })
+}
+
+function onInsertMarkdown(before: string, after: string, placeholder: string) {
+  textareaRef.value?.insertAtCursor(before, after, placeholder)
 }
 
 function handleClose() {
@@ -98,15 +101,17 @@ onUnmounted(() => {
 
 <style scoped>
 .editor-view {
-  position: fixed;
-  top: var(--nav-height);
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 40;
+  height: 100%;
   background: var(--canvas);
   display: flex;
+  flex-direction: column;
+}
+
+.editor-body {
+  flex: 1;
+  display: flex;
   flex-direction: row;
+  overflow: hidden;
 }
 
 .editor-main {
@@ -154,7 +159,7 @@ onUnmounted(() => {
   animation: toast-in 0.2s ease;
 }
 .editor-toast.error {
-  background: var(--error);
+  background: #c0392b;
   color: #fff;
 }
 .editor-toast button {

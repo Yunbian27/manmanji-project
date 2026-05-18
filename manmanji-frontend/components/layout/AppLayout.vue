@@ -37,33 +37,22 @@
   background: var(--canvas);
 }
 
-/* 主内容区：不参与 flex 拉伸（flex: 0 0 auto），固定最大宽度并居中 */
+/* 主内容区：自然流式滚动，不再独立 fixed-height 滚动 */
 .main-content {
   flex: 0 0 auto;
   max-width: var(--content-max);        /* 1000px */
   width: 100%;
-  padding: var(--space-xxl) var(--space-xxl);       /* 48px 上下，48px 左右 */
-  overflow-y: auto;                      /* 内容区独立滚动 */
-  height: calc(100vh - var(--nav-height));
-  scrollbar-width: auto;
-  scrollbar-color: auto;
+  padding: var(--space-xxl) var(--space-xxl);       /* 24px */
 }
-.main-content::-webkit-scrollbar { width: auto; }
-.main-content::-webkit-scrollbar-track { background: initial; }
-.main-content::-webkit-scrollbar-thumb { background: initial; border-radius: initial; }
-.main-content::-webkit-scrollbar-thumb:hover { background: initial; }
 
-/* 响应式断点 */
-@media (max-width: 1200px) {
-  /* 中屏：主内容缩窄 */
+/* 响应式断点 (BLUEPRINT: Tablet 1119, Desktop 1120, Mobile 599) */
+@media (max-width: 1119px) {
   .main-content { max-width: 860px; padding: var(--space-xl) var(--space-xl); }
 }
-@media (max-width: 1024px) {
-  /* 平板：主内容 100% 宽度 */
+@media (max-width: 767px) {
   .main-content { max-width: 100%; padding: var(--space-xl); }
 }
-@media (max-width: 768px) {
-  /* 手机：最小 padding */
-  .main-content { padding: var(--space-lg) 20px; }
+@media (max-width: 599px) {
+  .main-content { padding: var(--space-lg); }
 }
 </style>

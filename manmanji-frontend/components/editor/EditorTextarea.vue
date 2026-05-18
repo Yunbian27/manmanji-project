@@ -33,7 +33,37 @@ function syncScroll(ratio: number) {
   el.scrollTop = ratio * maxScroll
 }
 
-defineExpose({ syncScroll })
+/**
+ * 在光标处插入文本。若有选中文字则包裹（before + 选中 + after）。
+ * 插入后光标定位到 placeholder 处（before 和 after 之间），
+ * 若无 placeholder 则定位到插入文本末尾。
+ */
+function insertAtCursor(before: string, after = '', placeholder = '') {
+  const el = textareaRef.value
+  if (!el) return
+  const start = el.selectionStart
+  const end = el.selectionEnd
+  const selected = content.value.slice(start, end)
+  const insertText = selected ? before + selected + after : before + placeholder + after
+  content.value = content.value.slice(0, start) + insertText + content.value.slice(end)
+  nextTick(() => {
+    el.focus()
+    if (selected) {
+      el.selectionStart = start
+      el.selectionEnd = start + insertText.length
+    } else if (placeholder) {
+      const cursor = start + before.length
+      el.selectionStart = cursor
+      el.selectionEnd = cursor + placeholder.length
+    } else {
+      const cursor = start + before.length
+      el.selectionStart = cursor
+      el.selectionEnd = cursor
+    }
+  })
+}
+
+defineExpose({ syncScroll, insertAtCursor })
 </script>
 
 <style scoped>
@@ -44,7 +74,7 @@ defineExpose({ syncScroll })
   border: none;
   outline: none;
   background: var(--canvas);
-  color: var(--body);
+  color: var(--ink);
   font-family: var(--font-mono);
   font-size: var(--text-code);
   line-height: var(--leading-relaxed);

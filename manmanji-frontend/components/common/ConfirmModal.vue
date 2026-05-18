@@ -91,10 +91,11 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
 .modal-card {
   width: 100%;
   max-width: 400px;
-  background: var(--surface-card);
+  background: var(--canvas);
   border: 1px solid var(--hairline);
-  border-radius: var(--radius-lg);
-  padding: var(--space-xl);
+  border-radius: var(--radius-xl);
+  padding: var(--space-2xl);
+  box-shadow: var(--shadow-2);
 }
 
 .modal-header {
@@ -105,8 +106,8 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
 }
 
 .modal-title {
-  font-size: var(--text-title-md);
-  font-weight: var(--weight-semibold);
+  font-size: var(--text-body-lg);
+  font-weight: var(--weight-medium);
   line-height: var(--leading-normal);
   color: var(--ink);
 }
@@ -116,7 +117,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
   height: 36px;
   border-radius: var(--radius-full);
   border: none;
-  background: var(--surface-card);
+  background: transparent;
   color: var(--muted);
   cursor: pointer;
   display: flex;
@@ -125,7 +126,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
   transition: var(--transition-hover);
   flex-shrink: 0;
 }
-.modal-close:hover:not(:disabled) { background: var(--surface-elevated); color: var(--ink); }
+.modal-close:hover:not(:disabled) { background: var(--canvas-soft); color: var(--ink); }
 .modal-close:disabled { opacity: 0.5; cursor: not-allowed; }
 
 /* body-sm 规范 (DESIGN.md) */
@@ -137,13 +138,13 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
   margin: 0 0 var(--space-md) 0;
 }
 
-/* error-state 规范 (DESIGN.md) */
+/* error-state */
 .modal-error {
   font-size: var(--text-caption);
-  color: var(--error);
+  color: #c0392b;
   padding: var(--space-xs) var(--space-sm);
-  background: var(--surface-soft);
-  border-radius: var(--radius-sm);
+  background: #fde8e8;
+  border-radius: var(--radius-md);
   margin: 0 0 var(--space-md) 0;
 }
 
@@ -153,40 +154,40 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
   gap: var(--space-sm);
 }
 
-/* button-secondary 规范 (DESIGN.md) */
+/* button-secondary */
 .btn-cancel {
   height: 40px;
   padding: 12px 20px;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-pill);
   border: 1px solid var(--hairline);
-  background: var(--surface-card);
-  color: var(--on-dark);
+  background: transparent;
+  color: var(--ink);
   font-family: var(--font-sans);
   font-size: var(--text-body-sm);
-  font-weight: var(--weight-semibold);
+  font-weight: var(--weight-medium);
   line-height: 1;
   cursor: pointer;
   transition: var(--transition-hover);
 }
-.btn-cancel:hover:not(:disabled) { background: var(--surface-elevated); }
+.btn-cancel:hover:not(:disabled) { background: var(--canvas-soft); }
 .btn-cancel:disabled { opacity: 0.5; cursor: not-allowed; }
 
-/* danger 按钮 — error(#ef4444) 底 + #ffffff 文字 + button 规范 (DESIGN.md) */
+/* danger 按钮 */
 .btn-danger {
   height: 40px;
   padding: 12px 20px;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-pill);
   border: none;
-  background: var(--error);
-  color: #ffffff;
+  background: #c0392b;
+  color: var(--on-primary);
   font-family: var(--font-sans);
   font-size: var(--text-body-sm);
-  font-weight: var(--weight-semibold);
+  font-weight: var(--weight-medium);
   line-height: 1;
   cursor: pointer;
   transition: var(--transition-hover);
 }
-.btn-danger:hover:not(:disabled) { opacity: 0.85; }
+.btn-danger:hover:not(:disabled) { background: #a93226; }
 .btn-danger:disabled { opacity: 0.5; cursor: not-allowed; }
 
 </style>

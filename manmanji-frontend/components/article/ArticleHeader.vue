@@ -38,7 +38,6 @@
       <AppTag
         v-for="(tag, index) in tags"
         :key="tag.id"
-        :variant="index === 0 ? 'yellow' : 'default'"
       >
         {{ tag.name }}
       </AppTag>
@@ -87,26 +86,25 @@ function formatCount(n: number): string {
 }
 .separator { margin: 0 var(--space-xxs); }
 
-/* 标题：32px/700，-1px 字间距 */
+/* 标题：36px/700/44px (BLUEPRINT 203) */
 .article-title {
-  font-size: var(--text-display-sm);
-  font-weight: var(--weight-bold);
-  line-height: var(--leading-tight);
-  letter-spacing: var(--tracking-tight);
+  font-size: var(--display-xl);         /* 36px */
+  font-weight: var(--weight-bold);      /* 700 */
+  line-height: 44px;
   color: var(--ink);
   margin-bottom: var(--space-md);
 }
 
-/* 元信息行：flex 横向排列，flex-wrap 自动换行 */
+/* 元信息行：14px/400/body (BLUEPRINT 204) */
 .article-meta {
   display: flex;
   align-items: center;
   gap: var(--space-xs);
   flex-wrap: wrap;
   margin-bottom: var(--space-md);
-  color: var(--muted);
-  font-size: var(--text-caption);
-  font-weight: var(--weight-medium);
+  color: var(--body);
+  font-size: var(--text-body-sm);
+  font-weight: var(--weight-regular);
 }
 
 .author-info { display: flex; align-items: center; gap: var(--space-xs); }
@@ -115,7 +113,7 @@ function formatCount(n: number): string {
 .author-avatar {
   width: 32px; height: 32px;
   border-radius: var(--radius-full);
-  background: var(--surface-elevated);
+  background: var(--canvas-soft);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -125,7 +123,7 @@ function formatCount(n: number): string {
 }
 .author-avatar img { width: 100%; height: 100%; object-fit: cover; }
 .author-name { color: var(--body-strong); }
-.meta-sep { color: var(--hairline-strong); }
+.meta-sep { color: var(--muted); }
 
 /* 标签容器：flex wrap，gap 8px */
 .article-tags { display: flex; flex-wrap: wrap; gap: var(--space-xs); }

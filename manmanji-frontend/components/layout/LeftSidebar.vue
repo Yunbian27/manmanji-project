@@ -1,24 +1,21 @@
 <!--
-  LeftSidebar.vue — 左侧文件夹分类栏
-  布局：flex:1（填充左侧剩余空间），内部 sidebar-inner 右对齐
-  包含：分类标题 + 新建按钮 + 文件夹树 + 底部操作按钮
-
-  四种状态：
-  - loading: 骨架屏占位
-  - error: 错误信息 + 重试按钮
-  - empty: "暂无分类" 提示
-  - data: 渲染 TreeFolder 递归树
+  LeftSidebar.vue — 左侧文件夹树 (SIDEBAR.md §4)
+  sticky 定位，可折叠文件夹树，激活项带 3px 黑色左边条
 -->
 <template>
   <aside class="left-sidebar" :class="{ 'mobile-open': mobileOpen }">
-    <!-- sidebar-inner: 内容右对齐容器，max-width 280px -->
-    <div class="sidebar-inner" @contextmenu.prevent="onBlankContextMenu">
-      <!-- 顶部：分类标题 + 新建按钮 -->
+    <div class="sidebar-inner">
       <div class="sidebar-header">
-        <h3 class="sidebar-title">文章分类</h3>
-        <button class="sidebar-new-btn" @click="$emit('newFolder')" aria-label="新建文件夹">
-          <IconPlus :size="16" />
-        </button>
+        <h3 class="sidebar-title">文章列表</h3>
+        <div class="plus-btn-wrap">
+          <button class="sidebar-plus-btn" @click.stop="showDropdown = !showDropdown" aria-label="新建">+</button>
+          <Transition name="dropdown">
+            <div v-if="showDropdown" class="plus-dropdown">
+              <button class="dropdown-item" @click.stop="onCreateFolder">新建文件夹</button>
+              <button class="dropdown-item" @click.stop="onNewArticle">新建文章</button>
+            </div>
+          </Transition>
+        </div>
       </div>
 
       <!-- v-if / v-else-if / v-else: Vue 的条件渲染链 -->
@@ -71,11 +68,6 @@
         </draggable>
       </div>
 
-      <!-- 底部操作按钮 -->
-      <div class="sidebar-footer">
-        <AppButton variant="primary" @click="$emit('newFolder')">新建文件夹</AppButton>
-        <AppButton variant="secondary" @click="$emit('newArticle')">新文章</AppButton>
-      </div>
     </div>
   </aside>
 </template>
@@ -89,25 +81,32 @@ defineProps<{
   loading?: boolean
   error?: string | null
   currentArticleId?: number
-  mobileOpen?: boolean            // 移动端侧边栏是否打开
+  mobileOpen?: boolean
 }>()
 
-defineEmits<{
+const emit = defineEmits<{
   selectArticle: [id: number]
-  newFolder: []
   newArticle: []
+  createFolder: []
   retry: []
 }>()
 
-type OpenMenuFn = (event: MouseEvent, type: 'blank' | 'folder' | 'article', targetId?: number) => void
-const openMenu = inject<OpenMenuFn>('openContextMenu')
+const showDropdown = ref(false)
 
-function onBlankContextMenu(event: MouseEvent) {
-  // 只有右键目标确实是空白区域（非按钮/链接）时才触发
-  const target = event.target as HTMLElement
-  if (target.closest('.folder-toggle, .tree-article')) return
-  openMenu?.(event, 'blank')
+function onCreateFolder() {
+  showDropdown.value = false
+  emit('createFolder')
 }
+
+function onNewArticle() {
+  showDropdown.value = false
+  emit('newArticle')
+}
+
+// 点击其他区域关闭下拉
+onMounted(() => {
+  document.addEventListener('click', () => { showDropdown.value = false })
+})
 
 // ---- 根级文件夹拖拽移动 ----
 const folderStore = useFolderStore()
@@ -158,66 +157,101 @@ function onRootFolderChange(evt: any) {
 </script>
 
 <style scoped>
-/* 左侧栏：flex:1 填充空间，min/max 约束宽度范围 */
+/* 左侧栏：flex:1 拉伸，内容右对齐 (推内容至中间) */
 .left-sidebar {
   flex: 1;
-  min-width: 240px;
-  max-width: 400px;
-  flex-shrink: 0;                     /* 不会被压缩 */
-  background: var(--surface-soft);
-  border-right: 1px solid var(--hairline-strong);
+  min-width: 250px;
+  flex-shrink: 0;
+  background: var(--canvas);
   display: flex;
   flex-direction: column;
-  position: sticky;                   /* 跟随滚动吸顶 */
-  top: var(--nav-height);             /* 吸在导航栏下方 */
-  height: calc(100vh - var(--nav-height));  /* 全屏减去导航高度 */
-  overflow: hidden;
+  position: sticky;
+  top: var(--nav-height);
+  max-height: calc(100vh - var(--nav-height));
+  overflow-y: auto;
+  align-self: flex-start;
+  padding-top: var(--space-xxl);
 }
 
-/* 内容右对齐：max-width 280px + margin-left: auto */
 .sidebar-inner {
-  max-width: var(--sidebar-max);
-  margin-left: auto;
   width: 100%;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  overflow: hidden;
+  max-width: var(--sidebar-max);        /* 280px — 内容不超宽 */
+  margin-left: auto;                    /* 右对齐贴紧中间栏 */
 }
 
-/* 标题区：12px/600/全大写，底边分割线 */
+/* 头部：标题 + 按钮 (SIDEBAR §5.2) */
 .sidebar-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--space-sm) var(--space-md);
-  border-bottom: 1px solid var(--hairline);
+  margin-bottom: var(--space-lg);       /* 16px */
+  padding: 0 var(--space-md);
   flex-shrink: 0;
 }
 .sidebar-title {
-  font-size: var(--text-uppercase);
-  font-weight: var(--weight-semibold);
-  letter-spacing: var(--tracking-wide);
-  text-transform: uppercase;
-  color: var(--muted);
+  font-size: var(--display-sm);         /* 20px */
+  font-weight: var(--weight-bold);      /* 700 */
+  line-height: 28px;
+  color: var(--ink);
 }
-.sidebar-new-btn {
-  width: 28px; height: 28px;
-  border-radius: var(--radius-sm);
+
+/* 圆形新建按钮 (SIDEBAR: 32×32) */
+.sidebar-plus-btn {
+  width: 32px; height: 32px;
+  border-radius: var(--radius-full);
   border: none;
-  background: transparent;
-  color: var(--muted);
+  background: var(--canvas-soft);
+  color: var(--ink);
+  font-size: 18px;
+  font-family: var(--font-sans);
+  font-weight: var(--weight-regular);
+  line-height: 1;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: var(--transition-hover);
 }
-.sidebar-new-btn:hover { background: var(--surface-card); color: var(--ink); }
+.sidebar-plus-btn:hover { background: var(--surface-elevated); }
+
+/* "+"下拉菜单 */
+.plus-btn-wrap {
+  position: relative;
+}
+.plus-dropdown {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  margin-top: 4px;
+  min-width: 120px;
+  background: var(--canvas);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-2);
+  overflow: hidden;
+  z-index: var(--z-nav);
+}
+.dropdown-item {
+  display: block;
+  width: 100%;
+  padding: var(--space-sm) var(--space-md);
+  border: none;
+  background: transparent;
+  font-family: var(--font-sans);
+  font-size: var(--text-body-sm);
+  color: var(--ink);
+  cursor: pointer;
+  text-align: left;
+  transition: var(--transition-hover);
+}
+.dropdown-item:hover { background: var(--canvas-soft); }
+
+.dropdown-enter-active,
+.dropdown-leave-active { transition: opacity 0.12s ease, transform 0.12s ease; }
+.dropdown-enter-from,
+.dropdown-leave-to { opacity: 0; transform: translateY(-4px); }
 
 .tree-list {
-  flex: 1;
-  overflow-y: auto;                   /* 文件夹多时滚动 */
   padding: var(--space-sm);
 }
 
@@ -242,14 +276,6 @@ function onRootFolderChange(evt: any) {
   opacity: 0.4;
 }
 
-.sidebar-footer {
-  display: flex;
-  gap: var(--space-xs);
-  padding: var(--space-sm) var(--space-md);
-  border-top: 1px solid var(--hairline);
-  flex-shrink: 0;
-}
-
 /* 骨架屏（loading 状态） */
 .sidebar-loading { padding: var(--space-md); }
 .skeleton-folder { padding: 6px 8px; }
@@ -269,11 +295,11 @@ function onRootFolderChange(evt: any) {
 .sidebar-empty { padding: var(--space-md); text-align: center; color: var(--muted); }
 .sidebar-empty .hint { font-size: var(--text-caption); color: var(--muted-soft); margin-top: var(--space-xxs); }
 
-/* 响应式 */
-@media (max-width: 1200px) {
+/* 响应式 (BLUEPRINT: Tablet ≤1119px, Mobile <600px) */
+@media (max-width: 1119px) {
   .left-sidebar { min-width: 200px; max-width: 280px; }
 }
-@media (max-width: 768px) {
+@media (max-width: 599px) {
   /* 手机端：隐藏为全屏抽屉，通过 .mobile-open 显示 */
   .left-sidebar {
     display: none;

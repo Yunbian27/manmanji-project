@@ -1,19 +1,6 @@
 <!--
-  TreeFolder.vue — 递归文件夹树组件
-  Vue 中组件可以递归调用自己：TreeFolder 内部可以嵌套 TreeFolder
-  通过 name 属性或文件名自动识别
-
-  Props（父→子）:
-  - folder: 文件夹数据（含子文件夹和文章）
-  - currentArticleId: 当前选中的文章 id
-
-  Events（子→父）:
-  - selectArticle: 用户点击某篇文章时触发，传递文章 id
-
-  交互：
-  - 点击文件夹标题 → 折叠/展开（isOpen 状态切换）
-  - 点击文章标题 → 高亮选中（active 类 + dot 变黄）
-  - 草稿文章 → 显示橙色"草稿"标签
+  TreeFolder.vue — 递归文件夹树组件 (SIDEBAR.md §5)
+  ex-app-shell-row 规范：激活态 3px 黑色左边条 + 浅灰背景
 -->
 <template>
   <li class="tree-folder" data-drag-type="folder">
@@ -24,8 +11,7 @@
       @click="isOpen = !isOpen"
       @contextmenu.prevent.stop="openMenu?.($event, 'folder', folder.id)"
     >
-      <!-- 箭头图标：展开后旋转 90deg -->
-      <IconChevronRight :size="12" :class="['chevron', { open: isOpen }]" />
+      <span class="chevron">{{ isOpen ? '▼' : '▶' }}</span>
       <span class="folder-name">{{ folder.name }}</span>
       <!-- 数量标签（子文件夹数 + 文章数） -->
       <span class="folder-count">{{ localChildren.length + localArticles.length }}</span>
@@ -90,15 +76,16 @@
                 @click.prevent="$emit('selectArticle', article.id)"
                 @contextmenu.prevent.stop="openMenu?.($event, 'article', article.id)"
               >
-                <!-- 小圆点指示器，选中时变黄 -->
-                <span class="dot" />
                 <span class="article-title">{{ article.title }}</span>
-                <!-- 草稿文章显示橙色标签 -->
+                <!-- 草稿文章显示标签 -->
                 <span v-if="article.status === 'DRAFT'" class="draft-tag">草稿</span>
               </a>
             </li>
           </template>
         </draggable>
+
+        <!-- 空文件夹提示 (BLUEPRINT 7.2) -->
+        <p v-if="localChildren.length === 0 && localArticles.length === 0" class="empty-folder">暂无文章</p>
       </div>
     </Transition>
   </li>
@@ -211,30 +198,38 @@ function onArticleChildrenChange(evt: any) {
 </script>
 
 <style scoped>
-/* 文件夹标题：14px/500，padding 6px 8px，圆角 8px */
+/* 文件夹标题：16px/500, 8px 圆角 (SIDEBAR §5.4) */
 .folder-toggle {
   display: flex;
   align-items: center;
-  gap: var(--space-xs);
+  gap: var(--space-sm);                 /* 8px — 箭头与文字间距 */
   width: 100%;
-  padding: var(--space-xs) var(--space-sm);
-  margin-bottom: 2px;
-  border-radius: var(--radius-md);
+  padding: var(--space-md) var(--space-lg); /* 12px 16px */
+  margin-bottom: var(--space-xxs);      /* 4px */
+  border-radius: var(--radius-md);      /* 8px */
   border: none;
   background: transparent;
-  color: var(--body);
+  color: var(--ink);
   font-family: var(--font-sans);
-  font-size: var(--text-body-sm);
-  font-weight: var(--weight-medium);
-  line-height: var(--leading-normal);
+  font-size: 16px;
+  font-weight: var(--weight-medium);    /* 500 */
+  line-height: 20px;
   cursor: pointer;
+  user-select: none;
   transition: var(--transition-hover);
 }
 .folder-toggle:hover {
-  background: rgba(250, 255, 105, 0.07);
+  background: var(--canvas-soft);
+}
+
+/* 实心三角箭头：12px/ink, 展开 ▼ 折叠 ▶ */
+.chevron {
+  font-size: 12px;
   color: var(--ink);
-  border-left: 3px solid var(--primary);
-  padding-left: 9px; /* 原 12px 减 3px 抵消 border */
+  flex-shrink: 0;
+  width: 16px;
+  text-align: center;
+  line-height: 1;
 }
 
 .folder-name { flex: 1; text-align: left; }
@@ -242,77 +237,72 @@ function onArticleChildrenChange(evt: any) {
 .folder-count {
   font-size: 11px;
   color: var(--muted);
-  margin-left: auto;                    /* 推到右侧 */
+  margin-left: auto;
 }
 
-.folder-children { padding-left: var(--space-md); }
+/* 子项容器：左边 1px 竖线 + 16px 缩进 (SIDEBAR §5.4c) */
+.folder-children {
+  margin-left: var(--space-lg);         /* 16px */
+  border-left: 1px solid var(--surface-elevated); /* #e2e2e2 */
+  padding-left: 0;
+}
 
-/* 拖拽容器最小高度，确保空容器也能作为拖放目标 */
+/* 拖拽容器最小高度 */
 .subfolder-list,
 .article-list {
   min-height: 4px;
 }
 
-/* mirror 隐身 — 只做 SortableJS 的拖拽载体，实际图标由 JS 追踪光标渲染 */
-.sortable-drag {
-  opacity: 0 !important;
-}
+.sortable-drag { opacity: 0 !important; }
+.sortable-chosen { opacity: 0.4; }
 
-/* chosenClass 加在原始元素上 — 仅半透明 */
-.sortable-chosen {
-  opacity: 0.4;
-}
-
-/* 文章项：13px/400，padding 6px 8px 6px 20px，圆角 6px */
+/* 文章项：14px/400/body, 8px 圆角 (SIDEBAR §5.5) */
 .tree-article {
-  display: flex;
-  align-items: center;
-  gap: var(--space-xs);
-  padding: var(--space-xs) var(--space-sm) var(--space-xs) 24px;           /* 左缩进 24px */
-  margin-bottom: 2px;
-  border-radius: var(--radius-sm);
-  color: var(--muted);
-  font-size: var(--text-caption);
-  font-weight: var(--weight-regular);
-  line-height: var(--leading-normal);
+  display: block;
+  padding: var(--space-md) var(--space-lg); /* 12px 16px */
+  border-radius: var(--radius-md);      /* 8px */
+  color: var(--body);                   /* #5e5e5e */
+  font-size: var(--text-body-sm);       /* 14px */
+  font-weight: var(--weight-regular);   /* 400 */
+  line-height: 20px;
   transition: var(--transition-hover);
   text-decoration: none;
+  position: relative;
 }
 .tree-article:hover {
-  background: rgba(250, 255, 105, 0.07);
+  background: var(--canvas-soft);
   color: var(--ink);
-  border-left: 3px solid var(--primary);
-  padding-left: 21px; /* 原 24px 减 3px 抵消 border */
-}
-.tree-article:hover .dot {
-  background: var(--primary);
 }
 
-/* 选中态：背景加深 + 文字变白 + 黄色圆点 */
+/* 激活态：3px 黑色左边条 + 浅灰底 + 500 字重 (SIDEBAR §5.5) */
 .tree-article.active {
-  background: var(--surface-elevated);
+  font-weight: var(--weight-medium);    /* 500 */
   color: var(--ink);
+  background: var(--canvas-soft);
+  border-left: 3px solid var(--primary);
+  padding-left: calc(var(--space-lg) - 3px); /* 16px - 3px = 13px */
 }
 
-/* 小圆点：6px 直径，默认灰色，选中变黄 */
-.dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--hairline);
-  flex-shrink: 0;
-}
-.tree-article.active .dot { background: var(--primary); }
+.article-title { /* text content, no flex needed */ }
 
-.article-title { flex: 1; }
-
-/* 草稿标签：橙色文字 + 浅橙底色 */
+/* 草稿标签 */
 .draft-tag {
   font-size: 11px;
-  color: #E65100;
-  background: #FFF3E0;
+  color: var(--muted);
+  background: var(--canvas-softer);
   padding: 1px 6px;
-  border-radius: var(--radius-xs);
+  border-radius: var(--radius-pill);
   flex-shrink: 0;
+  margin-left: var(--space-xs);
+}
+
+/* 空文件夹提示：12px, mute 色 (SIDEBAR §5.6) */
+.empty-folder {
+  font-size: var(--text-caption);       /* 12px */
+  font-weight: var(--weight-regular);
+  line-height: 20px;
+  color: var(--muted);                  /* #afafaf */
+  padding: var(--space-md) var(--space-lg); /* 12px 16px */
+  margin: 0;
 }
 </style>

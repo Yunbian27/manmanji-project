@@ -47,15 +47,15 @@ const formattedTime = computed(() => {
   display: flex;
   gap: var(--space-sm);
   padding: 20px;
-  border-radius: var(--radius-lg);        /* 12px */
-  background: var(--surface-card);
+  border-radius: var(--radius-xl);        /* 16px */
+  background: var(--canvas);
   border: 1px solid var(--hairline);
   margin-bottom: var(--space-sm);
 }
 .comment-avatar {
   width: 32px; height: 32px;
   border-radius: var(--radius-full);
-  background: var(--surface-elevated);
+  background: var(--canvas-soft);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -78,7 +78,7 @@ const formattedTime = computed(() => {
 .comment-text {
   font-size: var(--text-body-sm);
   line-height: var(--leading-relaxed);
-  color: var(--body);
+  color: var(--ink);
   margin-bottom: var(--space-xs);
 }
 
@@ -93,5 +93,5 @@ const formattedTime = computed(() => {
   padding: 0;
   transition: var(--transition-hover);
 }
-.reply-btn:hover { color: var(--primary); }    /* hover 变黄 */
+.reply-btn:hover { color: var(--ink); }
 </style>

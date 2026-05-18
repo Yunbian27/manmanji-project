@@ -10,8 +10,8 @@
   - 打开：按钮上方弹出 400×560px 对话面板
 
   消息类型：
-  - user: 右对齐，黄色气泡（#faff69 底 + 黑色字）
-  - bot:  左对齐，灰色气泡（#242424 底 + 白色字）
+  - user: 右对齐，黑色气泡 + 白色字
+  - bot:  左对齐，浅灰气泡 + 黑色字
   - typing: 三个跳动的小圆点动画
 -->
 <template>
@@ -145,21 +145,20 @@ watch(isOpen, (val) => {
 }
 .ai-trigger {
   width: 48px; height: 48px;
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-pill);
   border: none;
-  background: var(--primary);              /* 黄色底 */
-  color: #0a0a0a;
+  background: var(--primary);              /* 黑色底 */
+  color: var(--on-primary);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  /* 整个项目唯一使用 box-shadow 的地方 */
-  box-shadow: var(--shadow-ai);
+  box-shadow: var(--shadow-3);
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 .ai-trigger:hover {
   transform: scale(1.06);
-  box-shadow: var(--shadow-ai-hover);
+  box-shadow: var(--shadow-2);
 }
 
 /* === 对话面板 === */
@@ -169,9 +168,10 @@ watch(isOpen, (val) => {
   right: var(--space-xl);
   width: 400px;
   max-height: 560px;
-  border-radius: var(--radius-lg);         /* 12px */
-  background: var(--surface-card);
+  border-radius: var(--radius-xl);         /* 16px */
+  background: var(--canvas);
   border: 1px solid var(--hairline);
+  box-shadow: var(--shadow-2);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -185,10 +185,10 @@ watch(isOpen, (val) => {
   border-bottom: 1px solid var(--hairline);
   flex-shrink: 0;
 }
-.ai-panel-title { font-size: var(--text-body-sm); font-weight: var(--weight-semibold); color: var(--ink); }
+.ai-panel-title { font-size: var(--text-body-sm); font-weight: var(--weight-medium); color: var(--ink); }
 .ai-close {
   width: 28px; height: 28px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-pill);
   border: none;
   background: transparent;
   color: var(--muted);
@@ -197,7 +197,7 @@ watch(isOpen, (val) => {
   align-items: center;
   justify-content: center;
 }
-.ai-close:hover { background: var(--surface-elevated); color: var(--ink); }
+.ai-close:hover { background: var(--canvas-soft); color: var(--ink); }
 
 /* === 消息列表 === */
 .ai-messages {
@@ -221,19 +221,19 @@ watch(isOpen, (val) => {
   line-height: var(--leading-relaxed);
   word-break: break-word;
 }
-/* 用户消息：右对齐 + 黄色背景 + 黑色字 */
+/* 用户消息：右对齐 + 黑色背景 + 白色字 */
 .ai-msg--user {
   align-self: flex-end;
   background: var(--primary);
-  color: #0a0a0a;
-  border-bottom-right-radius: var(--radius-xs);  /* 右下角收窄（气泡尾巴效果） */
+  color: var(--on-primary);
+  border-bottom-right-radius: 4px;  /* 右下角收窄（气泡尾巴效果） */
 }
-/* 机器人消息：左对齐 + 深灰背景 */
+/* 机器人消息：左对齐 + 浅灰背景 */
 .ai-msg--bot {
   align-self: flex-start;
-  background: var(--surface-elevated);
-  color: var(--body);
-  border-bottom-left-radius: var(--radius-xs);
+  background: var(--canvas-soft);
+  color: var(--ink);
+  border-bottom-left-radius: 4px;
 }
 
 /* === 打字指示器（三个跳动圆点） === */
@@ -268,7 +268,7 @@ watch(isOpen, (val) => {
   padding: 0 14px;
   border-radius: var(--radius-md);
   border: 1px solid var(--hairline);
-  background: var(--surface-card);
+  background: var(--canvas-soft);
   color: var(--ink);
   font-family: var(--font-sans);
   font-size: var(--text-body-sm);
@@ -277,10 +277,10 @@ watch(isOpen, (val) => {
 .ai-input::placeholder { color: var(--muted-soft); }
 .ai-send-btn {
   width: 40px; height: 40px;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-pill);
   border: none;
-  background: var(--primary);              /* 黄色发送按钮 */
-  color: #0a0a0a;
+  background: var(--primary);              /* 黑色发送按钮 */
+  color: var(--on-primary);
   cursor: pointer;
   display: flex;
   align-items: center;

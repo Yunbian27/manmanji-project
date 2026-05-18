@@ -18,13 +18,12 @@ export default defineNuxtConfig({
 
   // --------------------------------------------------
   // css: 全局 CSS 文件（每个页面都会加载）
-  // 加载顺序很重要：tokens(变量定义) → base(重置) → transitions(动画) → light(浅色覆盖)
+  // 加载顺序：tokens(变量定义) → base(重置) → transitions(动画)
   // --------------------------------------------------
   css: [
     '~/assets/css/tokens.css',       // CSS 变量定义（颜色、字号、间距等）
     '~/assets/css/base.css',         // 全局基础样式和 reset
     '~/assets/css/transitions.css',  // Vue 过渡动画
-    '~/assets/css/light-theme.css',  // 浅色主题颜色覆盖
   ],
 
   // --------------------------------------------------
@@ -61,25 +60,16 @@ export default defineNuxtConfig({
 
   // --------------------------------------------------
   // app: 应用级配置
-  // head.script: 在 <head> 中注入内联脚本（防止主题闪烁的关键）
   // head.link: Google Fonts 字体加载
   // --------------------------------------------------
   app: {
     head: {
-      script: [
-        {
-          // 这段代码在页面渲染前同步执行，防止深色→浅色闪烁（FOUC）
-          // 原理：Vue 还没加载时就把 data-theme 属性写到 <html> 上
-          innerHTML: `(function(){try{var t=localStorage.getItem('mannote-theme')||'dark';document.documentElement.setAttribute('data-theme',t)}catch(e){}})()`,
-          type: 'text/javascript',
-        },
-      ],
       link: [
         { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
         { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
         {
           rel: 'stylesheet',
-          href: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400&display=swap',
+          href: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=JetBrains+Mono:wght@400&display=swap',
         },
       ],
     },
@@ -104,7 +94,7 @@ export default defineNuxtConfig({
   // --------------------------------------------------
   vite: {
     optimizeDeps: {
-      include: ['markdown-it', 'pinia'],
+      include: ['markdown-it', 'pinia', 'highlight.js'],
     },
   },
 

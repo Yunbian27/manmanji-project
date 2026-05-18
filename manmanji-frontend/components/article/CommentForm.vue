@@ -43,8 +43,8 @@ function submit() {
   padding: 10px 14px;
   border-radius: var(--radius-md);
   border: 1px solid var(--hairline);
-  background: var(--surface-card);
-  color: var(--body);
+  background: var(--canvas-soft);
+  color: var(--ink);
   font-family: var(--font-sans);
   font-size: var(--text-body-sm);
   line-height: var(--leading-relaxed);

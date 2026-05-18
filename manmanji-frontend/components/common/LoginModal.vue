@@ -124,14 +124,15 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
   padding: var(--space-md);
 }
 
-/* 卡片：12px 圆角，深色背景 */
+/* 卡片：16px 圆角，白色背景，Level 2 阴影 */
 .modal-card {
   width: 100%;
   max-width: 400px;
-  background: var(--surface-card);
+  background: var(--canvas);
   border: 1px solid var(--hairline);
-  border-radius: var(--radius-lg);
-  padding: var(--space-xl);
+  border-radius: var(--radius-xl);
+  padding: var(--space-2xl);
+  box-shadow: var(--shadow-2);
 }
 
 .modal-header {
@@ -142,8 +143,8 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
 }
 
 .modal-title {
-  font-size: var(--text-title-md);
-  font-weight: var(--weight-semibold);
+  font-size: var(--text-body-lg);
+  font-weight: var(--weight-medium);
   color: var(--ink);
 }
 
@@ -160,7 +161,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
   justify-content: center;
   transition: var(--transition-hover);
 }
-.modal-close:hover { background: var(--surface-elevated); color: var(--ink); }
+.modal-close:hover { background: var(--canvas-soft); color: var(--ink); }
 
 /* 表单 */
 .modal-form {
@@ -172,10 +173,10 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
 /* 错误消息：红色 13px */
 .modal-error {
   font-size: var(--text-caption);
-  color: var(--error, #ef4444);
+  color: #c0392b;
   padding: var(--space-xs) var(--space-sm);
-  background: var(--surface-soft, rgba(239, 68, 68, 0.1));
-  border-radius: var(--radius-sm);
+  background: #fde8e8;
+  border-radius: var(--radius-md);
   margin: 0;
 }
 
@@ -197,7 +198,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
   padding: 0 var(--space-sm);
   border-radius: var(--radius-md);
   border: 1px solid var(--hairline);
-  background: var(--canvas);
+  background: var(--canvas-soft);
   color: var(--ink);
   font-family: var(--font-sans);
   font-size: var(--text-body-sm);
@@ -213,13 +214,13 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
   height: 40px;
   font-family: var(--font-sans);
   font-size: var(--text-body-sm);
-  font-weight: var(--weight-semibold);
+  font-weight: var(--weight-medium);
   line-height: 1;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-pill);
   border: none;
   cursor: pointer;
   background: var(--primary);
-  color: #0a0a0a;
+  color: var(--on-primary);
   transition: var(--transition-hover);
 }
 .modal-submit:hover:not(:disabled) { background: var(--primary-active); }

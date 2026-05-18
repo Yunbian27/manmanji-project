@@ -43,8 +43,8 @@
           :current-article-id="currentArticleId"
           :mobile-open="mobileSidebarOpen"
           @select-article="selectArticle"
-          @new-folder="onNewFolder"
           @new-article="onNewArticle"
+          @create-folder="onNewFolder"
         />
       </template>
 
@@ -69,30 +69,32 @@
 
       <!-- 状态3：正常 — 渲染完整文章 -->
       <template v-else-if="currentArticle">
-        <ArticleHeader
-          :title="currentArticle.title"
-          :author="{ id: currentArticle.authorId, username: '', nickname: '作者', avatarUrl: null }"
-          :category="null"
-          :tags="[]"
-          :published-at="currentArticle.publishedAt"
-          :view-count="currentArticle.viewCount"
-          :read-time="readTime"
-        />
-        <ArticleBody
-          :content="currentArticle.content"
-          @toc-updated="tocItems = $event"
-        />
-        <ArticleActions
-          :like-count="currentArticle.likeCount"
-          :comment-count="currentArticle.commentCount"
-          :bookmark-count="currentArticle.bookmarkCount"
-          :liked="false"
-          :bookmarked="false"
-          @like="onLike"
-          @bookmark="onBookmark"
-          @share="onShare"
-          @comment-click="scrollToComments"
-        />
+        <div class="article-card">
+          <ArticleHeader
+            :title="currentArticle.title"
+            :author="{ id: currentArticle.authorId, username: '', nickname: '作者', avatarUrl: null }"
+            :category="null"
+            :tags="[]"
+            :published-at="currentArticle.publishedAt"
+            :view-count="currentArticle.viewCount"
+            :read-time="readTime"
+          />
+          <ArticleBody
+            :content="currentArticle.content"
+            @toc-updated="tocItems = $event"
+          />
+          <ArticleActions
+            :like-count="currentArticle.likeCount"
+            :comment-count="currentArticle.commentCount"
+            :bookmark-count="currentArticle.bookmarkCount"
+            :liked="false"
+            :bookmarked="false"
+            @like="onLike"
+            @bookmark="onBookmark"
+            @share="onShare"
+            @comment-click="scrollToComments"
+          />
+        </div>
         <CommentSection
           :comments="comments"
           @add-comment="onAddComment"
@@ -169,8 +171,6 @@ import type { ArticleVO, TocItem, CommentVO } from '~/types'
 // 演示用 mock 数据 — 从独立文件导入，避免模板字面量与 Vue SFC 编译器的转义冲突
 import { mockArticle } from '~/data/mockArticle'
 import type { MenuItem } from '~/components/common/ContextMenu.vue'
-
-definePageMeta({ middleware: 'auth-client' })
 
 // ---- 设备检测（响应式） ----
 const { isMobile, isTablet } = useDevice()
@@ -511,7 +511,7 @@ function onNewArticle() { navigateTo('/write') }
   width: 36px; height: 36px;
   border-radius: var(--radius-md);
   border: 1px solid var(--hairline);
-  background: var(--surface-card);
+  background: var(--canvas);
   color: var(--ink);
   cursor: pointer;
   align-items: center;
@@ -527,7 +527,7 @@ function onNewArticle() { navigateTo('/write') }
   z-index: calc(var(--z-nav) - 1);
 }
 
-@media (max-width: 768px) {
+@media (max-width: 599px) {
   .hamburger-btn { display: flex; }
   .mobile-overlay { display: block; }
 }
@@ -536,23 +536,31 @@ function onNewArticle() { navigateTo('/write') }
 .skeleton-article { max-width: 780px; }
 .skeleton-title-bar {
   height: 36px;
-  background: var(--surface-elevated);
+  background: var(--canvas-soft);
   border-radius: var(--radius-sm);
   width: 70%;
   margin-bottom: var(--space-lg);
 }
 .skeleton-meta {
   height: 14px;
-  background: var(--surface-elevated);
+  background: var(--canvas-soft);
   border-radius: var(--radius-sm);
   width: 40%;
   margin-bottom: var(--space-xxl);
 }
 .skeleton-line {
   height: 16px;
-  background: var(--surface-elevated);
+  background: var(--canvas-soft);
   border-radius: var(--radius-sm);
   margin-bottom: var(--space-md);
+}
+
+/* === 文章卡片 (BLUEPRINT 7.3) === */
+.article-card {
+  background: var(--canvas);
+  border: 1px solid var(--surface-elevated); /* #e2e2e2 */
+  border-radius: var(--radius-xl);          /* 16px */
+  padding: var(--space-2xl);                /* 24px */
 }
 
 /* === 错误状态 === */
@@ -573,7 +581,7 @@ function onNewArticle() { navigateTo('/write') }
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: var(--space-section) 0;
+  padding: var(--space-3xl) 0;
   color: var(--muted);
   text-align: center;
 }

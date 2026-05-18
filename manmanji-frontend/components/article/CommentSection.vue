@@ -64,8 +64,8 @@ defineEmits<{
 .comment-section { margin-top: var(--space-xxl); }
 
 .comment-title {
-  font-size: var(--text-title-md);        /* 18px */
-  font-weight: var(--weight-semibold);
+  font-size: var(--text-body-lg);         /* 18px */
+  font-weight: var(--weight-medium);
   color: var(--ink);
   margin-bottom: var(--space-lg);
 }
@@ -76,22 +76,22 @@ defineEmits<{
   display: flex;
   gap: var(--space-sm);
   padding: 20px;
-  border-radius: var(--radius-lg);
-  background: var(--surface-card);
+  border-radius: var(--radius-xl);
+  background: var(--canvas);
   border: 1px solid var(--hairline);
 }
 .skeleton-avatar {
   width: 32px; height: 32px;
   border-radius: var(--radius-full);
-  background: var(--surface-elevated);
+  background: var(--canvas-soft);
   flex-shrink: 0;
 }
 .skeleton-lines { flex: 1; display: flex; flex-direction: column; gap: var(--space-xs); }
-.skeleton-line { height: 12px; background: var(--surface-elevated); border-radius: 4px; }
+.skeleton-line { height: 12px; background: var(--canvas-soft); border-radius: 4px; }
 .w-40 { width: 40%; }
 .w-90 { width: 90%; }
 
-.comment-error { text-align: center; padding: var(--space-xl); color: var(--error); }
+.comment-error { text-align: center; padding: var(--space-xl); color: #c0392b; }
 .comment-empty {
   text-align: center;
   padding: var(--space-lg);

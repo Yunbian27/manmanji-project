@@ -7,6 +7,7 @@
   <div class="layout">
     <TopNav />
     <slot />
+    <Footer />
   </div>
 </template>
 

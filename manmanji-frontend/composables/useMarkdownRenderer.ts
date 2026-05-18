@@ -1,4 +1,5 @@
 import MarkdownIt from 'markdown-it'
+import hljs from 'highlight.js'
 import type { TocItem } from '~/types'
 import type { ComputedRef } from 'vue'
 
@@ -18,8 +19,18 @@ export function useMarkdownRenderer(content: ComputedRef<string> | Ref<string>) 
     const token = tokens[idx]!
     const lang = token.info.trim() || 'text'
     const code = token.content
-    const escaped = escapeHtml(code)
-    return `<div class="code-block"><div class="code-block-header"><span class="code-lang">${lang}</span><button class="code-copy" onclick="navigator.clipboard.writeText(this.closest('.code-block').querySelector('code').textContent);var b=this;b.textContent='已复制';setTimeout(function(){b.textContent='复制代码'},2000)">复制代码</button></div><pre><code>${escaped}</code></pre></div>`
+    const highlighted = highlightCode(code, lang)
+    return `<div class="code-block"><div class="code-block-header"><span class="code-lang">${lang}</span><button class="code-copy" onclick="navigator.clipboard.writeText(this.closest('.code-block').querySelector('code').textContent);var b=this;b.textContent='已复制';setTimeout(function(){b.textContent='复制代码'},2000)">复制代码</button></div><pre><code class="hljs">${highlighted}</code></pre></div>`
+  }
+
+  function highlightCode(code: string, lang: string): string {
+    if (!lang || lang === 'text' || lang === 'plain' || lang === 'plaintext') {
+      return escapeHtml(code)
+    }
+    if (hljs.getLanguage(lang)) {
+      return hljs.highlight(code, { language: lang }).value
+    }
+    return hljs.highlightAuto(code).value
   }
 
   function escapeHtml(str: string): string {

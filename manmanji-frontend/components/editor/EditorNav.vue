@@ -1,93 +1,169 @@
+<!--
+  EditorNav.vue — 编辑器左侧功能区
+  - Markdown 快捷插入
+  - 发布设置（从 EditorPublishSettings 迁移）
+  - 视图切换 + 保存草稿/发布
+-->
 <template>
-  <aside class="editor-nav">
-    <!-- 1. 返回按钮 -->
-    <button class="nav-back-btn" @click="handleBack">
-      <IconChevronRight :size="14" class="back-icon" />
-      <span>返回列表</span>
-    </button>
-
-    <!-- 2. 标题输入框 -->
-    <div class="nav-title-wrap">
-      <input
-        v-model="title"
-        class="nav-title-input"
-        :class="{ 'has-error': titleError }"
-        placeholder="输入文章标题..."
-        type="text"
-        maxlength="200"
-        @keydown.enter.prevent
-      />
-      <span v-if="titleError" class="title-error-msg">{{ titleError }}</span>
-    </div>
-
-    <!-- 3. 视图模式切换（竖排） -->
-    <div class="nav-mode-group">
-      <span class="nav-section-label">视图</span>
-      <div class="nav-mode-btns">
+  <aside class="editor-sidebar">
+    <!-- Markdown 快捷插入 -->
+    <div class="sidebar-section">
+      <span class="section-label">快捷插入</span>
+      <div class="md-grid">
         <button
-          :class="['nav-mode-btn', { active: viewMode === 'edit' }]"
-          @click="viewMode = 'edit'"
+          v-for="btn in mdButtons"
+          :key="btn.label"
+          class="md-btn"
+          :title="btn.label"
+          @click="emit('insertMarkdown', btn.before, btn.after, btn.placeholder)"
         >
-          编辑
-        </button>
-        <button
-          :class="['nav-mode-btn', { active: viewMode === 'split' }]"
-          @click="viewMode = 'split'"
-        >
-          双栏
-        </button>
-        <button
-          :class="['nav-mode-btn', { active: viewMode === 'preview' }]"
-          @click="viewMode = 'preview'"
-        >
-          预览
+          {{ btn.icon }}
+          <span class="md-btn-label">{{ btn.label }}</span>
         </button>
       </div>
     </div>
 
-    <!-- 4. 操作按钮 -->
-    <div class="nav-actions">
-      <button
-        class="nav-action-btn secondary"
-        :disabled="isSaving"
-        @click="handleSaveDraft"
-      >
-        {{ isSaving ? '保存中...' : '保存草稿' }}
-      </button>
-      <button
-        class="nav-action-btn text"
-        @click="publishSettingsOpen = !publishSettingsOpen"
-      >
-        发布设置
-      </button>
-      <button
-        class="nav-action-btn primary"
-        :disabled="isSaving"
-        @click="handlePublish"
-      >
-        {{ isSaving ? '发布中...' : '发布' }}
-      </button>
+    <!-- 发布设置 -->
+    <div class="sidebar-section">
+      <span class="section-label">发布设置</span>
+      <div class="settings-body">
+        <label class="settings-field">
+          <span class="field-label">分类</span>
+          <select :value="publishSettings.categoryId" class="settings-select" @change="onCategoryChange">
+            <option :value="null">未选择</option>
+            <option v-for="cat in categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
+          </select>
+        </label>
+
+        <label class="settings-field">
+          <span class="field-label">标签</span>
+          <div class="tag-input-area">
+            <input
+              v-model="tagInput"
+              class="settings-input"
+              placeholder="输入标签后按回车"
+              @keydown.enter.prevent="addTag"
+            />
+            <div v-if="publishSettings.tagIds.length > 0" class="tag-list">
+              <AppTag v-for="tagId in publishSettings.tagIds" :key="tagId" variant="default">
+                {{ getTagName(tagId) }}
+                <button class="tag-remove" @click="removeTag(tagId)"><IconX :size="10" /></button>
+              </AppTag>
+            </div>
+          </div>
+        </label>
+
+        <label class="settings-field">
+          <span class="field-label">封面图片 URL</span>
+          <input v-model="publishSettings.coverUrl" class="settings-input" placeholder="https://..." />
+        </label>
+
+        <label class="settings-field">
+          <span class="field-label">摘要</span>
+          <textarea
+            v-model="publishSettings.summary"
+            class="settings-textarea"
+            placeholder="文章摘要（最多 500 字）"
+            maxlength="500"
+            rows="3"
+          />
+        </label>
+
+        <label class="settings-field settings-toggle-row">
+          <span class="field-label">原创</span>
+          <button
+            type="button"
+            :class="['toggle-btn', { on: publishSettings.isOriginal }]"
+            @click="publishSettings.isOriginal = !publishSettings.isOriginal"
+          >
+            <span class="toggle-knob" />
+          </button>
+        </label>
+
+        <label v-if="!publishSettings.isOriginal" class="settings-field">
+          <span class="field-label">转载来源 URL</span>
+          <input v-model="publishSettings.sourceUrl" class="settings-input" placeholder="https://..." />
+        </label>
+      </div>
     </div>
 
-    <!-- 5. 保存时间状态 -->
-    <span v-if="lastSavedAt" class="nav-save-status">已保存 {{ lastSavedAt }}</span>
+    <!-- 视图切换 -->
+    <div class="sidebar-section">
+      <span class="section-label">视图</span>
+      <div class="view-mode-btns">
+        <button :class="['view-btn', { active: viewMode === 'edit' }]" @click="viewMode = 'edit'">编辑</button>
+        <button :class="['view-btn', { active: viewMode === 'split' }]" @click="viewMode = 'split'">双栏</button>
+        <button :class="['view-btn', { active: viewMode === 'preview' }]" @click="viewMode = 'preview'">预览</button>
+      </div>
+    </div>
+
+    <!-- 操作 -->
+    <div class="sidebar-section sidebar-actions">
+      <button class="action-btn secondary" :disabled="isSaving" @click="handleSaveDraft">
+        {{ isSaving ? '保存中...' : '保存草稿' }}
+      </button>
+      <button class="action-btn primary" :disabled="isSaving" @click="handlePublish">
+        {{ isSaving ? '发布中...' : '发布' }}
+      </button>
+      <span v-if="lastSavedAt" class="save-status">已保存 {{ lastSavedAt }}</span>
+    </div>
   </aside>
 </template>
 
 <script setup lang="ts">
-const emit = defineEmits<{ close: [] }>()
+const emit = defineEmits<{
+  insertMarkdown: [before: string, after: string, placeholder: string]
+  close: []
+}>()
 
 const editor = injectEditor()
 const {
-  title, content, publishSettingsOpen, viewMode,
-  isSaving, lastSavedAt, titleError,
+  publishSettings, viewMode, isSaving, lastSavedAt,
 } = editor
 
-function handleBack() {
-  if (content.value || title.value) {
-    if (!confirm('有未保存的内容，确定返回吗？')) return
+const tagInput = ref('')
+
+interface CategoryItem { id: number; name: string; slug: string }
+const categories = ref<CategoryItem[]>([])
+
+function onCategoryChange(e: Event) {
+  const val = (e.target as HTMLSelectElement).value
+  publishSettings.categoryId = val ? Number(val) : null
+}
+
+const mdButtons = [
+  { icon: 'B', label: '粗体', before: '**', after: '**', placeholder: '粗体文字' },
+  { icon: 'I', label: '斜体', before: '*', after: '*', placeholder: '斜体文字' },
+  { icon: 'H', label: '标题', before: '\n## ', after: '', placeholder: '标题' },
+  { icon: '🔗', label: '链接', before: '[', after: '](url)', placeholder: '链接文字' },
+  { icon: '🖼', label: '图片', before: '![', after: '](url)', placeholder: '图片描述' },
+  { icon: '<>', label: '行内代码', before: '`', after: '`', placeholder: '代码' },
+  { icon: '{}', label: '代码块', before: '\n```\n', after: '\n```\n', placeholder: '语言\n代码' },
+  { icon: '❝', label: '引用', before: '\n> ', after: '', placeholder: '引用内容' },
+  { icon: '•', label: '无序列表', before: '\n- ', after: '', placeholder: '列表项' },
+  { icon: '1.', label: '有序列表', before: '\n1. ', after: '', placeholder: '列表项' },
+  { icon: '—', label: '分割线', before: '\n---\n', after: '', placeholder: '' },
+  { icon: '⊞', label: '表格', before: '\n| 列1 | 列2 |\n| --- | --- |\n| ', after: ' | ', placeholder: '内容' },
+]
+
+function addTag() {
+  const name = tagInput.value.trim()
+  if (!name) return
+  const existing = categories.value.find(c => c.name === name)
+  const tagId = existing ? existing.id : Date.now()
+  if (!publishSettings.tagIds.includes(tagId)) {
+    publishSettings.tagIds.push(tagId)
   }
-  emit('close')
+  tagInput.value = ''
+}
+
+function removeTag(tagId: number) {
+  publishSettings.tagIds = publishSettings.tagIds.filter(id => id !== tagId)
+}
+
+function getTagName(tagId: number): string {
+  const cat = categories.value.find(c => c.id === tagId)
+  return cat?.name ?? `标签 ${tagId}`
 }
 
 async function handleSaveDraft() {
@@ -101,90 +177,150 @@ async function handlePublish() {
 </script>
 
 <style scoped>
-.editor-nav {
+.editor-sidebar {
   width: 220px;
   flex-shrink: 0;
   height: 100%;
   display: flex;
   flex-direction: column;
-  gap: var(--space-md);
-  padding: var(--space-lg);
-  background: var(--surface-soft);
-  border-right: 1px solid var(--hairline);
   overflow-y: auto;
+  background: var(--canvas);
+  border-right: 1px solid var(--hairline);
 }
 
-/* ——— 返回按钮 ——— */
-.nav-back-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-xxs);
-  font-family: var(--font-sans);
-  font-size: var(--text-body-sm);
+.sidebar-section {
+  padding: var(--space-md) var(--space-sm);
+  border-bottom: 1px solid var(--hairline);
+}
+
+.section-label {
+  font-size: var(--text-caption);
   font-weight: var(--weight-medium);
   color: var(--muted);
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  padding: var(--space-xxs) 0;
-  border-radius: var(--radius-md);
-  transition: color 0.15s ease;
-  white-space: nowrap;
-  align-self: flex-start;
+  margin-bottom: var(--space-sm);
+  display: block;
+  padding: 0 var(--space-xs);
 }
-.nav-back-btn:hover { color: var(--body); }
-.back-icon { transform: rotate(180deg); flex-shrink: 0; }
 
-/* ——— 标题输入 ——— */
-.nav-title-wrap {
+/* Markdown 按钮网格 */
+.md-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 2px;
+}
+
+.md-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: var(--space-xxs);
+  height: 44px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--muted);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  cursor: pointer;
+  transition: var(--transition-hover);
+}
+.md-btn:hover { background: var(--canvas-soft); color: var(--ink); }
+.md-btn-label {
+  font-size: var(--text-caption);
+  color: var(--muted-soft);
+}
+
+/* 发布设置 */
+.settings-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.settings-field {
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
 
-.nav-title-input {
-  width: 100%;
-  height: 40px;
-  padding: 0 var(--space-sm);
-  font-family: var(--font-sans);
-  font-size: var(--text-body-sm);
+.field-label {
+  font-size: var(--text-caption);
   font-weight: var(--weight-medium);
+  color: var(--muted);
+}
+
+.settings-select,
+.settings-input,
+.settings-textarea {
+  font-family: var(--font-sans);
+  font-size: var(--text-caption);
   color: var(--ink);
-  background: var(--surface-card);
+  background: var(--canvas-soft);
   border: 1px solid var(--hairline);
   border-radius: var(--radius-md);
+  padding: var(--space-xxs) var(--space-xs);
   outline: none;
   transition: border-color 0.15s ease;
-  box-sizing: border-box;
 }
-.nav-title-input::placeholder { color: var(--muted-soft); }
-.nav-title-input:focus { border-color: var(--primary); }
-.nav-title-input.has-error { border-color: var(--error); }
+.settings-select:focus,
+.settings-input:focus,
+.settings-textarea:focus { border-color: var(--hairline-strong); }
+.settings-textarea { resize: vertical; line-height: var(--leading-normal); }
 
-.title-error-msg {
-  font-size: var(--text-uppercase);
-  color: var(--error);
-}
-
-/* ——— 视图模式 ——— */
-.nav-section-label {
-  font-size: var(--text-uppercase);
-  font-weight: var(--weight-semibold);
-  letter-spacing: var(--tracking-wide);
-  text-transform: uppercase;
+.tag-input-area { display: flex; flex-direction: column; gap: var(--space-xxs); }
+.tag-list { display: flex; flex-wrap: wrap; gap: var(--space-xxs); }
+.tag-remove {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 2px;
+  padding: 0;
+  background: transparent;
+  border: none;
   color: var(--muted);
-  margin-bottom: var(--space-xs);
-  display: block;
+  cursor: pointer;
+}
+.tag-remove:hover { color: #c0392b; }
+
+.settings-toggle-row {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
 }
 
-.nav-mode-btns {
+.toggle-btn {
+  position: relative;
+  width: 36px;
+  height: 20px;
+  border-radius: 10px;
+  background: var(--hairline-strong);
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  padding: 0;
+}
+.toggle-btn.on { background: var(--primary); }
+.toggle-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--on-primary);
+  transition: transform 0.2s ease;
+}
+.toggle-btn.on .toggle-knob { transform: translateX(16px); }
+
+/* 视图切换 */
+.view-mode-btns {
   display: flex;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-pill);
   border: 1px solid var(--hairline);
   overflow: hidden;
 }
-
-.nav-mode-btn {
+.view-btn {
   flex: 1;
   font-family: var(--font-sans);
   font-size: var(--text-caption);
@@ -192,66 +328,53 @@ async function handlePublish() {
   color: var(--muted);
   background: transparent;
   border: none;
-  padding: var(--space-xs) 0;
+  padding: var(--space-xxs) 0;
   cursor: pointer;
-  transition: background-color 0.15s ease, color 0.15s ease;
-  text-align: center;
+  transition: var(--transition-hover);
 }
-.nav-mode-btn:not(:last-child) { border-right: 1px solid var(--hairline); }
-.nav-mode-btn:hover { color: var(--body); }
-.nav-mode-btn.active {
-  background: var(--surface-card);
-  color: var(--ink);
-}
+.view-btn:not(:last-child) { border-right: 1px solid var(--hairline); }
+.view-btn:hover { color: var(--body); }
+.view-btn.active { background: var(--canvas-soft); color: var(--ink); }
 
-/* ——— 操作按钮 ——— */
-.nav-actions {
+/* 操作按钮 */
+.sidebar-actions {
+  margin-top: auto;
+  border-bottom: none;
   display: flex;
   flex-direction: column;
   gap: var(--space-xs);
-  margin-top: auto;
 }
 
-.nav-action-btn {
+.action-btn {
   width: 100%;
   height: 40px;
   padding: 0 var(--space-lg);
   font-family: var(--font-sans);
   font-size: var(--text-body-sm);
-  font-weight: var(--weight-semibold);
+  font-weight: var(--weight-medium);
   line-height: 1;
   border: none;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-pill);
   cursor: pointer;
-  transition: background-color 0.15s ease, color 0.15s ease;
-  white-space: nowrap;
+  transition: var(--transition-hover);
 }
-.nav-action-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
+.action-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-.nav-action-btn.primary {
+.action-btn.primary {
   background: var(--primary);
   color: var(--on-primary);
 }
-.nav-action-btn.primary:hover:not(:disabled) { background: var(--primary-active); }
+.action-btn.primary:hover:not(:disabled) { background: var(--primary-active); }
 
-.nav-action-btn.secondary {
-  background: var(--surface-card);
-  color: var(--ink);
-}
-.nav-action-btn.secondary:hover:not(:disabled) { background: var(--surface-elevated); }
-
-.nav-action-btn.text {
+.action-btn.secondary {
   background: transparent;
-  color: var(--body);
+  color: var(--ink);
+  border: 1px solid var(--hairline);
 }
-.nav-action-btn.text:hover:not(:disabled) { color: var(--ink); }
+.action-btn.secondary:hover:not(:disabled) { background: var(--canvas-soft); }
 
-/* ——— 保存状态 ——— */
-.nav-save-status {
-  font-size: var(--text-uppercase);
+.save-status {
+  font-size: var(--text-caption);
   color: var(--muted-soft);
   text-align: center;
 }

@@ -185,10 +185,11 @@ watch(mode, () => {
 .login-card {
   width: 100%;
   max-width: 400px;
-  background: var(--surface-card);
+  background: var(--canvas);
   border: 1px solid var(--hairline);
-  border-radius: var(--radius-lg);
-  padding: var(--space-xl);
+  border-radius: var(--radius-xl);
+  padding: var(--space-2xl);
+  box-shadow: var(--shadow-2);
 }
 
 /* Tab 切换 — 遵循 category-tab 模式 */
@@ -201,7 +202,7 @@ watch(mode, () => {
 .tab-btn {
   flex: 1;
   padding: 8px 14px;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-pill);
   border: none;
   background: transparent;
   color: var(--muted);
@@ -213,17 +214,17 @@ watch(mode, () => {
   transition: var(--transition-hover);
 }
 .tab-btn.active {
-  background: var(--surface-elevated);
+  background: var(--canvas-soft);
   color: var(--ink);
 }
 
 /* 错误提示 */
 .login-error {
   font-size: var(--text-caption);
-  color: var(--error);
+  color: #c0392b;
   padding: var(--space-xs) var(--space-sm);
-  background: var(--surface-soft);
-  border-radius: var(--radius-sm);
+  background: #fde8e8;
+  border-radius: var(--radius-md);
   margin: 0 0 var(--space-md);
 }
 
@@ -251,7 +252,7 @@ watch(mode, () => {
   padding: 0 var(--space-sm);
   border-radius: var(--radius-md);
   border: 1px solid var(--hairline);
-  background: var(--canvas);
+  background: var(--canvas-soft);
   color: var(--ink);
   font-family: var(--font-sans);
   font-size: var(--text-body-sm);
@@ -261,18 +262,18 @@ watch(mode, () => {
 .login-input:focus { outline: none; border-color: var(--primary); }
 .login-input:disabled { opacity: 0.5; }
 
-/* 提交按钮 — 遵循 button-primary 规范 */
+/* 提交按钮 — 黑色胶囊 */
 .login-submit {
   margin-top: var(--space-xs);
   width: 100%;
   height: 40px;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-pill);
   border: none;
   background: var(--primary);
-  color: #0a0a0a;
+  color: var(--on-primary);
   font-family: var(--font-sans);
   font-size: var(--text-body-sm);
-  font-weight: var(--weight-semibold);
+  font-weight: var(--weight-medium);
   line-height: 1;
   cursor: pointer;
   transition: var(--transition-hover);
@@ -288,10 +289,10 @@ watch(mode, () => {
   color: var(--muted);
 }
 .toggle-link {
-  color: var(--primary);
+  color: var(--link);
   cursor: pointer;
   text-decoration: underline;
   transition: var(--transition-hover);
 }
-.toggle-link:hover { color: var(--primary-active); }
+.toggle-link:hover { color: var(--ink); }
 </style>

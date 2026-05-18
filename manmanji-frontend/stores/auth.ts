@@ -19,14 +19,29 @@ export const useAuthStore = defineStore('auth', () => {
   const user = ref<UserInfo | null>(null)          // 当前用户信息
   const expiresAt = ref<number>(0)                 // 令牌过期时间（毫秒时间戳）
 
+  const COOKIE_NAME = 'mannote-token'
+  const COOKIE_MAX_AGE = 60 * 60 * 24 * 7 // 7 天
+
+  function setCookie(value: string) {
+    if (import.meta.client) {
+      document.cookie = `${COOKIE_NAME}=${value}; path=/; max-age=${COOKIE_MAX_AGE}; SameSite=Lax`
+    }
+  }
+
+  function clearCookie() {
+    if (import.meta.client) {
+      document.cookie = `${COOKIE_NAME}=; path=/; max-age=0`
+    }
+  }
+
   /** 保存登录会话（注册/登录/刷新后调用） */
   function setSession(data: LoginVO) {
     token.value = data.accessToken
     refreshToken.value = data.refreshToken
     user.value = data.user
-    // 计算绝对过期时间：当前时间 + 有效秒数 × 1000
     expiresAt.value = Date.now() + data.expiresIn * 1000
-    persist()  // 写入 localStorage 持久化
+    setCookie(data.accessToken)       // SSR 认证检查依赖 cookie
+    persist()
   }
 
   /** 清除登录会话（退出登录时调用） */
@@ -35,6 +50,7 @@ export const useAuthStore = defineStore('auth', () => {
     refreshToken.value = null
     user.value = null
     expiresAt.value = 0
+    clearCookie()
     persist()
   }
 

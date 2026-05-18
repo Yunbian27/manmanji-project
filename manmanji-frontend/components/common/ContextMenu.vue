@@ -108,10 +108,10 @@ onBeforeUnmount(() => {
   z-index: 10000;
   min-width: 160px;
   padding: 8px;
-  background: var(--surface-card);
+  background: var(--canvas);
   border: 1px solid var(--hairline);
-  border-radius: var(--radius-md);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-2);
   outline: none;
 }
 
@@ -120,9 +120,9 @@ onBeforeUnmount(() => {
   width: 100%;
   padding: 8px 12px;
   border: none;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-pill);
   background: transparent;
-  color: var(--on-dark);
+  color: var(--ink);
   font-family: var(--font-sans);
   font-size: var(--text-body-sm);
   font-weight: var(--weight-regular);
@@ -134,14 +134,14 @@ onBeforeUnmount(() => {
 }
 
 .context-menu-item:hover {
-  background: var(--surface-elevated);
+  background: var(--canvas-soft);
 }
 
 .context-menu-item--danger {
-  color: var(--error);
+  color: #c0392b;
 }
 
 .context-menu-item--danger:hover {
-  background: rgba(239, 68, 68, 0.1);
+  background: #fde8e8;
 }
 </style>

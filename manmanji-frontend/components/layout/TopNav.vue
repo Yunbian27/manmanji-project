@@ -54,8 +54,6 @@
         <AppButton variant="secondary" @click="navigateTo('/write')">写文章</AppButton>
       </template>
 
-      <ThemeToggle />
-
       <!-- 用户头像：36×36 圆形 + 下拉菜单 -->
       <div v-if="auth.isAuthenticated" ref="avatarContainer" class="avatar-wrapper">
         <div class="nav-avatar" :title="auth.user?.nickname" @click="showDropdown = !showDropdown">
@@ -115,8 +113,7 @@ const navLinks = [
   z-index: var(--z-nav);               /* 100 — 始终在页面之上 */
   background: var(--canvas);
   border-bottom: 1px solid var(--hairline);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
-  padding: 0 var(--space-xxl);          /* 左右 48px */
+  padding: var(--space-lg) var(--space-3xl); /* 16px 32px */
   display: flex;
   align-items: center;
   justify-content: space-between;       /* 两端对齐 */
@@ -136,17 +133,17 @@ const navLinks = [
   color: var(--ink);
 }
 
-/* 小黄方块标志 */
+/* 黑色方块标志 */
 .logo-icon {
   width: 32px;
   height: 32px;
   background: var(--primary);
-  color: #0a0a0a;
-  border-radius: var(--radius-sm);
+  color: var(--on-primary);
+  border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: var(--text-title-sm);
+  font-size: var(--text-body-md-strong);
   font-weight: var(--weight-bold);
 }
 
@@ -154,7 +151,6 @@ const navLinks = [
 .logo-text {
   font-size: 18px;
   font-weight: var(--weight-bold);
-  letter-spacing: -0.3px;
 }
 
 .nav-links { display: flex; gap: var(--space-sm); list-style: none; }
@@ -165,14 +161,14 @@ const navLinks = [
   font-weight: var(--weight-medium);
   line-height: var(--leading-normal);
   padding: 8px 14px;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-pill);
   color: var(--muted);                  /* 默认灰 */
   transition: var(--transition-hover);
 }
 .nav-link:hover,
 .nav-link.active {
-  color: var(--ink);                    /* hover/active 变白 */
-  background: var(--surface-card);      /* 加背景 */
+  color: var(--ink);                    /* hover/active 变黑 */
+  background: var(--canvas-soft);       /* 浅灰背景 */
 }
 
 .nav-right {
@@ -195,9 +191,9 @@ const navLinks = [
 .search-input {
   width: 100%;
   height: 40px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--hairline-strong);
-  background: var(--surface-card);
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--hairline);
+  background: var(--canvas-soft);
   color: var(--ink);
   padding: 0 14px 0 38px;               /* 左侧留 38px 给图标 */
   font-family: var(--font-sans);
@@ -217,13 +213,13 @@ const navLinks = [
 .nav-avatar {
   width: 36px; height: 36px;
   border-radius: var(--radius-full);
-  background: var(--surface-card);
+  background: var(--canvas-soft);
   color: var(--ink);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: var(--text-body-sm);
-  font-weight: var(--weight-semibold);
+  font-weight: var(--weight-medium);
   flex-shrink: 0;
   cursor: pointer;
   transition: var(--transition-hover);
@@ -237,9 +233,9 @@ const navLinks = [
   right: 0;
   min-width: 160px;
   padding: var(--space-xs);
-  background: var(--surface-card);
+  background: var(--canvas);
   border: 1px solid var(--hairline);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-xl);
 }
 
 /* 用户信息区 */
@@ -275,9 +271,9 @@ const navLinks = [
   width: 100%;
   padding: 8px 12px;
   border: none;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-pill);
   background: transparent;
-  color: var(--on-dark);
+  color: var(--ink);
   font-family: var(--font-sans);
   font-size: var(--text-body-sm);
   font-weight: var(--weight-regular);
@@ -286,10 +282,10 @@ const navLinks = [
   cursor: pointer;
   transition: var(--transition-hover);
 }
-.dropdown-item:hover { background: var(--surface-elevated); }
+.dropdown-item:hover { background: var(--canvas-soft); }
 
 /* 危险操作（退出登录） */
-.dropdown-item-danger:hover { color: var(--error); }
+.dropdown-item-danger:hover { color: #c0392b; }
 
 /* 下拉菜单过渡动画 */
 .dropdown-enter-active,
@@ -302,8 +298,8 @@ const navLinks = [
   transform: translateY(-4px);
 }
 
-/* 手机端隐藏导航链接和搜索框（可以用汉堡菜单替代） */
-@media (max-width: 768px) {
+/* 手机端隐藏导航链接和搜索框 (BLUEPRINT: <600px) */
+@media (max-width: 599px) {
   .nav-links { display: none; }
   .nav-search { display: none; }
 }
