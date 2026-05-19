@@ -50,7 +50,7 @@ CREATE INDEX IF NOT EXISTS idx_folders_parent ON folders(user_id, parent_id);   
 
 CREATE TABLE IF NOT EXISTS articles (
     id              BIGSERIAL PRIMARY KEY,                                    -- 主键
-    title           VARCHAR(200) NOT NULL,                                   -- 文章标题
+    title           VARCHAR(200) NOT NULL DEFAULT '未命名',                    -- 文章标题
     slug            VARCHAR(200) NOT NULL UNIQUE,                            -- URL 标识，全局唯一，如 java-21-virtual-thread-xxx
     content         TEXT,                                                     -- Markdown 正文
     summary         VARCHAR(500),                                            -- 文章摘要，feed 列表展示用
@@ -60,9 +60,7 @@ CREATE TABLE IF NOT EXISTS articles (
     folder_id       BIGINT,                                                  -- 个人文件夹 ID（个人博客侧分类）
     category_id     BIGINT,                                                  -- 社区分类 ID（社区页分类筛选）
 
-    status          VARCHAR(15) NOT NULL DEFAULT 'DRAFT',                    -- DRAFT / PUBLISHED / ARCHIVED
-    source_type     VARCHAR(10) NOT NULL DEFAULT 'MANUAL',                   -- MANUAL（手写）/ AI_GENERATED（AI 生成）
-    source_prompt   TEXT,                                                     -- AI 生成时的原始提示词
+    status          VARCHAR(15) NOT NULL DEFAULT 'UNPUBLISHED',              -- UNPUBLISHED / PUBLISHED
 
     view_count      INT NOT NULL DEFAULT 0,                                  -- 阅读量（冗余计数）
     like_count      INT NOT NULL DEFAULT 0,                                  -- 点赞数（冗余计数）
@@ -74,8 +72,8 @@ CREATE TABLE IF NOT EXISTS articles (
 
     created_at      TIMESTAMP NOT NULL DEFAULT NOW(),                        -- 创建时间
     updated_at      TIMESTAMP NOT NULL DEFAULT NOW(),                        -- 更新时间
-    published_at    TIMESTAMP                                                -- 发布时间，草稿为空
-);
+    published_at    TIMESTAMP                                                -- 发布时间
+    );
 
 -- ============================================
 -- 标签

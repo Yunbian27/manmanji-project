@@ -3,7 +3,7 @@ package com.yunbian27.content.model.dto;
 import lombok.Data;
 
 @Data
-public class RenameFolderDTO {
+public class ArticleRenameDTO {
     private Long id;
-    private String name;
+    private String title;
 }

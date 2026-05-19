@@ -31,4 +31,14 @@ public final class CommonConstants {
 
         private Pagination() {}
     }
+
+    /**
+     * 文章状态
+     */
+    public static final class ArticleStatus {
+        public static final String UNPUBLISHED = "UNPUBLISHED";
+        public static final String PUBLISHED = "PUBLISHED";
+
+        private ArticleStatus() {}
+    }
 }

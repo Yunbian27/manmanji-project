@@ -1,9 +1,4 @@
-// ============================================================
-// composables/useArticle.ts — 文章 API 封装
-// 对应后端 ArticleController 的三个端点
-// ============================================================
-
-import type { ArticleVO, ArticleCreateDTO } from '~/types'
+import type { ArticleVO, ArticleSaveDTO, ArticlePublishDTO } from '~/types'
 
 export function useArticle() {
   const api = useApi()
@@ -13,9 +8,22 @@ export function useArticle() {
     return api.get<ArticleVO>(`/api/articles/${id}`)
   }
 
-  /** 创建文章（需要登录） */
-  function createArticle(dto: ArticleCreateDTO): Promise<number> {
-    return api.post<number>('/api/articles/create', dto)
+  /** 创建文章（folderId 可选，不传则无文件夹） */
+  function createArticle(folderId?: number): Promise<number> {
+    if (folderId != null) {
+      return api.post<number>(`/api/articles/create/${folderId}`)
+    }
+    return api.post<number>('/api/articles/create')
+  }
+
+  /** 保存文章 */
+  function saveArticle(dto: ArticleSaveDTO): Promise<void> {
+    return api.put<void>('/api/articles/save', dto)
+  }
+
+  /** 发布文章 */
+  function publishArticle(dto: ArticlePublishDTO): Promise<void> {
+    return api.put<void>('/api/articles/publish', dto)
   }
 
   /** AI 润色文章内容（需要登录） */
@@ -23,5 +31,5 @@ export function useArticle() {
     return api.post<string>('/api/articles/improve', content)
   }
 
-  return { getArticle, createArticle, improve }
+  return { getArticle, createArticle, saveArticle, publishArticle, improve }
 }

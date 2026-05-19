@@ -33,7 +33,7 @@
       </div>
 
       <!-- 状态3：空数据 — 引导提示 -->
-      <div v-else-if="folders.length === 0" class="sidebar-empty">
+      <div v-else-if="folders.length === 0 && (!rootArticles || rootArticles.length === 0)" class="sidebar-empty">
         <p>暂无分类</p>
         <p class="hint">创建你的第一个文件夹</p>
       </div>
@@ -66,6 +66,40 @@
             />
           </template>
         </draggable>
+
+        <!-- 根层级无归属文章：可拖拽至文件夹，支持右键菜单 -->
+        <draggable
+          v-if="rootArticles && rootArticles.length > 0"
+          tag="ul"
+          :list="folderStore.rootArticles"
+          group="articles"
+          item-key="id"
+          class="root-article-list"
+          ghost-class="sortable-ghost"
+          drag-class="sortable-drag"
+          chosen-class="sortable-chosen"
+          :force-fallback="true"
+          :scroll="true"
+          :scroll-sensitivity="50"
+          :scroll-speed="15"
+          :bubble-scroll="true"
+          @start="onArticleDragStart"
+          @end="onArticleDragEnd"
+          @change="onRootArticleChange"
+        >
+          <template #item="{ element: article }">
+            <li
+              class="root-article-item"
+              :class="{ active: currentArticleId === article.id }"
+              data-drag-type="article"
+              @click="$emit('selectArticle', article.id)"
+              @contextmenu.prevent.stop="openMenu?.($event, 'article', article.id)"
+            >
+              <span class="article-title">{{ article.title || '未命名' }}</span>
+              <span v-if="article.status === 'UNPUBLISHED'" class="unpublished-tag">未发布</span>
+            </li>
+          </template>
+        </draggable>
       </div>
 
     </div>
@@ -74,10 +108,11 @@
 
 <script setup lang="ts">
 import draggable from 'vuedraggable'
-import type { FolderTreeVO } from '~/types'
+import type { FolderTree, ArticleItem } from '~/types'
 
 defineProps<{
-  folders: FolderTreeVO[]
+  folders: FolderTree[]
+  rootArticles?: ArticleItem[]
   loading?: boolean
   error?: string | null
   currentArticleId?: number
@@ -92,6 +127,9 @@ const emit = defineEmits<{
 }>()
 
 const showDropdown = ref(false)
+
+type OpenMenuFn = (event: MouseEvent, type: 'blank' | 'folder' | 'article', targetId?: number) => void
+const openMenu = inject<OpenMenuFn>('openContextMenu')
 
 function onCreateFolder() {
   showDropdown.value = false
@@ -150,6 +188,46 @@ function onRootFolderChange(evt: any) {
   } else if (evt.added) {
     const { element } = evt.added
     folderStore.moveFolder(element.id, null).catch(() => {
+      folderStore.fetchFolders()
+    })
+  }
+}
+
+// ---- 根级文章拖拽移动 ----
+function onArticleDragStart(evt: any) {
+  const icon = document.createElement('div')
+  icon.className = 'drag-cursor-icon'
+  icon.setAttribute('data-drag-type', 'article')
+  icon.style.cssText = 'position:fixed;width:32px;height:32px;pointer-events:none;z-index:99999'
+  document.body.appendChild(icon)
+
+  const onMove = (e: MouseEvent) => {
+    icon.style.left = (e.clientX - 16) + 'px'
+    icon.style.top = (e.clientY - 16) + 'px'
+  }
+  const onEnd = () => {
+    document.removeEventListener('mousemove', onMove)
+    document.removeEventListener('mouseup', onEnd)
+    icon.remove()
+    cursorCleanup = null
+  }
+  cursorCleanup = onEnd
+  document.addEventListener('mousemove', onMove)
+  document.addEventListener('mouseup', onEnd)
+}
+
+function onArticleDragEnd() {
+  cursorCleanup?.()
+}
+
+function onRootArticleChange(evt: any) {
+  if (evt.moved) {
+    // 同级重排 → refetch 恢复原顺序（根文章无排序概念）
+    folderStore.fetchFolders()
+  } else if (evt.added) {
+    // 从文件夹拖入 → 移到根目录（folderId = null）
+    const { element } = evt.added
+    folderStore.moveArticle(element.id, null).catch(() => {
       folderStore.fetchFolders()
     })
   }
@@ -294,6 +372,48 @@ function onRootFolderChange(evt: any) {
 }
 .sidebar-empty { padding: var(--space-md); text-align: center; color: var(--muted); }
 .sidebar-empty .hint { font-size: var(--text-caption); color: var(--muted-soft); margin-top: var(--space-xxs); }
+
+/* 根层级文章 */
+.root-article-list {
+  list-style: none;
+  padding: 0;
+  margin: var(--space-xs) 0 0;
+}
+.root-article-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: 6px 8px;
+  border-radius: var(--radius-md);
+  font-size: var(--text-body-sm);
+  font-weight: var(--weight-regular);
+  color: var(--body);
+  cursor: pointer;
+  transition: var(--transition-hover);
+  border-left: 3px solid transparent;
+}
+.root-article-item:hover { background: var(--canvas-soft); }
+.root-article-item.active {
+  background: var(--canvas-soft);
+  border-left-color: var(--primary);
+  color: var(--ink);
+  font-weight: var(--weight-medium);
+}
+.root-article-item .article-title {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.unpublished-tag {
+  flex-shrink: 0;
+  font-size: var(--text-caption);
+  font-weight: var(--weight-medium);
+  color: var(--muted);
+  background: var(--canvas-soft);
+  padding: 1px 6px;
+  border-radius: var(--radius-pill);
+}
 
 /* 响应式 (BLUEPRINT: Tablet ≤1119px, Mobile <600px) */
 @media (max-width: 1119px) {

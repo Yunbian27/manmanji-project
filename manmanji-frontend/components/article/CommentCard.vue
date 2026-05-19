@@ -7,7 +7,7 @@
   <div class="comment-card">
     <!-- 头像：32×32 圆形 -->
     <div class="comment-avatar">
-      <img v-if="comment.author.avatarUrl" :src="comment.author.avatarUrl" :alt="comment.author.nickname" />
+      <img v-if="comment.author.avatarUrl && !avatarError" :src="comment.author.avatarUrl" :alt="comment.author.nickname" @error="avatarError = true" />
       <span v-else>{{ comment.author.nickname?.charAt(0) || '匿' }}</span>
     </div>
 
@@ -33,6 +33,8 @@
 import type { CommentVO } from '~/types'
 
 const props = defineProps<{ comment: CommentVO }>()
+
+const avatarError = ref(false)
 defineEmits<{ reply: [id: number] }>()
 
 // computed: 根据 createdAt 格式化显示时间

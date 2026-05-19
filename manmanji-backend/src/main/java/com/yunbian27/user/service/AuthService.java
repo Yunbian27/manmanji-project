@@ -3,6 +3,7 @@ package com.yunbian27.user.service;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.yunbian27.common.constant.RedisKeys;
 import com.yunbian27.common.constant.RedisTTL;
+import com.yunbian27.common.constant.SystemConstants;
 import com.yunbian27.user.config.JwtProperties;
 import com.yunbian27.user.model.dto.LoginDTO;
 import com.yunbian27.user.model.vo.LoginVO;
@@ -90,9 +91,13 @@ public class AuthService {
         user.setEmail(req.getEmail());
         user.setPasswordHash(passwordEncoder.encode(req.getPassword()));
         user.setNickname(req.getNickname() != null ? req.getNickname() : req.getUsername());
+        user.setAvatarUrl(SystemConstants.DEFAULT_AVATAR);
         user.setRole("USER");
         user.setStatus("ACTIVE");
         userMapper.insert(user);
+
+        // 用户注册时自动分配一个待整理文件夹
+
 
         String accessToken = jwtService.generateAccessToken(user.getId(), user.getRole());
         String refreshToken = jwtService.generateRefreshToken(user.getId());

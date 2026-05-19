@@ -77,8 +77,8 @@
                 @contextmenu.prevent.stop="openMenu?.($event, 'article', article.id)"
               >
                 <span class="article-title">{{ article.title }}</span>
-                <!-- 草稿文章显示标签 -->
-                <span v-if="article.status === 'DRAFT'" class="draft-tag">草稿</span>
+                <!-- 未发布文章显示标签 -->
+                <span v-if="article.status === 'UNPUBLISHED'" class="unpublished-tag">未发布</span>
               </a>
             </li>
           </template>
@@ -93,10 +93,10 @@
 
 <script setup lang="ts">
 import draggable from 'vuedraggable'
-import type { FolderTreeVO, ArticleItem } from '~/types'
+import type { FolderTree, ArticleItem } from '~/types'
 
 const props = defineProps<{
-  folder: FolderTreeVO            // 文件夹数据
+  folder: FolderTree              // 文件夹数据
   currentArticleId?: number       // ? 表示可选
 }>()
 
@@ -124,10 +124,10 @@ const isOpen = computed({
 const collator = new Intl.Collator('zh-CN', { numeric: true })
 
 // vuedraggable 需要可写数组，props 是只读的，维护本地副本
-const localChildren = ref<FolderTreeVO[]>(sorted([...props.folder.children]))
+const localChildren = ref<FolderTree[]>(sorted([...props.folder.children]))
 const localArticles = ref<ArticleItem[]>(sorted([...props.folder.articles]))
 
-function sorted<T extends FolderTreeVO[] | ArticleItem[]>(list: T): T {
+function sorted<T extends FolderTree[] | ArticleItem[]>(list: T): T {
   return list.sort((a, b) => collator.compare('name' in a ? a.name : a.title, 'name' in b ? b.name : b.title)) as T
 }
 
@@ -286,7 +286,7 @@ function onArticleChildrenChange(evt: any) {
 .article-title { /* text content, no flex needed */ }
 
 /* 草稿标签 */
-.draft-tag {
+.unpublished-tag {
   font-size: 11px;
   color: var(--muted);
   background: var(--canvas-softer);

@@ -29,12 +29,8 @@ public class Article {
     private Long folderId;
     /** 分类ID */
     private Long categoryId;
-    /** 状态(DRAFT/PUBLISHED/ARCHIVED) */
+    /** 状态(UNPUBLISHED/PUBLISHED) */
     private String status;
-    /** 来源(MANUAL/AI_GENERATED) */
-    private String sourceType;
-    /** AI生成原始输入 */
-    private String sourcePrompt;
     /** 阅读量(冗余计数) */
     private Integer viewCount;
     /** 点赞数(冗余计数) */

@@ -1,13 +1,18 @@
 package com.yunbian27.content.model.dto;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 import java.util.List;
 
 @Data
-public class ArticleCreateDTO {
+public class ArticlePublishDTO {
+
+    /** 文章ID */
+    @NotNull(message = "文章ID不能为空")
+    private Long id;
 
     /** 文章标题(最长200) */
     @NotBlank(message = "标题不能为空")
@@ -24,8 +29,6 @@ public class ArticleCreateDTO {
 
     /** 封面图链接 */
     private String coverUrl;
-    /** 文件夹ID **/
-    private Long folderId;
     /** 分类ID */
     private Long categoryId;
     /** 标签ID列表 */
@@ -34,8 +37,5 @@ public class ArticleCreateDTO {
     private Boolean isOriginal;
     /** 转载来源链接 */
     private String sourceUrl;
-
-    /** 状态(DRAFT/PUBLISHED) */
-    private String status;
 }
 

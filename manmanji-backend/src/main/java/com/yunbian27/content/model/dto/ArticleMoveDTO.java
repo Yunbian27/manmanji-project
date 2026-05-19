@@ -3,7 +3,7 @@ package com.yunbian27.content.model.dto;
 import lombok.Data;
 
 @Data
-public class MoveArticleDTO {
+public class ArticleMoveDTO {
     private Long articleId;
     private Long folderId;
 }

@@ -29,7 +29,8 @@
     <div class="topnav-right">
       <div v-if="auth.isAuthenticated" ref="avatarContainer" class="avatar-wrapper">
         <div class="nav-avatar" :title="auth.user?.nickname" @click="showDropdown = !showDropdown">
-          {{ auth.user?.nickname?.charAt(0) || '用' }}
+          <img v-if="auth.user?.avatarUrl && !avatarError" :src="auth.user!.avatarUrl" class="avatar-img" @error="avatarError = true" />
+          <span v-else>{{ auth.user?.nickname?.charAt(0) || '用' }}</span>
         </div>
         <Transition name="dropdown">
           <div v-if="showDropdown" class="avatar-dropdown">
@@ -57,6 +58,7 @@ const editor = injectEditor()
 const { title, titleError, content } = editor
 
 const showDropdown = ref(false)
+const avatarError = ref(false)
 const avatarContainer = ref<HTMLElement | null>(null)
 
 onClickOutside(avatarContainer, () => {
@@ -68,9 +70,6 @@ function onTitleInput(e: Event) {
 }
 
 function handleBack() {
-  if (content.value || title.value) {
-    if (!confirm('有未保存的内容，确定返回吗？')) return
-  }
   editor.stopAutoSave()
   router.push('/home')
 }
@@ -191,6 +190,7 @@ async function handleLogout() {
   transition: var(--transition-hover);
 }
 .nav-avatar:hover { background: var(--surface-elevated); }
+.avatar-img { width: 100%; height: 100%; object-fit: cover; border-radius: var(--radius-full); }
 
 .avatar-dropdown {
   position: absolute;

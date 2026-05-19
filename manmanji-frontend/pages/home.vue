@@ -39,6 +39,7 @@
       <template #left-sidebar>
         <LeftSidebar
           :folders="folderStore.folders"
+          :root-articles="folderStore.rootArticles"
           :loading="folderStore.loading"
           :error="folderStore.error"
           :current-article-id="currentArticleId"
@@ -360,11 +361,13 @@ async function handleDeleteFolder(id: number) {
   }
 }
 
-function handleNewArticle(folderId?: number) {
-  if (folderId) {
-    navigateTo(`/write?folderId=${folderId}`)
-  } else {
-    navigateTo('/write')
+async function handleNewArticle(folderId?: number) {
+  try {
+    const { createArticle } = useArticle()
+    const articleId = await createArticle(folderId)
+    navigateTo(`/write?articleId=${articleId}`)
+  } catch {
+    // API 失败时留在当前页
   }
 }
 
@@ -497,7 +500,15 @@ function scrollToComments() {
 }
 
 function onNewFolder() { handleCreateFolder() }
-function onNewArticle() { navigateTo('/write') }
+async function onNewArticle() {
+  try {
+    const { createArticle } = useArticle()
+    const articleId = await createArticle()
+    navigateTo(`/write?articleId=${articleId}`)
+  } catch {
+    // API 失败时留在当前页，错误会在控制台显示
+  }
+}
 </script>
 
 <style scoped>

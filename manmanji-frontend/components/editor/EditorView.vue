@@ -30,12 +30,10 @@
 </template>
 
 <script setup lang="ts">
-const emit = defineEmits<{
-  close: []
-  published: [articleId: number]
-}>()
+const props = defineProps<{ articleId: number }>()
+const emit = defineEmits<{ close: [] }>()
 
-const editor = createEditorState()
+const editor = createEditorState(props.articleId)
 provideEditor(editor)
 
 const { content, title } = editor

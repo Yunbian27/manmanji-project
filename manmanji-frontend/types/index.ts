@@ -63,7 +63,7 @@ export interface ArticleVO {
   authorId: number
   folderId: number | null
   categoryId: number | null
-  status: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED'
+  status: 'UNPUBLISHED' | 'PUBLISHED'
   sourceType: 'MANUAL' | 'AI_GENERATED'
   sourcePrompt: string | null
   viewCount: number
@@ -77,8 +77,16 @@ export interface ArticleVO {
   publishedAt: string | null
 }
 
-// 创建文章提交的数据
-export interface ArticleCreateDTO {
+// 保存文章提交的数据
+export interface ArticleSaveDTO {
+  id: number
+  title: string
+  content: string
+}
+
+// 发布文章提交的数据
+export interface ArticlePublishDTO {
+  id: number
   title: string
   content: string
   summary?: string
@@ -87,7 +95,6 @@ export interface ArticleCreateDTO {
   tagIds?: number[]
   isOriginal?: boolean
   sourceUrl?: string
-  status?: 'DRAFT' | 'PUBLISHED'
 }
 
 // 文章详情（含嵌套的作者、分类、标签信息）
@@ -138,18 +145,25 @@ export interface TagInfo {
 }
 
 // ---------- 文件夹树 (user) ----------
-// 文件夹树节点，children 是自身类型的数组 → 递归结构
-export interface FolderTreeVO {
-  id: number
-  name: string
-  children: FolderTreeVO[]     // 递归：子文件夹
-  articles: ArticleItem[]      // 该文件夹下的文章
-}
 
 export interface ArticleItem {
   id: number
   title: string
-  status: 'DRAFT' | 'PUBLISHED'
+  status: 'UNPUBLISHED' | 'PUBLISHED'
+}
+
+// 文件夹树节点，children 是自身类型的数组 → 递归结构
+export interface FolderTree {
+  id: number
+  name: string
+  children: FolderTree[]       // 递归：子文件夹
+  articles: ArticleItem[]      // 该文件夹下的文章
+}
+
+// 文件夹树 API 响应
+export interface FolderTreeVO {
+  folders: FolderTree[]
+  rootArticles: ArticleItem[]  // folder_id 为空的文章
 }
 
 // ---------- LLM Provider ----------

@@ -20,7 +20,7 @@
     <div class="article-meta">
       <div class="author-info">
         <div class="author-avatar">
-          <img v-if="author.avatarUrl" :src="author.avatarUrl" :alt="author.nickname" />
+          <img v-if="author.avatarUrl && !avatarError" :src="author.avatarUrl" :alt="author.nickname" @error="avatarError = true" />
           <span v-else>{{ author.nickname?.charAt(0) || '匿' }}</span>
         </div>
         <span class="author-name">{{ author.nickname }}</span>
@@ -57,6 +57,8 @@ const props = defineProps<{
   viewCount: number
   readTime?: number         // 预估阅读时长（分钟）
 }>()
+
+const avatarError = ref(false)
 
 // computed: 根据 publishedAt 计算格式化日期
 // 依赖变化时自动重新计算（有缓存）

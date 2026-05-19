@@ -2,17 +2,20 @@ package com.yunbian27.content.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.yunbian27.common.constant.CommonConstants;
+import com.yunbian27.common.constant.SystemConstants;
 import com.yunbian27.common.utils.JsonUtils;
 import com.yunbian27.common.constant.RedisKeys;
 import com.yunbian27.common.constant.RedisTTL;
 import com.yunbian27.common.exception.BusinessException;
 import com.yunbian27.common.exception.ErrorCode;
-import com.yunbian27.content.model.dto.MoveArticleDTO;
+import com.yunbian27.content.model.dto.ArticleMoveDTO;
+import com.yunbian27.content.model.dto.ArticleSaveDTO;
 import com.yunbian27.content.model.vo.ArticleVO;
 import com.yunbian27.ai.mapper.LlmGlobalSettingMapper;
 import com.yunbian27.ai.model.LlmGlobalSettingEntity;
 import com.yunbian27.ai.service.LlmProviderRegistry;
-import com.yunbian27.content.model.dto.ArticleCreateDTO;
+import com.yunbian27.content.model.dto.ArticlePublishDTO;
 import com.yunbian27.content.model.entity.Article;
 import com.yunbian27.content.model.entity.ArticleTag;
 import com.yunbian27.content.mapper.ArticleMapper;
@@ -45,41 +48,68 @@ public class ArticleService {
 
     private final StringRedisTemplate stringRedisTemplate;
 
-    private static final Long Temp_Folder = 10000L;
-
-    @Transactional
-    public Long createArticle(ArticleCreateDTO dto) {
+    /**
+     * @param id 文件夹id，可为null
+     * @return 新文章id
+     */
+    public Long create(Long id) {
         Long userId = SecurityUtils.getCurrentUserId();
-
         Article article = new Article();
-        BeanUtils.copyProperties(dto, article);
         article.setUserId(userId);
-        article.setSlug(generateSlug(dto.getTitle()));
-        article.setSourceType("MANUAL");
-
-        if ("PUBLISHED".equals(dto.getStatus())) {
-            article.setPublishedAt(LocalDateTime.now());
-        } else {
-            article.setStatus("DRAFT");
-        }
-
-        // 如果文章folder_id为null,则固定放入未分类文件夹
-        if (dto.getFolderId() == null) {
-            article.setFolderId(Temp_Folder);
-        }
+        article.setTitle(SystemConstants.DEFAULT_ARTICLE_TITLE);
+        article.setSlug(generateSlug(SystemConstants.DEFAULT_ARTICLE_TITLE));
+        article.setStatus(CommonConstants.ArticleStatus.UNPUBLISHED);
+        article.setFolderId(id);
         articleMapper.insert(article);
-
-        if (dto.getTagIds() != null && !dto.getTagIds().isEmpty()) {
-            for (Long tagId : dto.getTagIds()) {
-                ArticleTag at = new ArticleTag();
-                at.setArticleId(article.getId());
-                at.setTagId(tagId);
-                articleTagMapper.insert(at);
-            }
-        }
-
         log.info("文章创建成功: id={}, title={}, status={}", article.getId(), article.getTitle(), article.getStatus());
         return article.getId();
+    }
+
+    /**
+     * 文章保存
+     * @param dto
+     */
+    public void save(ArticleSaveDTO dto) {
+        Long userId = SecurityUtils.getCurrentUserId();
+        if (dto == null) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST);
+        }
+
+        articleMapper.update(null,
+            new LambdaUpdateWrapper<Article>()
+                .set(Article::getTitle, dto.getTitle())
+                .set(Article::getContent, dto.getContent())
+                .set(Article::getSlug, generateSlug(dto.getTitle()))
+                .set(Article::getUpdatedAt, LocalDateTime.now())
+                .eq(Article::getId, dto.getId())
+                .eq(Article::getUserId, userId));
+
+        log.info("文章保存成功: id={}, title={}", dto.getId(), dto.getTitle());
+    }
+
+    public void publish(ArticlePublishDTO dto) {
+        Long userId = SecurityUtils.getCurrentUserId();
+        if (dto == null) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST);
+        }
+
+        articleMapper.update(null,
+            new LambdaUpdateWrapper<Article>()
+                .set(Article::getTitle, dto.getTitle())
+                .set(Article::getContent, dto.getContent())
+                .set(Article::getSlug, generateSlug(dto.getTitle()))
+                .set(Article::getSummary, dto.getSummary())
+                .set(Article::getCoverUrl, dto.getCoverUrl())
+                .set(Article::getCategoryId, dto.getCategoryId())
+                .set(Article::getIsOriginal, dto.getIsOriginal())
+                .set(Article::getSourceUrl, dto.getSourceUrl())
+                .set(Article::getStatus, CommonConstants.ArticleStatus.PUBLISHED)
+                .set(Article::getPublishedAt, LocalDateTime.now())
+                .set(Article::getUpdatedAt, LocalDateTime.now())
+                .eq(Article::getId, dto.getId())
+                .eq(Article::getUserId, userId));
+
+        log.info("文章发布成功: id={}, title={}", dto.getId(), dto.getTitle());
     }
 
     /**
@@ -152,7 +182,7 @@ public class ArticleService {
         return articleVO;
     }
 
-    public List<FolderTreeVO> move(MoveArticleDTO dto) {
+    public FolderTreeVO move(ArticleMoveDTO dto) {
         if (dto == null) {
             throw new BusinessException(ErrorCode.BAD_REQUEST);
         }
@@ -168,7 +198,7 @@ public class ArticleService {
         return folderService.show();
     }
 
-    public List<FolderTreeVO> rename(Long id, String title) {
+    public FolderTreeVO rename(Long id, String title) {
         if (id == null) {
             throw new BusinessException(ErrorCode.BAD_REQUEST);
         }
@@ -190,7 +220,7 @@ public class ArticleService {
     }
 
     @Transactional
-    public List<FolderTreeVO> delete(Long id) {
+    public FolderTreeVO delete(Long id) {
         if (id == null) {
             throw new BusinessException(ErrorCode.BAD_REQUEST);
         }
@@ -205,4 +235,6 @@ public class ArticleService {
         stringRedisTemplate.delete(RedisKeys.ARTICLE_CACHE_PREFIX + id);
         return folderService.show();
     }
+
+
 }

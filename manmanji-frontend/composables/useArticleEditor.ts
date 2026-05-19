@@ -1,4 +1,4 @@
-import type { ArticleCreateDTO } from '~/types'
+import type { ArticleSaveDTO, ArticlePublishDTO } from '~/types'
 
 export interface PublishSettings {
   categoryId: number | null
@@ -11,12 +11,12 @@ export interface PublishSettings {
 
 const EDITOR_KEY = Symbol('editor')
 
-export function createEditorState() {
+export function createEditorState(articleId: number) {
   const title = ref('')
   const content = ref('')
   const viewMode = ref<'edit' | 'split' | 'preview'>('split')
   const publishSettingsOpen = ref(false)
-  const currentArticleId = ref<number | null>(null)
+  const currentArticleId = ref<number>(articleId)
   const isSaving = ref(false)
   const lastSavedAt = ref<string | null>(null)
   const publishError = ref<string | null>(null)
@@ -68,7 +68,9 @@ export function createEditorState() {
         publishSettings.isOriginal = draft.settings.isOriginal ?? true
         publishSettings.sourceUrl = draft.settings.sourceUrl ?? ''
       }
-      currentArticleId.value = draft.articleId ?? null
+      if (draft.articleId) {
+        currentArticleId.value = draft.articleId
+      }
     } catch {
       // corrupted draft, ignore
     }
@@ -101,7 +103,6 @@ export function createEditorState() {
     content.value = ''
     viewMode.value = 'split'
     publishSettingsOpen.value = false
-    currentArticleId.value = null
     isSaving.value = false
     lastSavedAt.value = null
     publishError.value = null
@@ -112,19 +113,6 @@ export function createEditorState() {
     publishSettings.summary = ''
     publishSettings.isOriginal = true
     publishSettings.sourceUrl = ''
-  }
-
-  function buildDTO(): ArticleCreateDTO {
-    return {
-      title: title.value.trim(),
-      content: content.value,
-      summary: publishSettings.summary || undefined,
-      coverUrl: publishSettings.coverUrl || undefined,
-      categoryId: publishSettings.categoryId || undefined,
-      tagIds: publishSettings.tagIds.length > 0 ? publishSettings.tagIds : undefined,
-      isOriginal: publishSettings.isOriginal,
-      sourceUrl: publishSettings.sourceUrl || undefined,
-    }
   }
 
   function validate(): boolean {
@@ -141,20 +129,45 @@ export function createEditorState() {
     return true
   }
 
-  async function publish(status: 'DRAFT' | 'PUBLISHED' = 'PUBLISHED'): Promise<number | null> {
-    if (!validate()) return null
+  async function save(): Promise<void> {
+    if (!validate()) return
     isSaving.value = true
     publishError.value = null
     try {
-      const { createArticle } = useArticle()
-      const dto = buildDTO()
-      dto.status = status
-      const id = await createArticle(dto)
+      const { saveArticle } = useArticle()
+      await saveArticle({
+        id: currentArticleId.value,
+        title: title.value.trim(),
+        content: content.value,
+      })
       clearDraft()
-      return id
+    } catch (e: any) {
+      publishError.value = e?.message || '保存失败，请稍后重试'
+    } finally {
+      isSaving.value = false
+    }
+  }
+
+  async function publish() {
+    if (!validate()) return
+    isSaving.value = true
+    publishError.value = null
+    try {
+      const { publishArticle } = useArticle()
+      await publishArticle({
+        id: currentArticleId.value,
+        title: title.value.trim(),
+        content: content.value,
+        summary: publishSettings.summary || undefined,
+        coverUrl: publishSettings.coverUrl || undefined,
+        categoryId: publishSettings.categoryId || undefined,
+        tagIds: publishSettings.tagIds.length > 0 ? publishSettings.tagIds : undefined,
+        isOriginal: publishSettings.isOriginal,
+        sourceUrl: publishSettings.sourceUrl || undefined,
+      })
+      clearDraft()
     } catch (e: any) {
       publishError.value = e?.message || '发布失败，请稍后重试'
-      return null
     } finally {
       isSaving.value = false
     }
@@ -178,8 +191,8 @@ export function createEditorState() {
     startAutoSave,
     stopAutoSave,
     reset,
-    buildDTO,
     validate,
+    save,
     publish,
   }
 }

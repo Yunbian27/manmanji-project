@@ -57,7 +57,8 @@
       <!-- 用户头像：36×36 圆形 + 下拉菜单 -->
       <div v-if="auth.isAuthenticated" ref="avatarContainer" class="avatar-wrapper">
         <div class="nav-avatar" :title="auth.user?.nickname" @click="showDropdown = !showDropdown">
-          {{ auth.user?.nickname?.charAt(0) || '用' }}
+          <img v-if="auth.user?.avatarUrl && !avatarError" :src="auth.user!.avatarUrl" class="avatar-img" @error="avatarError = true" />
+          <span v-else>{{ auth.user?.nickname?.charAt(0) || '用' }}</span>
         </div>
         <Transition name="dropdown">
           <div v-if="showDropdown" class="avatar-dropdown">
@@ -82,6 +83,7 @@ import { onClickOutside } from '@vueuse/core'
 const auth = useAuthStore()
 
 const showDropdown = ref(false)
+const avatarError = ref(false)
 const avatarContainer = ref<HTMLElement | null>(null)
 
 onClickOutside(avatarContainer, () => {
@@ -225,6 +227,7 @@ const navLinks = [
   transition: var(--transition-hover);
 }
 .nav-avatar:hover { background: var(--surface-elevated); }
+.avatar-img { width: 100%; height: 100%; object-fit: cover; border-radius: var(--radius-full); }
 
 /* 下拉菜单容器 */
 .avatar-dropdown {

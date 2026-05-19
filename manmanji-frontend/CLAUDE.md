@@ -98,8 +98,9 @@ Same pattern for `ConfirmModal` with `confirm` reactive state + `showConfirmDial
 
 All TypeScript interfaces are in `types/index.ts`, mapping Java backend DTOs/VOs:
 - `ApiResult<T>` — `{ code, message, data }`
-- `FolderTreeVO` — recursive: `{ id, name, children: FolderTreeVO[], articles: ArticleItem[] }`
-- `ArticleItem` — `{ id, title, status: 'DRAFT' | 'PUBLISHED' }`
+- `FolderTreeVO` — `{ folders: FolderTree[], rootArticles: ArticleItem[] }`，顶级响应包装体
+- `FolderTree` — `{ id, name, children: FolderTree[], articles: ArticleItem[] }`，递归文件夹节点
+- `ArticleItem` — `{ id, title, status: 'UNPUBLISHED' | 'PUBLISHED' }`
 - `ArticleVO` — full article with all metadata fields
 - `TocItem` — `{ id, text, level: 2|3|4|5|6 }`
 - `PageDTO<T>` — `{ total, page, size, records }`

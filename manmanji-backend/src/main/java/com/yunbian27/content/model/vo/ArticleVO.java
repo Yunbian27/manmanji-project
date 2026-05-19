@@ -25,7 +25,7 @@ public class ArticleVO {
     private Long folderId;
     /** 分类ID */
     private Long categoryId;
-    /** 状态(DRAFT/PUBLISHED/ARCHIVED) */
+    /** 状态(UNPUBLISHED/PUBLISHED) */
     private String status;
     /** 来源(MANUAL/AI_GENERATED) */
     private String sourceType;

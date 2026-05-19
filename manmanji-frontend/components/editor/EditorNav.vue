@@ -167,12 +167,12 @@ function getTagName(tagId: number): string {
 }
 
 async function handleSaveDraft() {
-  await editor.publish('DRAFT')
+  await editor.save()
 }
 
 async function handlePublish() {
-  const id = await editor.publish('PUBLISHED')
-  if (id) emit('close')
+  await editor.publish()
+  emit('close')
 }
 </script>
 

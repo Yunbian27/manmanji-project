@@ -5,20 +5,22 @@
 -->
 <template>
   <div class="write-page">
-    <EditorView @close="handleClose" @published="handlePublished" />
+    <EditorView v-if="articleId" :article-id="articleId" @close="handleClose" />
   </div>
 </template>
 
 <script setup lang="ts">
 definePageMeta({ layout: 'editor' })
 
+const route = useRoute()
 const router = useRouter()
+const articleId = ref(0)
+
+watch(() => route.query.articleId, (val) => {
+  articleId.value = Number(val) || 0
+}, { immediate: true })
 
 function handleClose() {
-  router.push('/home')
-}
-
-function handlePublished(_articleId: number) {
   const folderStore = useFolderStore()
   folderStore.fetchFolders()
   router.push('/home')
