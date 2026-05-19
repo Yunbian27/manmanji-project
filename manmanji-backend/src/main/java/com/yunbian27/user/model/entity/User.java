@@ -27,14 +27,6 @@ public class User {
     private String bio;
     /** 角色(USER/ADMIN) */
     private String role;
-    /** 积分余额 */
-    private Integer pointsBalance;
-    /** AI对话剩余次数 */
-    private Integer aiQuota;
-    /** 用户自带API Key(加密存储) */
-    private String apiKeyEncrypted;
-    /** API提供商(如deepseek/openai) */
-    private String apiKeyProvider;
     /** 账号状态(ACTIVE/BANNED) */
     private String status;
 

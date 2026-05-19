@@ -20,10 +20,6 @@ CREATE TABLE IF NOT EXISTS users (
     avatar_url      VARCHAR(500),
     bio             TEXT,
     role            VARCHAR(20)  NOT NULL DEFAULT 'USER',
-    points_balance  INT          NOT NULL DEFAULT 0,
-    ai_quota        INT          NOT NULL DEFAULT 10,
-    api_key_encrypted TEXT,
-    api_key_provider  VARCHAR(20),
     status          VARCHAR(10)  NOT NULL DEFAULT 'ACTIVE',
     created_at      TIMESTAMP    NOT NULL DEFAULT NOW(),
     updated_at      TIMESTAMP    NOT NULL DEFAULT NOW()

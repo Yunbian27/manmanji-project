@@ -96,7 +96,7 @@ async function handleLogout() {
 }
 
 const navLinks = [
-  { label: '首页', href: '/', active: true },
+  { label: '首页', href: '/home', active: true },
   { label: '博客', href: '#', active: false },
   { label: '社区', href: '#', active: false },
   { label: 'AI助手', href: '#', active: false },

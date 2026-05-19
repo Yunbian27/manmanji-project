@@ -19,13 +19,19 @@ public class CustomUserDetailsService implements UserDetailsService {
     private final UserMapper userMapper;
 
     @Override
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+    public UserDetails loadUserByUsername(String account) throws UsernameNotFoundException {
         User user = userMapper.selectOne(
-                new LambdaQueryWrapper<User>().eq(User::getUsername, username)
+                new LambdaQueryWrapper<User>().eq(User::getUsername, account)
         );
 
         if (user == null) {
-            throw new UsernameNotFoundException("用户不存在: " + username);
+            user = userMapper.selectOne(
+                    new LambdaQueryWrapper<User>().eq(User::getEmail, account)
+            );
+        }
+
+        if (user == null) {
+            throw new UsernameNotFoundException("用户不存在: " + account);
         }
 
         if ("BANNED".equals(user.getStatus())) {

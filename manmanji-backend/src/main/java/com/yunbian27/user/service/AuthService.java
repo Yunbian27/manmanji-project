@@ -56,8 +56,6 @@ public class AuthService {
         user.setNickname(req.getNickname() != null ? req.getNickname() : req.getUsername());
         user.setRole("USER");
         user.setStatus("ACTIVE");
-        user.setPointsBalance(0);
-        user.setAiQuota(10);
         userMapper.insert(user);
 
         String accessToken = jwtService.generateAccessToken(user.getId(), user.getRole());
@@ -71,10 +69,10 @@ public class AuthService {
                 .build();
     }
 
-    public LoginVO login(LoginDTO req) {
+    public LoginVO login(LoginDTO dto) {
         try {
             Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(req.getUsername(), req.getPassword())
+                    new UsernamePasswordAuthenticationToken(dto.getAccount(), dto.getPassword())
             );
 
             org.springframework.security.core.userdetails.User principal =

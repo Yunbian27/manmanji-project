@@ -15,7 +15,7 @@ export interface ApiResult<T> {
 // ---------- 认证模块 (auth) ----------
 // 登录请求体
 export interface LoginDTO {
-  username: string
+  account: string
   password: string
 }
 

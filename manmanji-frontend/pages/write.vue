@@ -15,13 +15,13 @@ definePageMeta({ layout: 'editor' })
 const router = useRouter()
 
 function handleClose() {
-  router.push('/')
+  router.push('/home')
 }
 
 function handlePublished(_articleId: number) {
   const folderStore = useFolderStore()
   folderStore.fetchFolders()
-  router.push('/')
+  router.push('/home')
 }
 </script>
 

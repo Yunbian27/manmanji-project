@@ -14,7 +14,7 @@
 // useHead: Nuxt 的 SEO 工具，设置 <head> 标签内容
 // 影响搜索引擎收录和浏览器标签页显示
 useHead({
-  title: '慢慢记 — 反内卷技术知识平台',
+  title: '慢慢记 — 专注技术，慢下来思考',
   meta: [
     { charset: 'utf-8' },
     { name: 'viewport', content: 'width=device-width, initial-scale=1' },

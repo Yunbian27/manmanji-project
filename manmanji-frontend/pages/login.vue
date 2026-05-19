@@ -25,12 +25,12 @@
       <!-- 表单 -->
       <form class="login-form" @submit.prevent="handleSubmit">
         <label class="login-label">
-          <span>用户名</span>
+          <span>用户名或邮箱</span>
           <input
-            v-model="username"
+            v-model="account"
             class="login-input"
             type="text"
-            placeholder="请输入用户名"
+            placeholder="请输入用户名或邮箱"
             autocomplete="username"
             :disabled="loading"
           />
@@ -105,7 +105,7 @@ const route = useRoute()
 const router = useRouter()
 
 const mode = ref<'login' | 'register'>('login')
-const username = ref('')
+const account = ref('')
 const password = ref('')
 const email = ref('')
 const confirmPassword = ref('')
@@ -114,7 +114,7 @@ const errorMsg = ref<string | null>(null)
 
 const redirectPath = computed(() => {
   const raw = route.query.redirect as string | undefined
-  if (!raw || raw === '/login') return '/'
+  if (!raw || raw === '/login' || raw === '/') return '/home'
   return raw
 })
 
@@ -126,7 +126,7 @@ onMounted(() => {
 })
 
 const isFormValid = computed(() => {
-  if (!username.value || !password.value) return false
+  if (!account.value || !password.value) return false
   if (mode.value === 'register') {
     if (!email.value || password.value.length < 6) return false
     if (password.value !== confirmPassword.value) return false
@@ -149,7 +149,7 @@ async function handleSubmit() {
   try {
     const { login, register } = useAuth()
     if (mode.value === 'login') {
-      await login({ username: username.value, password: password.value })
+      await login({ account: account.value, password: password.value })
     } else {
       await register({
         username: username.value,

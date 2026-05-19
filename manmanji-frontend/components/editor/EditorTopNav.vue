@@ -72,7 +72,7 @@ function handleBack() {
     if (!confirm('有未保存的内容，确定返回吗？')) return
   }
   editor.stopAutoSave()
-  router.push('/')
+  router.push('/home')
 }
 
 async function handleLogout() {
