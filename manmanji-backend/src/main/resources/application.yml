@@ -4,6 +4,19 @@ server:
 spring:
   application:
     name: manmanji-backend
+
+  # 邮箱配置（注册验证码）
+  mail:
+    host: smtp.163.com
+    port: 465
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          ssl:
+            enable: true
   profiles:
     active: dev
 

@@ -19,6 +19,9 @@ public enum ErrorCode {
     EMAIL_EXISTS(400, "邮箱已被注册"),
     USER_NOT_FOUND(400, "用户不存在"),
     USER_BANNED(400, "用户已被禁用"),
+    CODE_SEND_TOO_FREQUENT(400, "验证码发送过于频繁，请 60 秒后再试"),
+    CODE_INCORRECT(400, "验证码错误"),
+    CODE_EXPIRED(400, "验证码已过期，请重新获取"),
 
     // ========== Provider管理模块错误 1xxx ==========
     PROVIDER_NOT_FOUND(1001, "LLM Provider 不存在"),

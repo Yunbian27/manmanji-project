@@ -24,7 +24,8 @@ export interface RegisterDTO {
   username: string
   email: string
   password: string
-  nickname?: string            // ? 表示可选字段，对应 Java 的 @Nullable
+  code: string
+  nickname?: string
 }
 
 // 刷新令牌请求体

@@ -23,6 +23,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.util.Date;
+import java.util.concurrent.ThreadLocalRandom;
 
 @Slf4j
 @Service
@@ -35,6 +36,30 @@ public class AuthService {
     private final JwtService jwtService;
     private final StringRedisTemplate stringRedisTemplate;
     private final JwtProperties jwtProperties;
+    private final MailService mailService;
+
+    private static final Duration CODE_TTL = Duration.ofMinutes(5);
+    private static final Duration CODE_RATE_TTL = Duration.ofSeconds(60);
+
+    public void sendCode(String email) {
+        // 限流：同一邮箱 60 秒内不能重复发送
+        String rateKey = RedisKeys.REGISTER_CODE_RATE_PREFIX + email;
+        if (Boolean.TRUE.equals(stringRedisTemplate.hasKey(rateKey))) {
+            throw new BusinessException(ErrorCode.CODE_SEND_TOO_FREQUENT);
+        }
+
+        // 生成 6 位数字验证码
+        String code = String.format("%06d", ThreadLocalRandom.current().nextInt(1000000));
+
+        // 存入 Redis（5 分钟过期）
+        stringRedisTemplate.opsForValue().set(
+                RedisKeys.REGISTER_CODE_PREFIX + email, code, CODE_TTL);
+        // 限流标记（60 秒）
+        stringRedisTemplate.opsForValue().set(rateKey, "1", CODE_RATE_TTL);
+
+        // 异步发邮件
+        mailService.sendCode(email, code);
+    }
 
     public LoginVO register(RegisterDTO req) {
         boolean exists = userMapper.exists(new LambdaQueryWrapper<User>()
@@ -48,6 +73,17 @@ public class AuthService {
         if (exists) {
             throw new BusinessException(ErrorCode.EMAIL_EXISTS);
         }
+
+        // 校验邮箱验证码
+        String codeKey = RedisKeys.REGISTER_CODE_PREFIX + req.getEmail();
+        String storedCode = stringRedisTemplate.opsForValue().get(codeKey);
+        if (storedCode == null) {
+            throw new BusinessException(ErrorCode.CODE_EXPIRED);
+        }
+        if (!storedCode.equals(req.getCode())) {
+            throw new BusinessException(ErrorCode.CODE_INCORRECT);
+        }
+        stringRedisTemplate.delete(codeKey); // 验证通过后删除，一次性使用
 
         User user = new User();
         user.setUsername(req.getUsername());

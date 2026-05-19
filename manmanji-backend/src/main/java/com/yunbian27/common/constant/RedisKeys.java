@@ -13,6 +13,10 @@ public final class RedisKeys {
     public static final String REFRESH_TOKEN_PREFIX = PROJECT + "auth:refresh_token:";       // userId
     public static final String ACCESS_TOKEN_BLACKLIST_PREFIX = PROJECT + "auth:access_blacklist:"; // tokenId
 
+    // ===== 验证码 =====
+    public static final String REGISTER_CODE_PREFIX = PROJECT + "auth:register_code:";   // email
+    public static final String REGISTER_CODE_RATE_PREFIX = PROJECT + "auth:code_rate:";  // email
+
     // 文章缓存
     public static final String ARTICLE_CACHE_PREFIX = PROJECT + "article:";
 

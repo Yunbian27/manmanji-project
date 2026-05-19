@@ -42,7 +42,7 @@ public class SecurityConfig {
                     "/scalar", "/scalar/**"
                 ).permitAll()
                 // 公开接口
-                .requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/refresh").permitAll()
+                .requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/refresh", "/api/auth/send-code").permitAll()
                 .requestMatchers(HttpMethod.GET,
                     "/api/users/*",
                     "/api/rankings/**",

@@ -23,6 +23,10 @@ public class RegisterDTO {
     @Size(min = 6, max = 100, message = "密码长度需在 6-100 之间")
     private String password;
 
+    /** 邮箱验证码(6位数字) */
+    @NotBlank(message = "验证码不能为空")
+    private String code;
+
     /** 昵称(可选，不填默认用username) */
     private String nickname;
 }

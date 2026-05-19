@@ -4,6 +4,7 @@ import com.yunbian27.user.model.dto.LoginDTO;
 import com.yunbian27.user.model.vo.LoginVO;
 import com.yunbian27.user.model.dto.RefreshDTO;
 import com.yunbian27.user.model.dto.RegisterDTO;
+import com.yunbian27.user.model.dto.SendCodeDTO;
 import com.yunbian27.user.service.AuthService;
 import com.yunbian27.common.Result;
 import com.yunbian27.common.utils.SecurityUtils;
@@ -30,6 +31,12 @@ public class AuthController {
     @PostMapping("/register")
     public Result<LoginVO> register(@Valid @RequestBody RegisterDTO dto) {
         return Result.success(authService.register(dto));
+    }
+
+    @PostMapping("/send-code")
+    public Result<Void> sendCode(@Valid @RequestBody SendCodeDTO dto) {
+        authService.sendCode(dto.getEmail());
+        return Result.success();
     }
 
     @PostMapping("/login")
