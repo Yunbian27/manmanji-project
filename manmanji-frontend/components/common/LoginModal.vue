@@ -89,7 +89,7 @@ async function handleLogin() {
   try {
     const { login } = useAuth()
     await login({
-      username: username.value,
+      account: username.value,
       password: password.value,
     })
     // 登录成功，关闭弹窗并重置表单

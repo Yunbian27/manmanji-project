@@ -365,7 +365,7 @@ async function handleNewArticle(folderId?: number) {
   try {
     const { createArticle } = useArticle()
     const articleId = await createArticle(folderId)
-    navigateTo(`/write?articleId=${articleId}`)
+    await navigateTo(`/write?articleId=${articleId}`)
   } catch {
     // API 失败时留在当前页
   }
@@ -504,7 +504,7 @@ async function onNewArticle() {
   try {
     const { createArticle } = useArticle()
     const articleId = await createArticle()
-    navigateTo(`/write?articleId=${articleId}`)
+    await navigateTo(`/write?articleId=${articleId}`)
   } catch {
     // API 失败时留在当前页，错误会在控制台显示
   }

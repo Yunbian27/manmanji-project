@@ -1,6 +1,9 @@
 <template>
   <article class="article-body">
-    <div ref="bodyRef" class="article-content" v-html="renderedHtml" />
+    <div v-if="renderedHtml" ref="bodyRef" class="article-content" v-html="renderedHtml" />
+    <div v-else class="article-empty">
+      <p>暂无内容</p>
+    </div>
   </article>
 </template>
 
@@ -23,6 +26,12 @@ watchEffect(() => {
   font-size: var(--text-body);
   line-height: var(--leading-relaxed);
   color: var(--ink);                    /* body paragraphs = 纯黑 (DESIGN.md) */
+}
+.article-empty {
+  padding: var(--space-3xl) 0;
+  text-align: center;
+  color: var(--muted);
+  font-size: var(--text-body);
 }
 </style>
 

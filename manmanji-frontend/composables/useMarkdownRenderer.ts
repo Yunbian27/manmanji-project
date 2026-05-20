@@ -42,7 +42,7 @@ export function useMarkdownRenderer(content: ComputedRef<string> | Ref<string>) 
   }
 
   const renderedHtml = computed(() => {
-    let html = md.render(unref(content))
+    let html = md.render(unref(content) || '')
     html = html.replace(/<(h[23456])>/g, (_, tag) => {
       const level = parseInt(tag[1]!) as 2 | 3 | 4 | 5 | 6
       const id = `heading-${tocIndex[level - 2]!++}`
