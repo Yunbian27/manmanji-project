@@ -1,6 +1,6 @@
 package com.yunbian27.common.exception;
 
-import com.yunbian27.common.Result;
+import com.yunbian27.common.result.Result;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;

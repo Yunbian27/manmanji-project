@@ -1,4 +1,4 @@
-package com.yunbian27.common;
+package com.yunbian27.common.result;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

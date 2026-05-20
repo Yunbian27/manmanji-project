@@ -132,3 +132,20 @@ CREATE TABLE IF NOT EXISTS llm_global_setting (
     CHECK (id = 1)
 );
 
+-- ============================================
+-- 存储配置
+-- ============================================
+CREATE TABLE IF NOT EXISTS storage_config (
+    id                              VARCHAR(30)   PRIMARY KEY,
+    user_id                         BIGINT        NOT NULL,
+    provider_type                   VARCHAR(30)   NOT NULL DEFAULT 'aliyun-oss',
+    endpoint                        VARCHAR(300)  NOT NULL,
+    bucket_name                     VARCHAR(100)  NOT NULL,
+    access_key_id_ciphertext        TEXT          NOT NULL,
+    access_key_id_nonce              VARCHAR(50)   NOT NULL,
+    access_key_secret_ciphertext     TEXT          NOT NULL,
+    access_key_secret_nonce          VARCHAR(50)   NOT NULL,
+    enabled                         BOOLEAN       NOT NULL DEFAULT TRUE,
+    created_at                      TIMESTAMP     NOT NULL DEFAULT NOW(),
+    updated_at                      TIMESTAMP     NOT NULL DEFAULT NOW()
+);

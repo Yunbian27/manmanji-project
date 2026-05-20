@@ -74,6 +74,33 @@ export function useApi() {
     return result.data  // 只返回 data 字段
   }
 
+  /**
+   * Multipart 上传（不设 Content-Type，让浏览器自动设 multipart/form-data）
+   */
+  async function uploadFormData<T>(endpoint: string, formData: FormData, auth = true): Promise<T> {
+    const headers: Record<string, string> = {}
+
+    if (auth) {
+      const token = getStoredToken()
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`
+      }
+    }
+
+    const url = `${baseURL}${endpoint}`
+    const res = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: formData,
+    })
+
+    const result: ApiResult<T> = await res.json()
+    if (!res.ok || result.code !== 200) {
+      throw new Error(result.message || `HTTP ${res.status}`)
+    }
+    return result.data
+  }
+
   // 暴露简化的 get/post 方法
   return {
     get: <T>(url: string, auth?: boolean) =>
@@ -84,5 +111,7 @@ export function useApi() {
       request<T>(url, { method: 'PUT', body, auth }),
     delete: <T>(url: string, auth?: boolean) =>
       request<T>(url, { method: 'DELETE', auth }),
+    uploadFormData: <T>(endpoint: string, formData: FormData, auth?: boolean) =>
+      uploadFormData<T>(endpoint, formData, auth),
   }
 }

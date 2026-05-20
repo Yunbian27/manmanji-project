@@ -1,29 +1,29 @@
-package com.yunbian27.common.utils;
+package com.yunbian27.storage.service;
 
 import com.aliyun.oss.OSS;
 import com.aliyun.oss.OSSClientBuilder;
-import com.yunbian27.common.config.AliOssProperties;
-import jakarta.annotation.Resource;
+import com.yunbian27.common.utils.SecurityUtils;
+import com.yunbian27.storage.config.AliOssProperties;
+import com.yunbian27.storage.model.StorageConfigDTO;
+import com.yunbian27.storage.registry.StorageProviderRegistry;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.InputStream;
 import java.util.UUID;
 
 /**
- * 阿里云 OSS 工具类
+ * 阿里云 OSS 存储实现
  */
-@Data
 @Slf4j
-@Component
+@Service
 @RequiredArgsConstructor
-public class AliOssUtils {
+public class AliOssStorageProvider {
 
-    private final AliOssProperties aliOssProperties;
+    private final StorageProviderRegistry registry;
 
     /**
      * 上传文件到 OSS
@@ -33,29 +33,26 @@ public class AliOssUtils {
      * @return 文件访问 URL
      */
     public String upload(MultipartFile file, String dir) {
-        // 获取原始文件名
         String originalFilename = file.getOriginalFilename();
-        // 获取文件后缀
         String suffix = originalFilename.substring(originalFilename.lastIndexOf("."));
-        // 生成唯一文件名
-        // 确保目录路径不以 / 结尾，避免双斜杠
         String cleanDir = dir != null && dir.endsWith("/") ? dir.substring(0, dir.length() - 1) : dir;
         String objectName = cleanDir + "/" + UUID.randomUUID().toString().replace("-", "") + suffix;
+
+        StorageConfigDTO config = registry.loadConfig(SecurityUtils.getCurrentUserId());
 
         OSS ossClient = null;
         try {
             ossClient = new OSSClientBuilder().build(
-                    aliOssProperties.getEndpoint(),
-                    aliOssProperties.getAccessKeyId(),
-                    aliOssProperties.getAccessKeySecret()
+                    config.getEndpoint(),
+                    config.getAccessKeyId(),
+                    config.getAccessKeySecret()
             );
 
             InputStream inputStream = file.getInputStream();
-            ossClient.putObject(aliOssProperties.getBucketName(), objectName, inputStream);
+            ossClient.putObject(config.getBucketName(), objectName, inputStream);
 
-            // 拼接访问 URL
-            String url = "https://" + aliOssProperties.getBucketName() + "."
-                    + aliOssProperties.getEndpoint().replace("https://", "")
+            String url = "https://" + config.getBucketName() + "."
+                    + config.getEndpoint().replace("https://", "")
                     + "/" + objectName;
 
             log.info("文件上传成功: {}", url);
@@ -72,9 +69,6 @@ public class AliOssUtils {
 
     /**
      * 上传文件到 OSS（默认存储到 images 目录）
-     *
-     * @param file 上传的文件
-     * @return 文件访问 URL
      */
     public String upload(MultipartFile file) {
         return upload(file, "images");
@@ -82,18 +76,17 @@ public class AliOssUtils {
 
     /**
      * 删除 OSS 文件
-     *
-     * @param objectName 文件路径（如 "images/xxx.jpg"）
      */
     public void delete(String objectName) {
+        StorageConfigDTO config = registry.loadConfig(SecurityUtils.getCurrentUserId());
         OSS ossClient = null;
         try {
             ossClient = new OSSClientBuilder().build(
-                    aliOssProperties.getEndpoint(),
-                    aliOssProperties.getAccessKeyId(),
-                    aliOssProperties.getAccessKeySecret()
+                    config.getEndpoint(),
+                    config.getAccessKeyId(),
+                    config.getAccessKeySecret()
             );
-            ossClient.deleteObject(aliOssProperties.getBucketName(), objectName);
+            ossClient.deleteObject(config.getBucketName(), objectName);
             log.info("文件删除成功: {}", objectName);
         } catch (Exception e) {
             log.error("文件删除失败", e);

@@ -6,7 +6,7 @@ import com.yunbian27.user.model.dto.RefreshDTO;
 import com.yunbian27.user.model.dto.RegisterDTO;
 import com.yunbian27.user.model.dto.SendCodeDTO;
 import com.yunbian27.user.service.AuthService;
-import com.yunbian27.common.Result;
+import com.yunbian27.common.result.Result;
 import com.yunbian27.common.utils.SecurityUtils;
 import io.jsonwebtoken.Claims;
 import io.swagger.v3.oas.annotations.Operation;

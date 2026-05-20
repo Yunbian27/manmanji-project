@@ -1,4 +1,4 @@
-package com.yunbian27.common.config;
+package com.yunbian27.storage.config;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;

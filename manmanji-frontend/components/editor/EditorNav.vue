@@ -33,6 +33,25 @@
       </div>
     </div>
 
+    <!-- 插入图片 -->
+    <div class="sidebar-section">
+      <span class="section-label">插入图片</span>
+      <input
+        ref="fileInput"
+        type="file"
+        accept="image/*"
+        hidden
+        @change="onFileSelected"
+      />
+      <button
+        class="action-btn secondary"
+        :disabled="uploading"
+        @click="fileInput?.click()"
+      >
+        {{ uploading ? '上传中...' : '选择图片' }}
+      </button>
+    </div>
+
     <!-- 操作 -->
     <div class="sidebar-section sidebar-actions">
       <button class="action-btn secondary" :disabled="isSaving" @click="$emit('openPublishSettings')">
@@ -61,7 +80,6 @@ const mdButtons = [
   { icon: 'I', label: '斜体', before: '*', after: '*', placeholder: '斜体文字' },
   { icon: 'H', label: '标题', before: '\n## ', after: '', placeholder: '标题' },
   { icon: '🔗', label: '链接', before: '[', after: '](url)', placeholder: '链接文字' },
-  { icon: '🖼', label: '图片', before: '![', after: '](url)', placeholder: '图片描述' },
   { icon: '<>', label: '行内代码', before: '`', after: '`', placeholder: '代码' },
   { icon: '{}', label: '代码块', before: '\n```\n', after: '\n```\n', placeholder: '语言\n代码' },
   { icon: '❝', label: '引用', before: '\n> ', after: '', placeholder: '引用内容' },
@@ -73,6 +91,27 @@ const mdButtons = [
 
 async function handleSave() {
   await editor.save()
+}
+
+const fileInput = ref<HTMLInputElement | null>(null)
+const uploading = ref(false)
+
+async function onFileSelected(e: Event) {
+  const input = e.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+
+  uploading.value = true
+  try {
+    const { uploadImage } = useArticle()
+    const url = await uploadImage(file)
+    emit('insertMarkdown', '![', `](${url})`, '图片描述')
+  } catch (err) {
+    alert(err instanceof Error ? err.message : '上传失败')
+  } finally {
+    uploading.value = false
+    input.value = ''
+  }
 }
 </script>
 

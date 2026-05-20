@@ -30,8 +30,9 @@ npx nuxi typecheck   # TypeScript type check
 
 ### Routing & Layout
 
-- `pages/index.vue` → `/` (article reader, 3-column layout)
-- `pages/write.vue` → `/write` (markdown editor, auth required)
+- `pages/index.vue` → `/` (landing page, unauthenticated users; logged-in users redirected to `/home`)
+- `pages/home.vue` → `/home` (article reader, 3-column layout, auth required)
+- `pages/write.vue` → `/write` (markdown editor, auth required). Supports `?articleId=X` query param for editing existing articles
 - `pages/login.vue` → `/login` (auth form, uses `layouts/blank.vue` — no TopNav/Footer)
 - `layouts/default.vue` renders: `<TopNav />` + `<slot />` + `<Footer />`
 - `layouts/blank.vue` renders: bare `<slot />` (for login page only)
@@ -46,6 +47,7 @@ The page scrolls as a single document (no independent column scrolling). Sidebar
 Nuxt auto-imports all Vue composables (`ref`, `computed`, `watch`, `provide`, `inject`, etc.), plus:
 - Components from all subdirectories under `components/` are globally available **without prefix** (e.g., `<TopNav />`, `<AppButton />`, `<TreeFolder />`)
 - Stores from `stores/` are auto-imported (e.g., `useAuthStore()` can be called without importing)
+- Composables from `composables/` are auto-imported (e.g., `useApi()`, `useArticle()`, `useAuth()`)
 
 The `defineStore` function is NOT auto-imported — each store file must `import { defineStore } from 'pinia'`.
 
@@ -56,14 +58,18 @@ The `defineStore` function is NOT auto-imported — each store file must `import
 loading → skeleton | error → message + retry | data → render
 ```
 
-**API layer**: `composables/useApi.ts` wraps `fetch` with JWT injection and `ApiResult<T>` unwrapping. Domain composables delegate to `useApi()` and return typed promises:
+**API layer**: `composables/useApi.ts` wraps `fetch` with JWT injection and `ApiResult<T>` unwrapping. Two request methods:
+- `request<T>()` / `get/post/put/delete` — JSON requests, sets `Content-Type: application/json`
+- `uploadFormData<T>()` — multipart file uploads, omits Content-Type (browser sets `multipart/form-data` + boundary)
+
+Domain composables delegate to `useApi()` and return typed promises:
 - `useAuth()` — login, register, refresh, logout
-- `useArticle()` — get/create article, AI polish
+- `useArticle()` — get/create/save/publish article, AI polish, `uploadImage(file)` for image upload
 - `useFolder()` — folder tree, create/rename/delete/move folders **and** rename/delete/move articles (article mutations live here because they return the refreshed folder tree)
 
-**Context menu**: `ContextMenu.vue` renders via `<Teleport>` to `body`. `pages/index.vue` `provide('openContextMenu', handler)` — the handler builds menu items by right-click target type (`blank`/`folder`/`article`). `LeftSidebar.vue` and `TreeFolder.vue` `inject` it and call on `@contextmenu`. Selection dispatches to `handleCreateFolder`, `handleRenameFolder`, `handleDeleteFolder`, `handleRenameArticle`, `handleDeleteArticle`.
+**Context menu**: `ContextMenu.vue` renders via `<Teleport>` to `body`. `pages/home.vue` `provide('openContextMenu', handler)` — the handler builds menu items by right-click target type (`blank`/`folder`/`article`). `LeftSidebar.vue` and `TreeFolder.vue` `inject` it and call on `@contextmenu`. Selection dispatches to `handleCreateFolder`, `handleRenameFolder`, `handleDeleteFolder`, `handleRenameArticle`, `handleDeleteArticle`, and `handleNewArticle` (including via `/write?articleId=X`).
 
-**Modals (PromptModal / ConfirmModal)**: Custom modals (no browser-native dialogs). Both use `<Teleport to="body">` + `<Transition name="modal">`. State is managed via `reactive()` objects + Promise resolve pattern in `pages/index.vue`:
+**Modals (PromptModal / ConfirmModal / PublishSettingsModal)**: Custom modals (no browser-native dialogs). All use `<Teleport to="body">` + `<Transition name="modal">`. State is managed via `reactive()` objects + Promise resolve pattern in `pages/home.vue`:
 ```ts
 const prompt = reactive({ visible, title, placeholder, confirmText, loading, error })
 let promptResolve: ((value: string | null) => void) | null = null
@@ -75,11 +81,13 @@ function showPrompt(config): Promise<string | null> {
 // If name is null → user cancelled
 // If name is set → set loading=true, call API, on success close modal, on error set prompt.error
 ```
-Same pattern for `ConfirmModal` with `confirm` reactive state + `showConfirmDialog()`.
+Same pattern for `ConfirmModal` with `confirm` reactive state + `showConfirmDialog()`. `PublishSettingsModal` uses `v-model:visible` instead.
 
 **Drag-and-drop**: `vuedraggable` (SortableJS with `:force-fallback="true"`) handles folder/article reordering. Mirror element is fully transparent (`opacity:0`); a custom `drag-cursor-icon` div tracks the mouse via `mousemove` listener in `onDragStart`, cleaned up in `onDragEnd`. Two sort groups: `"folders"` and `"articles"` — folders and articles cannot cross-sort.
 
-**Editor state**: The markdown editor (`/write`) uses `provide/inject` (Symbol key `EDITOR_KEY`) rather than Pinia. `createEditorState()` in `composables/useArticleEditor.ts` creates the full state; `provideEditor()` / `injectEditor()` wire it. Single-instance feature.
+**Editor state**: The markdown editor (`/write`) uses `provide/inject` (Symbol key `EDITOR_KEY`) rather than Pinia. `createEditorState()` in `composables/useArticleEditor.ts` creates the full state; `provideEditor()` / `injectEditor()` wire it. Single-instance feature. Editing existing articles: navigate to `/write?articleId=X`, `EditorView.onMounted` calls `loadFromServer()` which fetches article data via `GET /api/articles/{id}` and populates title, content, and publish settings.
+
+**Editor image upload**: Click "选择图片" button in sidebar → file picker → uploads to `POST /api/storage/image` via multipart → inserts `![图片描述](url)` at cursor position. Reuses the existing `insertMarkdown` emit → `insertAtCursor` chain in `EditorTextarea`.
 
 **Auth guard**: Client-only named middleware `middleware/auth.client.ts` redirects unauthenticated users to `/login?redirect=...`. Auth state hydrated via `plugins/auth.client.ts` (loads JWT from localStorage before middleware runs). Pinia plugin renamed to `plugins/01.pinia.ts` to force load order (numeric prefix before alphabetical).
 
@@ -93,6 +101,10 @@ Same pattern for `ConfirmModal` with `confirm` reactive state + `showConfirmDial
 | `LeftSidebar` | Folder tree sidebar. Actions (create/rename/delete) via right-click context menu only. Matches SIDEBAR.md spec |
 | `TreeFolder` | Recursive folder tree node. Folder headers: 16px/500, 8px radius. Article items: 14px/400/body color. Active state: 3px black left bar + canvas-soft bg |
 | `AppLayout` | 3-column flex layout. Natural document scroll, sticky sidebars |
+| `EditorNav` | Editor sidebar: view mode toggle, markdown quick insert grid, image upload button, save/publish actions |
+| `EditorTopNav` | Editor sticky top bar: logo, back button, title input, user avatar dropdown |
+| `PublishSettingsModal` | Modal for article publish settings (category, tags, cover, summary, isOriginal, sourceUrl). Migrated from sidebar |
+| `PromptModal` / `ConfirmModal` | Generic text input / confirmation dialogs, Promise-based |
 
 ### Type System
 
@@ -102,6 +114,8 @@ All TypeScript interfaces are in `types/index.ts`, mapping Java backend DTOs/VOs
 - `FolderTree` — `{ id, name, children: FolderTree[], articles: ArticleItem[] }`，递归文件夹节点
 - `ArticleItem` — `{ id, title, status: 'UNPUBLISHED' | 'PUBLISHED' }`
 - `ArticleVO` — full article with all metadata fields
+- `ArticleSaveDTO` — `{ id, title, content }`
+- `ArticlePublishDTO` — extends save with summary, coverUrl, categoryId, tagIds, isOriginal, sourceUrl
 - `TocItem` — `{ id, text, level: 2|3|4|5|6 }`
 - `PageDTO<T>` — `{ total, page, size, records }`
 

@@ -3,7 +3,7 @@ package com.yunbian27.ai.controller;
 import com.yunbian27.ai.model.CreateProviderDTO;
 import com.yunbian27.ai.model.LlmProviderVO;
 import com.yunbian27.ai.service.LlmProviderService;
-import com.yunbian27.common.Result;
+import com.yunbian27.common.result.Result;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;

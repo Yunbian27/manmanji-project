@@ -1,4 +1,4 @@
-package com.yunbian27.ai.service;
+package com.yunbian27.ai.utils;
 
 import org.springframework.ai.openai.api.OpenAiApi;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;

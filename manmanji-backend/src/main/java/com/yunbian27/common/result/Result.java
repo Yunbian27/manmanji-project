@@ -1,4 +1,4 @@
-package com.yunbian27.common;
+package com.yunbian27.common.result;
 
 import com.yunbian27.common.constant.CommonConstants;
 import com.yunbian27.common.exception.ErrorCode;

@@ -7,7 +7,7 @@ import com.yunbian27.content.model.dto.ArticleSaveDTO;
 import com.yunbian27.content.model.vo.ArticleVO;
 import com.yunbian27.content.model.vo.FolderTreeVO;
 import com.yunbian27.content.service.ArticleService;
-import com.yunbian27.common.Result;
+import com.yunbian27.common.result.Result;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

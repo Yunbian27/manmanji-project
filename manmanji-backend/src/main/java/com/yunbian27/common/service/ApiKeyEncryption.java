@@ -1,4 +1,4 @@
-package com.yunbian27.ai.service;
+package com.yunbian27.common.service;
 
 import com.yunbian27.ai.config.LlmProviderProperties;
 import com.yunbian27.common.exception.BusinessException;
@@ -12,17 +12,17 @@ import javax.crypto.Cipher;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 @Slf4j
-@Component
+@Service
 public class ApiKeyEncryption {
 
     private static final int NONCE_BYTES = 12;
     private static final int GCM_TAG_BITS = 128;
     private static final String CIPHER = "AES/GCM/NoPadding";
     private static final String DEV_FALLBACK_KEY =
-            "interview-guide-dev-only-provider-api-key-encryption";
+            "yunbian27-dev-only-provider-api-key-encryption";
 
     private final LlmProviderProperties properties;
     private final SecureRandom secureRandom = new SecureRandom();

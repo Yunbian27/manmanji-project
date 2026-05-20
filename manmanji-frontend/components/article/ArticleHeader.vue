@@ -6,13 +6,6 @@
 -->
 <template>
   <header class="article-header">
-    <!-- 面包屑导航：分类 / 文章标题，13px/500 -->
-    <nav class="breadcrumb">
-      <span>{{ category || '未分类' }}</span>
-      <span class="separator">/</span>
-      <span>{{ title }}</span>
-    </nav>
-
     <!-- 文章标题：32px/700，letter-spacing -1px -->
     <h1 class="article-title">{{ title }}</h1>
 
@@ -78,15 +71,6 @@ function formatCount(n: number): string {
 
 <style scoped>
 .article-header { margin-bottom: var(--space-xl); }
-
-/* 面包屑：13px/500，灰色 */
-.breadcrumb {
-  font-size: var(--text-caption);
-  font-weight: var(--weight-medium);
-  color: var(--muted);
-  margin-bottom: var(--space-md);
-}
-.separator { margin: 0 var(--space-xxs); }
 
 /* 标题：36px/700/44px (BLUEPRINT 203) */
 .article-title {

@@ -1,10 +1,12 @@
-package com.yunbian27.ai.service;
+package com.yunbian27.ai.registry;
 
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.yunbian27.ai.config.LlmProviderProperties;
 import com.yunbian27.ai.model.LlmProviderEntity;
 import com.yunbian27.ai.mapper.LlmProviderMapper;
+import com.yunbian27.common.service.ApiKeyEncryption;
+import com.yunbian27.ai.utils.ApiPathResolver;
 import io.micrometer.observation.ObservationRegistry;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;

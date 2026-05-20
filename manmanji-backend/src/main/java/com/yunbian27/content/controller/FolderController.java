@@ -1,6 +1,6 @@
 package com.yunbian27.content.controller;
 
-import com.yunbian27.common.Result;
+import com.yunbian27.common.result.Result;
 import com.yunbian27.content.model.dto.FolderCreateDTO;
 import com.yunbian27.content.model.dto.FolderMoveDTO;
 import com.yunbian27.content.model.dto.FolderRenameDTO;

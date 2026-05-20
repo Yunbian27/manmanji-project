@@ -1,6 +1,6 @@
 package com.yunbian27.user.controller;
 
-import com.yunbian27.common.Result;
+import com.yunbian27.common.result.Result;
 import com.yunbian27.user.service.UserService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -16,13 +16,5 @@ public class UserController {
 
     private final UserService userService;
 
-    /**
-     * 图片上传功能
-     * @return
-     */
-    @PostMapping("/upload")
-    public Result<Void> upload() {
-        return Result.success();
-    }
 
 }

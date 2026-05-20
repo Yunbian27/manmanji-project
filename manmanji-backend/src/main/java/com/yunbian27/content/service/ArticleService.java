@@ -14,7 +14,7 @@ import com.yunbian27.content.model.dto.ArticleSaveDTO;
 import com.yunbian27.content.model.vo.ArticleVO;
 import com.yunbian27.ai.mapper.LlmGlobalSettingMapper;
 import com.yunbian27.ai.model.LlmGlobalSettingEntity;
-import com.yunbian27.ai.service.LlmProviderRegistry;
+import com.yunbian27.ai.registry.LlmProviderRegistry;
 import com.yunbian27.content.model.dto.ArticlePublishDTO;
 import com.yunbian27.content.model.entity.Article;
 import com.yunbian27.content.model.entity.ArticleTag;
@@ -31,7 +31,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.UUID;
 
 @Slf4j

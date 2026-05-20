@@ -81,6 +81,12 @@ jwt:
   access-token-expire: 900000000000        # 15 分钟(900)
   refresh-token-expire: 604800    # 7 天
 
+# 本地上传
+app:
+  upload:
+    path: ./uploads/images/
+    url-prefix: /uploads/images/
+
 # 阿里云 oss
 aliyun:
   oss:

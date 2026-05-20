@@ -31,5 +31,12 @@ export function useArticle() {
     return api.post<string>('/api/articles/improve', content)
   }
 
-  return { getArticle, createArticle, saveArticle, publishArticle, improve }
+  /** 上传图片 */
+  function uploadImage(file: File): Promise<string> {
+    const formData = new FormData()
+    formData.append('file', file)
+    return api.uploadFormData<string>('/api/storage/image', formData)
+  }
+
+  return { getArticle, createArticle, saveArticle, publishArticle, improve, uploadImage }
 }
