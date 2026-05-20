@@ -207,6 +207,7 @@ function openContextMenu(event: MouseEvent, type: 'blank' | 'folder' | 'article'
       break
     case 'article':
       contextItems.value = [
+        { key: 'edit-article', label: '编辑' },
         { key: 'rename-article', label: '重命名' },
         { key: 'delete-article', label: '删除', danger: true },
         { key: 'copy-link', label: '复制链接' },
@@ -233,6 +234,9 @@ function onContextSelect(key: string) {
       break
     case 'new-article-in-folder':
       handleNewArticle(contextTargetId)
+      break
+    case 'edit-article':
+      if (contextTargetId) navigateTo(`/write?articleId=${contextTargetId}`)
       break
     case 'rename-folder':
       if (contextTargetId) handleRenameFolder(contextTargetId)

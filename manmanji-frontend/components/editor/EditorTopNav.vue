@@ -70,7 +70,6 @@ function onTitleInput(e: Event) {
 }
 
 function handleBack() {
-  editor.stopAutoSave()
   router.push('/home')
 }
 

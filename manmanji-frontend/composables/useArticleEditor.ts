@@ -31,70 +31,19 @@ export function createEditorState(articleId: number) {
     sourceUrl: '',
   })
 
-  const draftKey = computed(() => {
-    const t = title.value.trim()
-    return t ? `mannote-draft-${t}` : 'mannote-draft-__new__'
-  })
-
-  let autoSaveTimer: ReturnType<typeof setTimeout> | null = null
-
-  function saveDraft() {
-    if (!content.value && !title.value) return
-    const draft = {
-      title: title.value,
-      content: content.value,
-      settings: { ...publishSettings },
-      articleId: currentArticleId.value,
-      savedAt: new Date().toISOString(),
-    }
-    localStorage.setItem(draftKey.value, JSON.stringify(draft))
-    lastSavedAt.value = new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
-  }
-
-  function loadDraft() {
-    const key = Object.keys(localStorage).find(k => k.startsWith('mannote-draft-'))
-    if (!key) return
+  async function loadFromServer() {
     try {
-      const raw = localStorage.getItem(key)
-      if (!raw) return
-      const draft = JSON.parse(raw)
-      title.value = draft.title || ''
-      content.value = draft.content || ''
-      if (draft.settings) {
-        publishSettings.categoryId = draft.settings.categoryId ?? null
-        publishSettings.tagIds = draft.settings.tagIds ?? []
-        publishSettings.coverUrl = draft.settings.coverUrl ?? ''
-        publishSettings.summary = draft.settings.summary ?? ''
-        publishSettings.isOriginal = draft.settings.isOriginal ?? true
-        publishSettings.sourceUrl = draft.settings.sourceUrl ?? ''
-      }
-      if (draft.articleId) {
-        currentArticleId.value = draft.articleId
-      }
+      const { getArticle } = useArticle()
+      const article = await getArticle(currentArticleId.value)
+      title.value = article.title || ''
+      content.value = article.content || ''
+      publishSettings.categoryId = article.categoryId ?? null
+      publishSettings.coverUrl = article.coverUrl ?? ''
+      publishSettings.summary = article.summary ?? ''
+      publishSettings.isOriginal = article.isOriginal ?? true
+      publishSettings.sourceUrl = article.sourceUrl ?? ''
     } catch {
-      // corrupted draft, ignore
-    }
-  }
-
-  function clearDraft() {
-    localStorage.removeItem(draftKey.value)
-  }
-
-  function startAutoSave() {
-    watch([content, title], () => {
-      if (autoSaveTimer) clearTimeout(autoSaveTimer)
-      autoSaveTimer = setTimeout(() => {
-        if (content.value || title.value) {
-          saveDraft()
-        }
-      }, 30000)
-    }, { immediate: false })
-  }
-
-  function stopAutoSave() {
-    if (autoSaveTimer) {
-      clearTimeout(autoSaveTimer)
-      autoSaveTimer = null
+      // article not found or network error, stay with empty state
     }
   }
 
@@ -140,7 +89,7 @@ export function createEditorState(articleId: number) {
         title: title.value.trim(),
         content: content.value,
       })
-      clearDraft()
+      lastSavedAt.value = new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
     } catch (e: any) {
       publishError.value = e?.message || '保存失败，请稍后重试'
     } finally {
@@ -165,7 +114,6 @@ export function createEditorState(articleId: number) {
         isOriginal: publishSettings.isOriginal,
         sourceUrl: publishSettings.sourceUrl || undefined,
       })
-      clearDraft()
     } catch (e: any) {
       publishError.value = e?.message || '发布失败，请稍后重试'
     } finally {
@@ -184,12 +132,7 @@ export function createEditorState(articleId: number) {
     publishError,
     titleError,
     publishSettings,
-    draftKey,
-    saveDraft,
-    loadDraft,
-    clearDraft,
-    startAutoSave,
-    stopAutoSave,
+    loadFromServer,
     reset,
     validate,
     save,

@@ -70,6 +70,9 @@ public class ArticleService {
      * @param dto
      */
     public void save(ArticleSaveDTO dto) {
+        // 删除redis中缓存的文章
+        stringRedisTemplate.delete(RedisKeys.ARTICLE_CACHE_PREFIX + dto.getId());
+
         Long userId = SecurityUtils.getCurrentUserId();
         if (dto == null) {
             throw new BusinessException(ErrorCode.BAD_REQUEST);
@@ -174,6 +177,13 @@ public class ArticleService {
         Article article = articleMapper.selectById(articleId);
         if (article == null) {
             throw new BusinessException("文章不存在");
+        }
+        // 未发布文章仅作者本人可读
+        if (CommonConstants.ArticleStatus.UNPUBLISHED.equals(article.getStatus())) {
+            Long userId = SecurityUtils.getCurrentUserId();
+            if (!userId.equals(article.getUserId())) {
+                throw new BusinessException(ErrorCode.NOT_FOUND);
+            }
         }
         ArticleVO articleVO = new ArticleVO();
         BeanUtils.copyProperties(article, articleVO);

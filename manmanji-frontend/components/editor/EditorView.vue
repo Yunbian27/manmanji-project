@@ -2,7 +2,11 @@
   <div class="editor-view">
     <EditorTopNav />
     <div class="editor-body">
-      <EditorNav @close="handleClose" @insert-markdown="onInsertMarkdown" />
+      <EditorNav
+        @close="handleClose"
+        @insert-markdown="onInsertMarkdown"
+        @open-publish-settings="showPublishSettings = true"
+      />
 
       <div :class="['editor-main', `editor-main--${viewMode}`]">
       <EditorTextarea
@@ -10,7 +14,6 @@
         ref="textareaRef"
         @scroll="onTextareaScroll"
       />
-      <div v-if="viewMode === 'split'" class="editor-divider" />
       <EditorPreview
         v-if="viewMode !== 'edit'"
         ref="previewRef"
@@ -26,6 +29,11 @@
         <IconX :size="14" />
       </button>
     </div>
+
+    <PublishSettingsModal
+      v-model:visible="showPublishSettings"
+      @published="handleClose"
+    />
   </div>
 </template>
 
@@ -48,10 +56,9 @@ onBeforeRouteLeave((_to, _from, next) => {
   next()
 })
 
-const {
-  viewMode, publishError,
-  startAutoSave, stopAutoSave, loadDraft,
-} = editor
+const { viewMode, publishError, loadFromServer } = editor
+
+const showPublishSettings = ref(false)
 
 interface TextareaExposed {
   syncScroll: (ratio: number) => void
@@ -83,17 +90,13 @@ function onInsertMarkdown(before: string, after: string, placeholder: string) {
 }
 
 function handleClose() {
-  stopAutoSave()
   emit('close')
 }
 
-onMounted(() => {
-  loadDraft()
-  startAutoSave()
-})
-
-onUnmounted(() => {
-  stopAutoSave()
+onMounted(async () => {
+  if (props.articleId > 0) {
+    await loadFromServer()
+  }
 })
 </script>
 
@@ -123,22 +126,11 @@ onUnmounted(() => {
 }
 
 .editor-main--split {
-  grid-template-columns: 1fr 4px 1fr;
+  grid-template-columns: 1fr 1fr;
 }
 
 .editor-main--preview {
-  grid-template-columns: min(var(--content-max), 100%) 1fr;
-}
-
-.editor-divider {
-  width: 4px;
-  background: var(--hairline);
-  cursor: col-resize;
-  transition: background-color 0.15s ease;
-  flex-shrink: 0;
-}
-.editor-divider:hover {
-  background: var(--primary);
+  grid-template-columns: 1fr;
 }
 
 .editor-toast {

@@ -29,7 +29,7 @@ function handleClose() {
 
 <style scoped>
 .write-page {
-  height: calc(100vh - var(--nav-height));
+  height: 100vh;
   background: var(--canvas);
 }
 </style>
