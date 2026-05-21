@@ -1,5 +1,6 @@
 package com.yunbian27.storage.service;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.yunbian27.common.constant.SystemConstants;
 import com.yunbian27.common.exception.BusinessException;
 import com.yunbian27.common.exception.ErrorCode;
@@ -28,6 +29,12 @@ public class StorageService {
         }
 
         Long userId = SecurityUtils.getCurrentUserId();
+        StorageConfigEntity entity = storageConfigMapper.selectOne(new LambdaQueryWrapper<StorageConfigEntity>()
+                .eq(StorageConfigEntity::getUserId, userId));
+        if (entity != null) {
+            throw new BusinessException(ErrorCode.PROVIDER_CONFIG_WRITE_FAILED);
+        }
+
         ApiKeyEncryption.EncryptedValue encryptId = apiKeyEncryption.encrypt(dto.getAccessKeyId());
         ApiKeyEncryption.EncryptedValue encryptSecret = apiKeyEncryption.encrypt(dto.getAccessKeySecret());
 

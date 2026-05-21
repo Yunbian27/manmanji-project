@@ -50,9 +50,7 @@
         <AppButton variant="secondary" @click="navigateTo('/login')">登录</AppButton>
         <AppButton variant="primary" @click="navigateTo('/login')">注册</AppButton>
       </template>
-      <template v-else>
-        <AppButton variant="secondary" @click="navigateTo('/write')">写文章</AppButton>
-      </template>
+
 
       <!-- 用户头像：36×36 圆形 + 下拉菜单 -->
       <div v-if="auth.isAuthenticated" ref="avatarContainer" class="avatar-wrapper">

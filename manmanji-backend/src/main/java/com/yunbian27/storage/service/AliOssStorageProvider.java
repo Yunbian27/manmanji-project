@@ -2,6 +2,8 @@ package com.yunbian27.storage.service;
 
 import com.aliyun.oss.OSS;
 import com.aliyun.oss.OSSClientBuilder;
+import com.yunbian27.common.exception.BusinessException;
+import com.yunbian27.common.exception.ErrorCode;
 import com.yunbian27.common.utils.SecurityUtils;
 import com.yunbian27.storage.config.AliOssProperties;
 import com.yunbian27.storage.model.StorageConfigDTO;
@@ -59,7 +61,7 @@ public class AliOssStorageProvider {
             return url;
         } catch (Exception e) {
             log.error("文件上传失败", e);
-            throw new RuntimeException("文件上传失败: " + e.getMessage());
+            throw new BusinessException(ErrorCode.PROVIDER_CONFIG_READ_FAILED);
         } finally {
             if (ossClient != null) {
                 ossClient.shutdown();
