@@ -24,6 +24,7 @@ export default defineNuxtConfig({
     '~/assets/css/tokens.css',       // CSS 变量定义（颜色、字号、间距等）
     '~/assets/css/base.css',         // 全局基础样式和 reset
     '~/assets/css/transitions.css',  // Vue 过渡动画
+    'highlight.js/styles/atom-one-dark.css',
   ],
 
   // --------------------------------------------------

@@ -1,26 +1,221 @@
 <template>
   <div class="editor-view">
-    <EditorTopNav />
-    <div class="editor-body">
-      <EditorNav
-        @close="handleClose"
-        @insert-markdown="onInsertMarkdown"
-        @open-publish-settings="showPublishSettings = true"
+    <!-- 顶部热区（顶栏隐藏时悬停显示） -->
+    <div
+      v-if="topnavHidden"
+      class="topnav-hotzone"
+      @mouseenter="onHotzoneEnter"
+      @mouseleave="onHotzoneLeave"
+    />
+    <Transition name="topnav-slide">
+      <EditorTopNav
+        v-if="!topnavHidden || topnavPeek"
+        @mouseenter="onTopnavEnter"
+        @mouseleave="onTopnavLeave"
       />
+    </Transition>
 
-      <div :class="['editor-main', `editor-main--${viewMode}`]">
-      <EditorTextarea
-        v-if="viewMode !== 'preview'"
-        ref="textareaRef"
-        @scroll="onTextareaScroll"
-      />
-      <EditorPreview
-        v-if="viewMode !== 'edit'"
-        ref="previewRef"
-        @scroll="onPreviewScroll"
-        @toc-updated="() => {}"
-      />
-    </div>
+    <div class="editor-body">
+      <!-- 单卡片容器 -->
+      <div class="editor-card">
+        <!-- 卡片顶部工具栏 -->
+        <div class="card-toolbar">
+          <div class="toolbar-left">
+            <button
+              v-for="btn in formatButtons"
+              :key="btn.label"
+              class="toolbar-btn"
+              :title="btn.label"
+              @click="onInsertMarkdown(btn.before, btn.after, btn.placeholder)"
+            >
+              <span class="btn-icon">{{ btn.icon }}</span>
+            </button>
+            <div class="dropdown-wrap" ref="headingDropdownRef">
+              <button class="toolbar-btn" title="标题" @click="toggleHeading">
+                <span class="btn-icon">H</span>
+              </button>
+              <div v-if="showHeadingMenu" class="toolbar-dropdown">
+                <button
+                  v-for="h in headingLevels"
+                  :key="h.level"
+                  class="dropdown-item"
+                  @click="insertHeading(h); showHeadingMenu = false"
+                >
+                  <span class="dropdown-item-prefix">{{ '#'.repeat(h.level) }}</span>
+                  {{ h.label }}
+                </button>
+              </div>
+            </div>
+            <span class="toolbar-divider" />
+            <div class="dropdown-wrap" ref="listDropdownRef">
+              <button class="toolbar-btn toolbar-btn--labeled" @click="toggleList">
+                <span class="btn-icon">≡</span>
+                <span class="btn-label">列表</span>
+                <span class="btn-arrow">▾</span>
+              </button>
+              <div v-if="showListMenu" class="toolbar-dropdown">
+                <button
+                  v-for="item in listTypes"
+                  :key="item.id"
+                  class="dropdown-item"
+                  @click="insertList(item); showListMenu = false"
+                >
+                  {{ item.label }}
+                </button>
+              </div>
+            </div>
+            <div class="dropdown-wrap" ref="codeDropdownRef">
+              <button class="toolbar-btn toolbar-btn--labeled" @click="toggleCode">
+                <span class="btn-icon">{ }</span>
+                <span class="btn-label">代码块</span>
+                <span class="btn-arrow">▾</span>
+              </button>
+              <div v-if="showCodeMenu" class="toolbar-dropdown toolbar-dropdown--wide">
+                <button
+                  v-for="lang in codeLanguages"
+                  :key="lang.id"
+                  class="dropdown-item"
+                  @click="insertCodeBlock(lang.id); showCodeMenu = false"
+                >
+                  {{ lang.label }}
+                </button>
+              </div>
+            </div>
+            <div class="dropdown-wrap" ref="moreDropdownRef">
+              <button class="toolbar-btn toolbar-btn--labeled" @click="toggleMore">
+                <span class="btn-label">更多格式</span>
+                <span class="btn-arrow">▾</span>
+              </button>
+              <div v-if="showMoreMenu" class="toolbar-dropdown">
+                <button
+                  v-for="item in moreItems"
+                  :key="item.label"
+                  class="dropdown-item"
+                  @click="onInsertMarkdown(item.before, item.after, item.placeholder); showMoreMenu = false"
+                >
+                  <span class="btn-icon dropdown-item-icon">{{ item.icon }}</span>
+                  {{ item.label }}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="toolbar-center">
+            <!-- 图片 -->
+            <button class="toolbar-btn" title="图片" @click="handleImage">
+              <svg class="btn-icon-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                <circle cx="8.5" cy="8.5" r="1.5"/>
+                <polyline points="21 15 16 10 5 21"/>
+              </svg>
+            </button>
+            <input
+              ref="fileInput"
+              type="file"
+              accept="image/*"
+              hidden
+              @change="onFileSelected"
+            />
+            <!-- 链接 -->
+            <button class="toolbar-btn" title="链接" @click="onInsertMarkdown('[', '](url)', '链接文字')">
+              <svg class="btn-icon-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+              </svg>
+            </button>
+          </div>
+
+          <div class="toolbar-view-toggle">
+            <div class="view-toggle">
+              <button :class="['view-btn', { active: viewMode === 'edit' }]" @click="viewMode = 'edit'">编辑</button>
+              <button :class="['view-btn', { active: viewMode === 'split' }]" @click="viewMode = 'split'">对比</button>
+              <button :class="['view-btn', { active: viewMode === 'preview' }]" @click="viewMode = 'preview'">预览</button>
+            </div>
+          </div>
+
+          <div class="toolbar-right">
+            <button class="toolbar-btn toolbar-btn--labeled" title="历史版本">
+              <svg class="btn-icon-svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="12 6 12 12 16 14"/>
+              </svg>
+              <span class="btn-label">历史版本</span>
+            </button>
+            <div class="dropdown-wrap" ref="actionDropdownRef">
+              <button class="toolbar-btn toolbar-btn--labeled" @click="showActionMenu = !showActionMenu">
+                <span class="btn-icon">···</span>
+                <span class="btn-label">更多操作</span>
+                <span class="btn-arrow">▾</span>
+              </button>
+              <div v-if="showActionMenu" class="toolbar-dropdown toolbar-dropdown--right">
+                <button class="dropdown-item" @click="showActionMenu = false">导入</button>
+                <button class="dropdown-item" @click="showActionMenu = false">导出</button>
+                <button class="dropdown-item" @click="showActionMenu = false">模板</button>
+              </div>
+            </div>
+            <button class="toolbar-btn" :title="topnavHidden ? '展开顶栏' : '收起顶栏'" @click="toggleTopnav">
+              <svg v-if="topnavHidden" class="btn-icon-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+              <svg v-else class="btn-icon-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="18 15 12 9 6 15"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- 卡片内容区 -->
+        <div :class="['card-content', { 'card-content--single': viewMode !== 'split' }]">
+          <div
+            v-if="viewMode !== 'preview'"
+            :class="['pane-edit', { 'pane-edit--centered': viewMode === 'edit' }]"
+          >
+            <div class="pane-edit-inner">
+              <EditorTextarea
+                ref="textareaRef"
+                @scroll="onTextareaScroll"
+                @selection-change="onSelectionChange"
+              />
+            </div>
+          </div>
+
+          <div v-if="viewMode === 'split'" class="static-divider" />
+
+          <div
+            v-if="viewMode !== 'edit'"
+            :class="['pane-preview', { 'pane-preview--split': viewMode === 'split' }]"
+          >
+            <EditorPreview
+              ref="previewRef"
+              :centered="viewMode === 'preview'"
+              @scroll="onPreviewScroll"
+            />
+          </div>
+        </div>
+
+        <!-- 卡片底部操作栏 -->
+        <div class="card-statusbar">
+          <div class="statusbar-left">
+            <span class="statusbar-stat">{{ wordCount }} 字</span>
+            <span class="statusbar-divider">·</span>
+            <span class="statusbar-stat">{{ lineCount }} 行</span>
+            <span class="statusbar-divider">·</span>
+            <span class="statusbar-stat">第 {{ cursorRow }} 行，第 {{ cursorCol }} 列</span>
+          </div>
+          <div class="statusbar-right">
+            <span v-if="lastSavedAt" class="statusbar-timestamp">已保存 {{ lastSavedAt }}</span>
+            <button class="statusbar-btn statusbar-btn--save" :disabled="isSaving" @click="handleSave">
+              {{ isSaving ? '保存中...' : '保存草稿' }}
+            </button>
+            <button class="statusbar-btn statusbar-btn--publish" :disabled="isSaving" @click="showPublishSettings = true">
+              发布文章
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 右侧悬浮按钮（卡片外部） -->
+      <RightFloatingPanel :toc-items="outlineItems" @navigate-to-heading="handleNavigateToHeading" />
     </div>
 
     <div v-if="publishError" class="editor-toast error">
@@ -38,13 +233,47 @@
 </template>
 
 <script setup lang="ts">
+import { onClickOutside } from '@vueuse/core'
+import type { TocItem } from '~/types'
+
 const props = defineProps<{ articleId: number }>()
 const emit = defineEmits<{ close: [] }>()
 
 const editor = createEditorState(props.articleId)
 provideEditor(editor)
 
-const { content, title } = editor
+const { content, title, viewMode, publishError, isSaving, lastSavedAt, loadFromServer } = editor
+
+// ── Topnav hide/show ──────────────────────────────────────
+const topnavHidden = ref(false)
+const topnavPeek = ref(false)
+let hideTimer: ReturnType<typeof setTimeout> | null = null
+
+function toggleTopnav() {
+  topnavHidden.value = !topnavHidden.value
+  topnavPeek.value = false
+}
+
+function onHotzoneEnter() {
+  if (!topnavHidden.value) return
+  topnavPeek.value = true
+  if (hideTimer) { clearTimeout(hideTimer); hideTimer = null }
+}
+
+function onHotzoneLeave() {
+  if (!topnavHidden.value) return
+  hideTimer = setTimeout(() => { topnavPeek.value = false }, 300)
+}
+
+function onTopnavEnter() {
+  if (!topnavHidden.value) return
+  if (hideTimer) { clearTimeout(hideTimer); hideTimer = null }
+}
+
+function onTopnavLeave() {
+  if (!topnavHidden.value) return
+  hideTimer = setTimeout(() => { topnavPeek.value = false }, 300)
+}
 
 onBeforeRouteLeave((_to, _from, next) => {
   if (content.value || title.value) {
@@ -56,17 +285,236 @@ onBeforeRouteLeave((_to, _from, next) => {
   next()
 })
 
-const { viewMode, publishError, loadFromServer } = editor
+// ── Toolbar buttons ──────────────────────────────────────────
+const formatButtons = [
+  { icon: 'B', label: '粗体', before: '**', after: '**', placeholder: '粗体文字' },
+  { icon: 'I', label: '斜体', before: '*', after: '*', placeholder: '斜体文字' },
+  { icon: 'S̶', label: '删除线', before: '~~', after: '~~', placeholder: '删除线' },
+]
 
-const showPublishSettings = ref(false)
+const fileInput = ref<HTMLInputElement | null>(null)
 
+// ── Dropdown toggles ──────────────────────────────────────
+function closeAllDropdowns() {
+  showHeadingMenu.value = false
+  showCodeMenu.value = false
+  showListMenu.value = false
+  showMoreMenu.value = false
+}
+
+function toggleHeading() {
+  showCodeMenu.value = false
+  showListMenu.value = false
+  showMoreMenu.value = false
+  showHeadingMenu.value = !showHeadingMenu.value
+}
+
+function toggleList() {
+  showHeadingMenu.value = false
+  showCodeMenu.value = false
+  showMoreMenu.value = false
+  showListMenu.value = !showListMenu.value
+}
+
+function toggleCode() {
+  showHeadingMenu.value = false
+  showListMenu.value = false
+  showMoreMenu.value = false
+  showCodeMenu.value = !showCodeMenu.value
+}
+
+function toggleMore() {
+  showHeadingMenu.value = false
+  showListMenu.value = false
+  showCodeMenu.value = false
+  showMoreMenu.value = !showMoreMenu.value
+}
+
+// ── Heading dropdown ──────────────────────────────────────
+const showHeadingMenu = ref(false)
+const headingDropdownRef = ref<HTMLElement | null>(null)
+
+const headingLevels = [
+  { level: 1, label: '一级标题' },
+  { level: 2, label: '二级标题' },
+  { level: 3, label: '三级标题' },
+  { level: 4, label: '四级标题' },
+  { level: 5, label: '五级标题' },
+  { level: 6, label: '六级标题' },
+]
+
+function insertHeading(h: { level: number; label: string }) {
+  const prefix = '\n' + '#'.repeat(h.level) + ' '
+  onInsertMarkdown(prefix, '', h.label)
+}
+
+// ── Code block dropdown ───────────────────────────────────
+const showCodeMenu = ref(false)
+const codeDropdownRef = ref<HTMLElement | null>(null)
+
+const codeLanguages = [
+  { id: '', label: '纯文本' },
+  { id: 'javascript', label: 'JavaScript' },
+  { id: 'typescript', label: 'TypeScript' },
+  { id: 'python', label: 'Python' },
+  { id: 'java', label: 'Java' },
+  { id: 'go', label: 'Go' },
+  { id: 'rust', label: 'Rust' },
+  { id: 'c', label: 'C' },
+  { id: 'cpp', label: 'C++' },
+  { id: 'css', label: 'CSS' },
+  { id: 'html', label: 'HTML' },
+  { id: 'sql', label: 'SQL' },
+  { id: 'bash', label: 'Bash' },
+  { id: 'json', label: 'JSON' },
+  { id: 'yaml', label: 'YAML' },
+  { id: 'markdown', label: 'Markdown' },
+]
+
+function insertCodeBlock(lang: string) {
+  const before = '\n```' + lang + '\n'
+  onInsertMarkdown(before, '\n```\n', '代码')
+}
+
+// ── List dropdown ──────────────────────────────────────────
+const showListMenu = ref(false)
+const listDropdownRef = ref<HTMLElement | null>(null)
+
+const listTypes = [
+  { id: 'unordered', label: '无序列表', before: '\n- ', after: '', placeholder: '列表项' },
+  { id: 'ordered', label: '有序列表', before: '\n1. ', after: '', placeholder: '列表项' },
+  { id: 'task', label: '任务列表', before: '\n- [ ] ', after: '', placeholder: '待办项' },
+]
+
+function insertList(item: { id: string; before: string; after: string; placeholder: string }) {
+  onInsertMarkdown(item.before, item.after, item.placeholder)
+}
+
+// ── More formats dropdown ──────────────────────────────────
+const showMoreMenu = ref(false)
+const moreDropdownRef = ref<HTMLElement | null>(null)
+
+const moreItems = [
+  { icon: '⊞', label: '表格', before: '\n| 列1 | 列2 |\n| --- | --- |\n| ', after: ' | ', placeholder: '内容' },
+  { icon: '—', label: '分割线', before: '\n---\n', after: '', placeholder: '' },
+  { icon: '❝', label: '引用', before: '\n> ', after: '', placeholder: '引用内容' },
+]
+
+// ── Close dropdowns on outside click ──────────────────────
+onClickOutside(headingDropdownRef, () => { showHeadingMenu.value = false })
+onClickOutside(codeDropdownRef, () => { showCodeMenu.value = false })
+onClickOutside(listDropdownRef, () => { showListMenu.value = false })
+onClickOutside(moreDropdownRef, () => { showMoreMenu.value = false })
+
+// ── Action menu dropdown ──────────────────────────────────
+const showActionMenu = ref(false)
+const actionDropdownRef = ref<HTMLElement | null>(null)
+
+onClickOutside(actionDropdownRef, () => { showActionMenu.value = false })
+
+function handleImage() {
+  fileInput.value?.click()
+}
+
+async function onFileSelected(e: Event) {
+  const input = e.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+  try {
+    const { uploadImage } = useArticle()
+    const url = await uploadImage(file)
+    onInsertMarkdown('![', `](${url})`, '图片描述')
+  } catch (err) {
+    alert(err instanceof Error ? err.message : '上传失败')
+  } finally {
+    input.value = ''
+  }
+}
+
+// ── Selection / cursor ──────────────────────────────────────
+const cursorRow = ref(1)
+const cursorCol = ref(1)
+
+function onSelectionChange(_state: { start: number; end: number; text: string; isCollapsed: boolean }) {
+  // cursor position updated on scroll
+}
+
+function updateCursorPos() {
+  const ta = textareaRef.value
+  if (!ta) return
+  const pos = ta.getCursorLineCol()
+  cursorRow.value = pos.row
+  cursorCol.value = pos.col
+}
+
+// ── Stats ───────────────────────────────────────────────────
+const wordCount = computed(() => {
+  return content.value.replace(/\s/g, '').length
+})
+
+const lineCount = computed(() => {
+  if (!content.value) return 1
+  return content.value.split('\n').length
+})
+
+// ── Outline ──────────────────────────────────────────────────
+function extractOutline(text: string): TocItem[] {
+  if (!text) return []
+  const headingRe = /^(#{1,6})\s+(.+)$/gm
+  const items: TocItem[] = []
+  let index = 0
+  for (const m of text.matchAll(headingRe)) {
+    items.push({
+      id: `heading-${index++}`,
+      text: m[2]!.trim(),
+      level: m[1]!.length as TocItem['level'],
+    })
+  }
+  return items
+}
+
+const outlineItems = ref<TocItem[]>(extractOutline(content.value))
+watch(() => content.value, (text) => {
+  outlineItems.value = extractOutline(text)
+})
+
+function findNthHeading(text: string, targetIndex: number): number {
+  let i = 0
+  for (const m of text.matchAll(/^(#{1,6})\s+(.+)$/gm)) {
+    if (i === targetIndex) return m.index!
+    i++
+  }
+  return -1
+}
+
+function handleNavigateToHeading(index: number) {
+  const pos = findNthHeading(content.value, index)
+  if (pos < 0) return
+
+  // scroll textarea
+  const ta = textareaRef.value?.textareaEl
+  if (ta) {
+    const linesBefore = content.value.substring(0, pos).split('\n').length
+    ta.scrollTop = Math.max(0, (linesBefore - 2) * 22)
+  }
+
+  // scroll preview
+  if (viewMode.value !== 'edit') {
+    previewRef.value?.scrollToHeading(index)
+  }
+}
+
+// ── Scroll sync ─────────────────────────────────────────────
 interface TextareaExposed {
   syncScroll: (ratio: number) => void
   insertAtCursor: (before: string, after: string, placeholder: string) => void
+  textareaEl: HTMLTextAreaElement | null
+  selectionState: { start: number; end: number; text: string; isCollapsed: boolean }
+  getCursorLineCol: () => { row: number; col: number }
 }
 
 const textareaRef = ref<TextareaExposed | null>(null)
-const previewRef = ref<{ syncScroll: (ratio: number) => void } | null>(null)
+const previewRef = ref<{ syncScroll: (ratio: number) => void; scrollToHeading: (index: number) => void } | null>(null)
 
 let isTextareaDriven = false
 let isPreviewDriven = false
@@ -76,6 +524,7 @@ function onTextareaScroll(ratio: number) {
   isTextareaDriven = true
   previewRef.value?.syncScroll(ratio)
   requestAnimationFrame(() => { isTextareaDriven = false })
+  updateCursorPos()
 }
 
 function onPreviewScroll(ratio: number) {
@@ -87,6 +536,13 @@ function onPreviewScroll(ratio: number) {
 
 function onInsertMarkdown(before: string, after: string, placeholder: string) {
   textareaRef.value?.insertAtCursor(before, after, placeholder)
+}
+
+// ── Actions ─────────────────────────────────────────────────
+const showPublishSettings = ref(false)
+
+async function handleSave() {
+  await editor.save()
 }
 
 function handleClose() {
@@ -103,32 +559,389 @@ onMounted(async () => {
 <style scoped>
 .editor-view {
   height: 100vh;
-  background: var(--canvas);
+  background: var(--surface-soft);
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  position: relative;
 }
 
+/* ── Topnav hotzone ────────────────────────────────────── */
+.topnav-hotzone {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 6px;
+  z-index: 101;
+}
+
+/* ── Topnav slide transition ───────────────────────────── */
+.topnav-slide-enter-active,
+.topnav-slide-leave-active {
+  transition: transform 0.25s var(--ease);
+}
+
+.topnav-slide-enter-from,
+.topnav-slide-leave-to {
+  transform: translateY(-100%);
+}
+
+/* ── Body ─────────────────────────────────────────────── */
 .editor-body {
+  flex: 1;
+  overflow: hidden;
+  padding: var(--spacing-lg);
+  padding-right: 64px;
+  position: relative;
+  transition: padding-right 0.25s var(--ease);
+}
+
+.editor-body:has(.slide-panel) {
+  padding-right: 352px;
+}
+
+/* ── Single Card ──────────────────────────────────────── */
+.editor-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--canvas);
+  border-radius: var(--rounded-lg);
+  box-shadow: rgba(15, 15, 15, 0.08) 0px 4px 12px 0px;
+  overflow: hidden;
+}
+
+/* ── Toolbar ──────────────────────────────────────────── */
+.card-toolbar {
+  height: 44px;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--hairline);
+  padding: 0 var(--spacing-md);
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.toolbar-left,
+.toolbar-center,
+.toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.toolbar-left {
+  flex-shrink: 0;
+  padding-right: var(--spacing-sm);
+  border-right: 1px solid var(--hairline);
+  margin-right: var(--spacing-sm);
+}
+
+.toolbar-center {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding-right: var(--spacing-sm);
+  border-right: 1px solid var(--hairline);
+  margin-right: var(--spacing-sm);
+}
+
+.toolbar-view-toggle {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.view-toggle {
+  display: flex;
+  gap: 4px;
+}
+
+.view-btn {
+  font-family: var(--font-sans);
+  font-size: var(--body-sm);
+  font-weight: var(--weight-medium);
+  color: var(--steel);
+  background: transparent;
+  border: 1px solid var(--hairline);
+  border-radius: var(--rounded-full);
+  padding: var(--spacing-xs) var(--spacing-md);
+  cursor: pointer;
+  transition: all 0.15s var(--ease);
+  white-space: nowrap;
+}
+
+.view-btn:hover { color: var(--ink); border-color: var(--hairline-strong); }
+
+.view-btn.active {
+  color: var(--on-dark);
+  background: var(--ink-deep);
+  border-color: var(--ink-deep);
+}
+
+.toolbar-right {
+  gap: var(--spacing-xs);
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.toolbar-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: none;
+  border-radius: var(--rounded-sm);
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: var(--caption);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.12s var(--ease);
+}
+
+.toolbar-btn:hover {
+  background: var(--hairline-soft);
+}
+
+.btn-icon {
+  font-size: 15px;
+  font-weight: var(--weight-semibold);
+  line-height: 1;
+}
+
+.btn-icon-svg {
+  flex-shrink: 0;
+  color: var(--ink);
+}
+
+.toolbar-btn--labeled {
+  width: auto;
+  padding: 0 8px;
+  gap: 4px;
+}
+
+.toolbar-btn--labeled .btn-label {
+  font-size: var(--caption);
+  color: var(--slate);
+}
+
+.toolbar-btn--labeled .btn-arrow {
+  font-size: 20px;
+  color: var(--slate);
+  margin-left: -2px;
+  line-height: 1;
+}
+
+.dropdown-item-icon {
+  font-size: 14px;
+  width: 20px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.toolbar-divider {
+  width: 1px;
+  height: 20px;
+  background: var(--hairline);
+  margin: 0 6px;
+  flex-shrink: 0;
+}
+
+/* ── Dropdown menus ────────────────────────────────────── */
+.dropdown-wrap {
+  position: relative;
+}
+
+.toolbar-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  min-width: 130px;
+  padding: 4px;
+  background: var(--canvas);
+  border: 1px solid var(--hairline);
+  border-radius: var(--rounded-md);
+  box-shadow: rgba(15, 15, 15, 0.08) 0px 4px 12px 0px;
+  z-index: 50;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.toolbar-dropdown--right {
+  left: auto;
+  right: 0;
+}
+
+.toolbar-dropdown--wide {
+  min-width: 140px;
+  column-count: 2;
+  column-gap: 4px;
+}
+
+.toolbar-dropdown--wide .dropdown-item {
+  break-inside: avoid;
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 6px 10px;
+  border: none;
+  border-radius: var(--rounded-xs);
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: var(--caption);
+  text-align: left;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.1s var(--ease);
+}
+
+.dropdown-item:hover {
+  background: var(--hairline-soft);
+}
+
+.dropdown-item-prefix {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--muted);
+  width: 48px;
+  flex-shrink: 0;
+}
+
+/* ── Card Status Bar ───────────────────────────────────── */
+.card-statusbar {
+  height: 36px;
+  flex-shrink: 0;
+  border-top: 1px solid var(--hairline);
+  padding: 0 var(--spacing-md);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.statusbar-left,
+.statusbar-right {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.statusbar-stat {
+  font-size: var(--caption);
+  color: var(--steel);
+  white-space: nowrap;
+}
+
+.statusbar-divider {
+  color: var(--hairline-strong);
+  font-size: var(--caption);
+}
+
+.statusbar-timestamp {
+  color: var(--muted);
+  font-size: var(--caption);
+  white-space: nowrap;
+}
+
+.statusbar-btn {
+  height: 28px;
+  padding: 0 var(--spacing-sm);
+  border: none;
+  border-radius: var(--rounded-sm);
+  font-family: var(--font-sans);
+  font-size: var(--caption);
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.12s var(--ease), color 0.12s var(--ease);
+}
+
+.statusbar-btn--save {
+  background: var(--surface);
+  color: var(--steel);
+}
+
+.statusbar-btn--save:hover:not(:disabled) {
+  background: var(--hairline-soft);
+  color: var(--ink);
+}
+
+.statusbar-btn--publish {
+  background: var(--primary);
+  color: var(--on-primary);
+}
+
+.statusbar-btn--publish:hover:not(:disabled) {
+  background: var(--primary-pressed);
+}
+
+.statusbar-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── Content Area ─────────────────────────────────────── */
+.card-content {
   flex: 1;
   display: flex;
   flex-direction: row;
   overflow: hidden;
 }
 
-.editor-main {
+.card-content--single > :only-child {
+  width: 100%;
+}
+
+.pane-edit {
   flex: 1;
-  display: grid;
+  background: var(--canvas);
   overflow: hidden;
 }
 
-.editor-main--edit { grid-template-columns: 1fr; }
-.editor-main--split { grid-template-columns: 1fr 1fr; }
-.editor-main--preview { grid-template-columns: 1fr; }
+.pane-edit--centered {
+  display: flex;
+  justify-content: center;
+}
 
+.pane-edit-inner {
+  width: 100%;
+  height: 100%;
+}
+
+.pane-edit--centered .pane-edit-inner {
+  max-width: 720px;
+}
+
+.pane-preview {
+  flex: 1;
+  background: var(--canvas);
+  overflow: hidden;
+}
+
+.pane-preview--split {
+  background: var(--surface);
+}
+
+.static-divider {
+  width: 1px;
+  flex-shrink: 0;
+  background: var(--hairline);
+}
+
+/* ── Toast ────────────────────────────────────────────── */
 .editor-toast {
   position: fixed;
-  bottom: var(--spacing-md);
+  bottom: 24px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
@@ -141,7 +954,9 @@ onMounted(async () => {
   z-index: 200;
   animation: toast-in 0.2s var(--ease);
 }
+
 .editor-toast.error { background: #c0392b; color: #fff; }
+
 .editor-toast button {
   display: flex;
   align-items: center;
@@ -151,10 +966,63 @@ onMounted(async () => {
   cursor: pointer;
   opacity: 0.8;
 }
+
 .editor-toast button:hover { opacity: 1; }
 
 @keyframes toast-in {
   from { opacity: 0; transform: translateX(-50%) translateY(8px); }
   to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+/* ── Responsive ───────────────────────────────────────── */
+@media (max-width: 900px) {
+  .toolbar-btn--labeled .btn-label { display: none; }
+  .toolbar-btn--labeled {
+    padding: 0 6px;
+    gap: 0;
+  }
+  .toolbar-divider { margin: 0 4px; }
+  .view-btn { padding: 4px 8px; font-size: var(--caption); }
+  .editor-body:has(.slide-panel) { padding-right: 312px; }
+}
+
+@media (max-width: 768px) {
+  .card-toolbar {
+    overflow-x: auto;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .card-toolbar::-webkit-scrollbar { display: none; }
+  .toolbar-btn { width: 28px; height: 28px; }
+  .btn-icon { font-size: 14px; }
+  .toolbar-btn--labeled {
+    width: 28px;
+    padding: 0;
+    justify-content: center;
+  }
+  .toolbar-btn--labeled .btn-arrow { display: none; }
+  .toolbar-divider { margin: 0 2px; }
+  .toolbar-left,
+  .toolbar-center {
+    padding-right: 4px;
+    margin-right: 4px;
+  }
+  .view-btn { padding: 3px 6px; font-size: 12px; }
+  .editor-body:has(.slide-panel) { padding-right: 272px; }
+}
+
+@media (max-width: 640px) {
+  .editor-body { padding: var(--spacing-xs); padding-right: var(--spacing-xs); }
+  .editor-body:has(.slide-panel) { padding-right: 240px; }
+  .card-toolbar { padding: 0 var(--spacing-xs); }
+  .toolbar-left { border-right: none; margin-right: 0; padding-right: 0; }
+  .toolbar-center { border-right: none; margin-right: 0; padding-right: 0; }
+  .toolbar-view-toggle { position: static; transform: none; flex-shrink: 0; }
+  .toolbar-right { margin-left: auto; }
+  .view-btn { padding: 3px 6px; font-size: 11px; }
+  .statusbar-stat,
+  .statusbar-divider,
+  .statusbar-timestamp { display: none; }
+  .pane-edit--centered .pane-edit-inner { max-width: none; }
 }
 </style>

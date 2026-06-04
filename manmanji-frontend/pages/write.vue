@@ -30,6 +30,5 @@ function handleClose() {
 <style scoped>
 .write-page {
   height: 100vh;
-  background: var(--canvas);
 }
 </style>

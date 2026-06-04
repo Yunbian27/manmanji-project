@@ -15,114 +15,132 @@ npx nuxi typecheck   # TypeScript type check
 
 **Stack**: Nuxt 4.1 + Vue 3.5 (Composition API, `<script setup>`) + TypeScript + Pinia 3
 
-**Backend**: Java Spring Boot at `localhost:8080`. Dev proxy `/api/*` → `http://localhost:8080` (configured in `nuxt.config.ts`). No Nitro server routes — all API goes to the Java backend. Backend architecture in `../docs/CLAUDE.md`.
+**Backend**: Java Spring Boot at `localhost:8080`. Dev proxy `/api/*` → `http://localhost:8080` (configured in `nuxt.config.ts`). No Nitro server routes. Backend architecture in `../docs/CLAUDE.md`.
 
-**Design system**: Uber-inspired black-and-white duet. `#000000` as the sole brand color (primary CTAs, active indicators), `#ffffff` canvas, no secondary accent. The pill (`999px` border-radius) is the signature interactive shape. Cards use `16px` radius. Font is Inter with only two roles: weight 700 for display headings, weights 400/500 for text. No letter-spacing, no all-caps headlines (sentence-case only). No dark mode — single white theme.
+### Design System
 
-**Authoritative design specs** (in `../docs/`):
-- `DESIGN.md` — color, typography, spacing, shapes, components
-- `BLUEPRINT.md` — page layouts, responsive breakpoints, component placement
-- `SIDEBAR.md` — left sidebar folder tree (ex-app-shell-row pattern)
+Design tokens in `assets/css/tokens.css`, based on Notion DESIGN.md (`../docs/DESIGN.md`):
+- **Primary**: `#2563eb` (blue), pressed `#1d4ed8`
+- **Canvas**: `#ffffff`, **Surface**: `#f6f5f4`, **Surface Soft**: `#fafaf9` (page backgrounds)
+- **Text**: `--ink` (#1a1a1a) for body, `--slate`/`--steel`/`--muted` for secondary
+- **Buttons**: 8px rounded (`--rounded-md`), **not** pill-shaped
+- **Cards**: 12px rounded (`--rounded-lg`), shadow level 2: `rgba(15,15,15,0.08) 0px 4px 12px`
+- **Font**: Inter (sans), JetBrains Mono (mono)
+- **Spacing**: 4px base, scale: 8/12/16/20/24/32/40
+- **Transition**: `cubic-bezier(0.16, 1, 0.3, 1)`
 
-**Typography rule**: `--ink` (#000000) for headings AND body paragraphs (main reading text). `--body` (#5e5e5e) only for secondary text (captions, metadata, sidebar navigation). Token file: `assets/css/tokens.css`.
+CSS loading order (`nuxt.config.ts`): `tokens.css` → `base.css` → `transitions.css`
 
-**CSS loading order** (defined in `nuxt.config.ts`): tokens.css → base.css → transitions.css
+### Routing & Layouts
 
-### Routing & Layout
+| Route | Page | Layout | Notes |
+|-------|------|--------|-------|
+| `/` | `index.vue` | `default` | Landing page; redirects to `/home` if authenticated |
+| `/home` | `home.vue` | `blank` | 2-column 语雀-style (sidebar + content), auth required |
+| `/write` | `write.vue` | `editor` | Markdown editor, auth required, `?articleId=X` to edit |
+| `/login` | `login.vue` | `blank` | Auth form |
 
-- `pages/index.vue` → `/` (landing page, unauthenticated users; logged-in users redirected to `/home`)
-- `pages/home.vue` → `/home` (article reader, 3-column layout, auth required)
-- `pages/write.vue` → `/write` (markdown editor, auth required). Supports `?articleId=X` query param for editing existing articles
-- `pages/login.vue` → `/login` (auth form, uses `layouts/blank.vue` — no TopNav/Footer)
-- `layouts/default.vue` renders: `<TopNav />` + `<slot />` + `<Footer />`
-- `layouts/blank.vue` renders: bare `<slot />` (for login page only)
-- `app.vue`: `<NuxtLayout><NuxtPage /></NuxtLayout>`
-
-### Layout Behavior
-
-The page scrolls as a single document (no independent column scrolling). Sidebars use `position: sticky; top: var(--nav-height)` to stay in view. Footer appears naturally at the document bottom after all content. AppLayout (`components/layout/AppLayout.vue`) is a 3-column flex container with `#left-sidebar` / default / `#right-sidebar` named slots. Left sidebar width is fixed at 250px; main content max-width is `1000px` (`--content-max`); right sidebar max-width is `220px` (`--right-sidebar-width`). Both side columns have `flex: 1` to center the middle content on wide screens.
+- `layouts/default.vue`: `<TopNav />` + `<slot />` + `<Footer />`
+- `layouts/blank.vue`: bare `<slot />` (used by home and login)
+- `layouts/editor.vue`: `100vh` container with `background: var(--surface-soft)`, `overflow: hidden`
 
 ### Auto-imports
 
-Nuxt auto-imports all Vue composables (`ref`, `computed`, `watch`, `provide`, `inject`, etc.), plus:
-- Components from all subdirectories under `components/` are globally available **without prefix** (e.g., `<TopNav />`, `<AppButton />`, `<TreeFolder />`)
-- Stores from `stores/` are auto-imported (e.g., `useAuthStore()` can be called without importing)
-- Composables from `composables/` are auto-imported (e.g., `useApi()`, `useArticle()`, `useAuth()`)
+Nuxt auto-imports all Vue composables (`ref`, `computed`, `watch`, `provide`, `inject`, etc.):
+- Components from `components/` subdirectories are globally available without prefix (e.g., `<AppButton />`, `<EditorView />`, `<IconX />`)
+- Stores from `stores/` are auto-imported (e.g., `useAuthStore()`)
+- Composables from `composables/` are auto-imported (e.g., `useArticle()`, `useApi()`)
+- `defineStore` is NOT auto-imported — each store file must `import { defineStore } from 'pinia'`
 
-The `defineStore` function is NOT auto-imported — each store file must `import { defineStore } from 'pinia'`.
+### Home Page (`home.vue`)
 
-### Key Patterns
+Two-column 语雀-style layout using `layouts/blank.vue`:
+- **Left sidebar (280px)**: Logo, tag filter popover, 4 status filter buttons (全部/已发布/草稿/收藏), scrollable article list, "探索社区" footer button
+- **Right content area**: 51px topbar (search input, article title, "发布文章" button, avatar dropdown), scrollable article content card (`max-width: 720px`)
 
-**Three-state async data** (used everywhere: stores, components):
+All state is local to the page (no provide/inject). "发布文章" opens `/write` in a new tab via `window.open('/write', '_blank')`. Article list uses mock data from `useArticle().listStudyArticles()`.
+
+### Editor Architecture (`/write`)
+
+**Component hierarchy:**
 ```
-loading → skeleton | error → message + retry | data → render
+EditorView (provides EDITOR_KEY)
+├── EditorTopNav — back button, title input, view mode toggle (edit/split/preview), avatar dropdown
+├── EditorToolbar — format buttons | insert buttons | more actions. Emits format(before, after, placeholder)
+├── EditorTextarea (card) — textarea with v-model="content", exposes syncScroll/insertAtCursor
+├── DraggableDivider — resizes split panes (16px invisible zone, hover handle)
+├── EditorPreview (card) — rendered HTML, exposes syncScroll
+├── RightFloatingPanel — 3 circular buttons → slide-out panels (TOC/AI/Help)
+├── BottomStatusBar — word/line/cursor stats + save draft/publish buttons
+└── PublishSettingsModal — category, tags, cover, summary, isOriginal
 ```
 
-**API layer**: `composables/useApi.ts` wraps `fetch` with JWT injection and `ApiResult<T>` unwrapping. Two request methods:
-- `request<T>()` / `get/post/put/delete` — JSON requests, sets `Content-Type: application/json`
-- `uploadFormData<T>()` — multipart file uploads, omits Content-Type (browser sets `multipart/form-data` + boundary)
+**State sharing**: Uses `provide/inject` with `Symbol('editor')` key (`EDITOR_KEY`), not Pinia. `EditorView` calls `createEditorState(articleId)` and `provideEditor()`. All child components call `injectEditor()` to access shared state (`title`, `content`, `viewMode`, `isSaving`, `lastSavedAt`, `publishError`, `publishSettings`, `save()`, `publish()`, etc.).
 
-Domain composables delegate to `useApi()` and return typed promises:
+**Card layout**: Page background is `--surface-soft`, editor/preview are white `--canvas` cards with `--rounded-lg` + level-2 shadow, separated by `gap: 16px` in split mode, centered `max-width: 820px` in single mode.
+
+**Scroll sync**: Bidirectional between textarea and preview using guard flags (`isTextareaDriven`/`isPreviewDriven`) and `requestAnimationFrame` to prevent feedback loops.
+
+**Markdown rendering**: `useMarkdownRenderer(content)` → MarkdownIt + highlight.js → `renderedHtml` + `tocItems`. Code blocks get a header with language label and "copy code" button. Headings get auto-generated IDs for TOC navigation.
+
+**Image upload**: EditorToolbar image button → `<input type="file">` → `useArticle().uploadImage(file)` → `POST /api/storage/image` multipart → returns URL → `insertAtCursor('![', '](url)', '图片描述')`.
+
+### API Layer
+
+`composables/useApi.ts` wraps `fetch` with JWT injection and `ApiResult<T>` unwrapping:
+- `request<T>()` / `get/post/put/delete` — JSON requests
+- `uploadFormData<T>()` — multipart file uploads
+
+Domain composables delegate to `useApi()`:
 - `useAuth()` — login, register, refresh, logout
-- `useArticle()` — get/create/save/publish article, AI polish, `uploadImage(file)` for image upload
-- `useFolder()` — folder tree, create/rename/delete/move folders **and** rename/delete/move articles (article mutations live here because they return the refreshed folder tree)
+- `useArticle()` — get/create/save/publish article, AI polish, `uploadImage(file)`
+- `useFolder()` — folder tree CRUD + article rename/delete/move
 
-**Context menu**: `ContextMenu.vue` renders via `<Teleport>` to `body`. `pages/home.vue` `provide('openContextMenu', handler)` — the handler builds menu items by right-click target type (`blank`/`folder`/`article`). `LeftSidebar.vue` and `TreeFolder.vue` `inject` it and call on `@contextmenu`. Selection dispatches to `handleCreateFolder`, `handleRenameFolder`, `handleDeleteFolder`, `handleRenameArticle`, `handleDeleteArticle`, and `handleNewArticle` (including via `/write?articleId=X`).
+### Auth
 
-**Modals (PromptModal / ConfirmModal / PublishSettingsModal)**: Custom modals (no browser-native dialogs). All use `<Teleport to="body">` + `<Transition name="modal">`. State is managed via `reactive()` objects + Promise resolve pattern in `pages/home.vue`:
-```ts
-const prompt = reactive({ visible, title, placeholder, confirmText, loading, error })
-let promptResolve: ((value: string | null) => void) | null = null
+- Global middleware `auth.global.ts` runs on every route, redirects unauthenticated users to `/login?redirect=...`
+- `plugins/01.pinia.ts` (numeric prefix forces load order before alphabetical plugins)
+- `plugins/auth.client.ts` hydrates JWT from localStorage before middleware runs
+- Access + refresh token pattern (15min / 7 days)
 
-function showPrompt(config): Promise<string | null> {
-  return new Promise(resolve => { promptResolve = resolve })
-}
-// Handler calls: const name = await showPrompt(...)
-// If name is null → user cancelled
-// If name is set → set loading=true, call API, on success close modal, on error set prompt.error
-```
-Same pattern for `ConfirmModal` with `confirm` reactive state + `showConfirmDialog()`. `PublishSettingsModal` uses `v-model:visible` instead.
+### Drag-and-Drop
 
-**Drag-and-drop**: `vuedraggable` (SortableJS with `:force-fallback="true"`) handles folder/article reordering. Mirror element is fully transparent (`opacity:0`); a custom `drag-cursor-icon` div tracks the mouse via `mousemove` listener in `onDragStart`, cleaned up in `onDragEnd`. Two sort groups: `"folders"` and `"articles"` — folders and articles cannot cross-sort.
-
-**Editor state**: The markdown editor (`/write`) uses `provide/inject` (Symbol key `EDITOR_KEY`) rather than Pinia. `createEditorState()` in `composables/useArticleEditor.ts` creates the full state; `provideEditor()` / `injectEditor()` wire it. Single-instance feature. Editing existing articles: navigate to `/write?articleId=X`, `EditorView.onMounted` calls `loadFromServer()` which fetches article data via `GET /api/articles/{id}` and populates title, content, and publish settings.
-
-**Editor image upload**: Click "选择图片" button in sidebar → file picker → uploads to `POST /api/storage/image` via multipart → inserts `![图片描述](url)` at cursor position. Reuses the existing `insertMarkdown` emit → `insertAtCursor` chain in `EditorTextarea`.
-
-**Auth guard**: Client-only named middleware `middleware/auth.client.ts` redirects unauthenticated users to `/login?redirect=...`. Auth state hydrated via `plugins/auth.client.ts` (loads JWT from localStorage before middleware runs). Pinia plugin renamed to `plugins/01.pinia.ts` to force load order (numeric prefix before alphabetical).
-
-### Key Components
-
-| Component | Purpose |
-|-----------|---------|
-| `AppButton` | 3 variants: `primary` (black pill), `secondary` (white pill + border), `subtle` (gray pill). `icon` and `text` variants removed |
-| `AppTag` | Single gray pill style. Yellow variant removed (no second accent) |
-| `Footer` | Black full-width footer. 3-column grid (产品/资源/关于) + copyright bar |
-| `LeftSidebar` | Folder tree sidebar. Actions (create/rename/delete) via right-click context menu only. Matches SIDEBAR.md spec |
-| `TreeFolder` | Recursive folder tree node. Folder headers: 16px/500, 8px radius. Article items: 14px/400/body color. Active state: 3px black left bar + canvas-soft bg |
-| `AppLayout` | 3-column flex layout. Natural document scroll, sticky sidebars |
-| `EditorNav` | Editor sidebar: view mode toggle, markdown quick insert grid, image upload button, save/publish actions |
-| `EditorTopNav` | Editor sticky top bar: logo, back button, title input, user avatar dropdown |
-| `PublishSettingsModal` | Modal for article publish settings (category, tags, cover, summary, isOriginal, sourceUrl). Migrated from sidebar |
-| `PromptModal` / `ConfirmModal` | Generic text input / confirmation dialogs, Promise-based |
+`vuedraggable` (SortableJS) with `:force-fallback="true"` handles folder/article reordering in home page sidebar. Custom drag cursor with fully transparent mirror element.
 
 ### Type System
 
-All TypeScript interfaces are in `types/index.ts`, mapping Java backend DTOs/VOs:
+All interfaces in `types/index.ts`, mapping Java backend DTOs:
 - `ApiResult<T>` — `{ code, message, data }`
-- `FolderTreeVO` — `{ folders: FolderTree[], rootArticles: ArticleItem[] }`，顶级响应包装体
-- `FolderTree` — `{ id, name, children: FolderTree[], articles: ArticleItem[] }`，递归文件夹节点
-- `ArticleItem` — `{ id, title, status: 'UNPUBLISHED' | 'PUBLISHED' }`
-- `ArticleVO` — full article with all metadata fields
-- `ArticleSaveDTO` — `{ id, title, content }`
-- `ArticlePublishDTO` — extends save with summary, coverUrl, categoryId, tagIds, isOriginal, sourceUrl
+- `ArticleVO`, `ArticleSaveDTO`, `ArticlePublishDTO`
+- `FolderTreeVO`, `FolderTree`, `ArticleItem`
 - `TocItem` — `{ id, text, level: 2|3|4|5|6 }`
 - `PageDTO<T>` — `{ total, page, size, records }`
 
-### Responsive Breakpoints (BLUEPRINT §7)
+### Components
+
+| Component | Role |
+|-----------|------|
+| `AppButton` | `primary` (blue), `secondary` (white + border), `subtle` (ghost) |
+| `AppTag` | Chip/tag with surface background |
+| `TopNav` | Global nav bar (used in `default` layout only) |
+| `Footer` | Full-width footer (used in `default` layout only) |
+| `EditorView` | Editor orchestrator — provides EDITOR_KEY, manages split ratio and scroll sync |
+| `EditorTopNav` | Persistent top bar — back, title, view toggle, avatar |
+| `EditorToolbar` | Fixed format toolbar — format/insert/more actions |
+| `EditorTextarea` | Markdown textarea — exposes `insertAtCursor`, `syncScroll`, `getCursorLineCol` |
+| `EditorPreview` | Rendered HTML preview — exposes `syncScroll` |
+| `DraggableDivider` | Split pane resize handle — transparent with hover indicator |
+| `BottomStatusBar` | Semi-transparent bottom bar — stats + save/publish |
+| `RightFloatingPanel` | Right edge circular buttons + 320px slide-out panels (TOC/AI/Help) |
+| `PublishSettingsModal` | Modal — category, tags, cover, summary, isOriginal |
+| `IconChevronRight` | Lucide chevron-right SVG (default size 16) |
+| `IconSearch` | Lucide search SVG (default size 16) |
+| `IconX` | Lucide x SVG (default size 20) |
+
+### Responsive Breakpoints
 
 | Breakpoint | Width | Behavior |
 |-----------|-------|----------|
-| Mobile | < 600px | Hamburger menu, left sidebar drawer, content full-width |
-| Tablet | 600–1119px | Right sidebar hidden, left sidebar narrowed |
-| Desktop | ≥ 1120px | Full 3-column layout |
+| Mobile | < 600px | Hide logo text, shrink inputs, hide toolbar right section |
+| Tablet | 600–768px | Hide toolbar button labels |
+| Desktop | ≥ 768px | Full layout |

@@ -11,7 +11,7 @@
 <style scoped>
 .editor-layout {
   height: 100vh;
-  background: var(--canvas);
+  background: var(--surface-soft);
   overflow: hidden;
 }
 </style>

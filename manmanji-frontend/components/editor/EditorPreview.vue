@@ -1,11 +1,19 @@
 <template>
-  <div ref="previewRef" class="editor-preview" @scroll="onScroll">
+  <div
+    ref="previewRef"
+    :class="['editor-preview', {
+      'editor-preview--centered': centered
+    }]"
+    @scroll="onScroll"
+  >
     <div class="article-content" v-html="renderedHtml" />
   </div>
 </template>
 
 <script setup lang="ts">
 import type { TocItem } from '~/types'
+
+const props = withDefaults(defineProps<{ centered?: boolean }>(), { centered: false })
 
 const editor = injectEditor()
 const { content } = editor
@@ -39,7 +47,14 @@ function syncScroll(ratio: number) {
   el.scrollTop = ratio * maxScroll
 }
 
-defineExpose({ syncScroll })
+function scrollToHeading(index: number) {
+  const el = previewRef.value
+  if (!el) return
+  const headings = el.querySelectorAll('h1, h2, h3, h4, h5, h6')
+  headings[index]?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
+
+defineExpose({ syncScroll, scrollToHeading })
 </script>
 
 <style scoped>
@@ -47,6 +62,21 @@ defineExpose({ syncScroll })
   height: 100%;
   overflow-y: auto;
   padding: var(--spacing-xl);
-  background: var(--canvas);
+  background: transparent;
+}
+
+.article-content {
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+.editor-preview--centered {
+  display: flex;
+  justify-content: center;
+}
+
+.editor-preview--centered .article-content {
+  width: 100%;
+  max-width: 720px;
 }
 </style>
