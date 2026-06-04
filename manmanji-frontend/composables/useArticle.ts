@@ -44,14 +44,14 @@ export function useArticle() {
     return api.post<number>('/api/articles/create')
   }
 
-  /** 保存文章 */
-  function saveArticle(dto: ArticleSaveDTO): Promise<void> {
-    return api.put<void>('/api/articles/save', dto)
+  /** 保存文章（新建返回文章ID，更新返回原ID） */
+  function saveArticle(dto: ArticleSaveDTO): Promise<number> {
+    return api.put<number>('/api/articles/save', dto)
   }
 
-  /** 发布文章 */
-  function publishArticle(dto: ArticlePublishDTO): Promise<void> {
-    return api.put<void>('/api/articles/publish', dto)
+  /** 发布文章（新建返回文章ID，更新返回原ID） */
+  function publishArticle(dto: ArticlePublishDTO): Promise<number> {
+    return api.put<number>('/api/articles/publish', dto)
   }
 
   /** AI 润色文章内容（需要登录） */

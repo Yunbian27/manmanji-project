@@ -7,7 +7,10 @@
   <div class="body">
     <!-- ===== Left Sidebar ===== -->
     <aside class="sidebar">
-      <div class="sidebar-logo">慢慢记</div>
+      <div class="sidebar-logo">
+        <img src="/favicon.svg" alt="慢慢记" class="sidebar-logo-mark" />
+      慢慢记
+      </div>
 
       <div class="sidebar-fixed">
         <div class="tag-filter-wrap">
@@ -57,6 +60,12 @@
         <div v-if="searchQuery && filteredNotes.length === 0" class="note-empty">未找到相关笔记</div>
       </div>
 
+      <div class="sidebar-footer">
+        <button class="sidebar-community-btn" @click="router.push('/community')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          探索社区
+        </button>
+      </div>
     </aside>
 
     <!-- ===== Content Area ===== -->
@@ -76,7 +85,23 @@
         <div class="content-topbar-center">{{ selectedArticle?.title || '' }}</div>
         <div class="content-topbar-right">
           <button class="btn-primary" @click="onPublish">发布文章</button>
-          <div class="topbar-avatar">{{ avatarChar }}</div>
+          <div ref="avatarContainer" class="avatar-wrapper">
+            <div class="topbar-avatar" @click="showDropdown = !showDropdown">
+              {{ avatarChar }}
+            </div>
+            <Transition name="dropdown">
+              <div v-if="showDropdown" class="avatar-dropdown">
+                <div class="dropdown-user">
+                  <p class="dropdown-nickname">{{ authStore.user?.nickname }}</p>
+                  <p class="dropdown-username">{{ authStore.user?.username }}</p>
+                </div>
+                <div class="dropdown-divider" />
+                <button class="dropdown-item dropdown-item-danger" @click="handleLogout">
+                  退出登录
+                </button>
+              </div>
+            </Transition>
+          </div>
         </div>
       </div>
 
@@ -109,6 +134,7 @@
 
 <script setup lang="ts">
 import type { StudyArticle } from '~/types'
+import { onClickOutside } from '@vueuse/core'
 
 definePageMeta({ layout: 'blank' })
 
@@ -122,10 +148,12 @@ const activeStatus = ref('ALL')
 const activeTags = ref<string[]>([])
 const searchQuery = ref('')
 const popoverVisible = ref(false)
+const showDropdown = ref(false)
 
 // --- Refs for scrollbar ---
 const sidebarScrollRef = ref<HTMLElement | null>(null)
 const contentBodyRef = ref<HTMLElement | null>(null)
+const avatarContainer = ref<HTMLElement | null>(null)
 
 // --- Compute ---
 const avatarChar = computed(() => authStore.user?.nickname?.charAt(0) || '慢')
@@ -195,7 +223,14 @@ function selectArticle(article: StudyArticle) {
 }
 
 function onPublish() {
-  router.push('/write')
+  window.open('/write', '_blank')
+}
+
+async function handleLogout() {
+  const { logout } = useAuth()
+  await logout()
+  showDropdown.value = false
+  navigateTo('/login')
 }
 
 // --- Init ---
@@ -225,7 +260,11 @@ onMounted(() => {
   if (contentBodyRef.value) initScrollbar(contentBodyRef.value)
 })
 
-// --- Close popover on outside click ---
+// --- Close popover & dropdown on outside click ---
+onClickOutside(avatarContainer, () => {
+  showDropdown.value = false
+})
+
 onMounted(() => {
   document.addEventListener('click', (e) => {
     const target = e.target as HTMLElement
@@ -256,11 +295,28 @@ onMounted(() => {
 }
 
 .sidebar-logo {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
   padding: var(--spacing-lg) var(--spacing-md) var(--spacing-sm);
   font-family: var(--font-sans);
   font-size: var(--heading-4);
   font-weight: var(--weight-semibold);
   color: var(--ink);
+  flex-shrink: 0;
+}
+.sidebar-logo-mark {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--rounded-md);
+  background: var(--ink);
+  color: var(--canvas);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: var(--weight-semibold);
+  font-family: 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
   flex-shrink: 0;
 }
 
@@ -290,9 +346,10 @@ onMounted(() => {
 }
 .sidebar-action-btn:hover { background: var(--hairline-soft); color: var(--ink); }
 .sidebar-action-btn.active {
-  background: var(--hairline-soft);
+  background: var(--canvas);
   color: var(--ink);
   font-weight: var(--weight-medium);
+  box-shadow: rgba(15, 15, 15, 0.06) 0px 1px 3px 0px;
 }
 .sidebar-action-btn svg { opacity: 0.5; flex-shrink: 0; }
 .sidebar-action-btn.active svg { opacity: 1; }
@@ -332,13 +389,16 @@ onMounted(() => {
 }
 .note-list { flex: 1; }
 .note-item {
-  padding: var(--spacing-xs) var(--spacing-sm);
+  padding: 6px var(--spacing-sm);
   border-radius: var(--rounded-sm);
   cursor: pointer;
-  transition: background 0.15s var(--ease);
+  transition: background 0.15s var(--ease), box-shadow 0.15s var(--ease);
 }
 .note-item:hover { background: var(--hairline-soft); }
-.note-item.active { background: var(--hairline); }
+.note-item.active {
+  background: var(--canvas);
+  box-shadow: rgba(15, 15, 15, 0.06) 0px 1px 3px 0px;
+}
 .note-item-title {
   font-family: var(--font-sans);
   font-size: var(--body-sm);
@@ -357,7 +417,34 @@ onMounted(() => {
   color: var(--muted);
 }
 
-/* Sidebar scrollable zone */
+/* Sidebar footer */
+.sidebar-footer {
+  flex-shrink: 0;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-top: 1px solid var(--hairline-soft);
+}
+
+.sidebar-community-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  width: 100%;
+  padding: 6px var(--spacing-sm);
+  border: none;
+  border-radius: var(--rounded-sm);
+  background: transparent;
+  color: var(--steel);
+  font-family: var(--font-sans);
+  font-size: var(--body-sm);
+  font-weight: var(--weight-regular);
+  cursor: pointer;
+  transition: background 0.15s var(--ease), color 0.15s var(--ease);
+}
+.sidebar-community-btn:hover {
+  background: var(--hairline-soft);
+  color: var(--ink);
+}
+.sidebar-community-btn svg { flex-shrink: 0; opacity: 0.5; }
 
 /* ===== Content Area ===== */
 .content-area {
@@ -392,6 +479,7 @@ onMounted(() => {
 }
 .content-topbar-search {
   width: 300px;
+  max-width: 100%;
   height: 36px;
   padding: var(--spacing-xs) var(--spacing-sm) var(--spacing-xs) 32px;
   border: 1px solid var(--hairline);
@@ -415,6 +503,7 @@ onMounted(() => {
   text-overflow: ellipsis;
   white-space: nowrap;
   max-width: 400px;
+  min-width: 0;
 }
 .content-topbar-right {
   flex: 1;
@@ -422,6 +511,18 @@ onMounted(() => {
   align-items: center;
   justify-content: flex-end;
   gap: var(--spacing-md);
+  flex-shrink: 0;
+}
+
+@media (max-width: 1023px) {
+  .content-topbar { padding: 0 var(--spacing-md); }
+  .content-topbar-search { width: 200px; }
+  .content-topbar-center { display: none; }
+}
+
+@media (max-width: 599px) {
+  .content-topbar-search { width: 140px; }
+  .btn-primary { padding: 8px 14px; font-size: var(--caption); }
 }
 .topbar-avatar {
   width: 28px; height: 28px;
@@ -434,6 +535,74 @@ onMounted(() => {
   font-size: var(--body-sm-medium);
   font-weight: var(--weight-medium);
   flex-shrink: 0;
+  cursor: pointer;
+  transition: opacity 0.15s var(--ease);
+}
+.topbar-avatar:hover { opacity: 0.85; }
+
+.avatar-wrapper { position: relative; flex-shrink: 0; }
+
+.avatar-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 160px;
+  padding: var(--spacing-xs);
+  background: var(--canvas);
+  border: 1px solid var(--hairline);
+  border-radius: var(--rounded-xl);
+  box-shadow: rgba(15, 15, 15, 0.08) 0px 4px 12px 0px;
+  z-index: var(--z-modal);
+}
+
+.dropdown-user { padding: 8px 12px; }
+.dropdown-nickname {
+  font-size: var(--body-sm);
+  font-weight: var(--weight-medium);
+  color: var(--ink);
+  margin: 0;
+  line-height: 1.4;
+}
+.dropdown-username {
+  font-size: var(--caption);
+  color: var(--muted);
+  margin: 2px 0 0;
+  line-height: 1.4;
+}
+
+.dropdown-divider {
+  height: 1px;
+  background: var(--hairline);
+  margin: 4px 0;
+}
+
+.dropdown-item {
+  display: block;
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
+  border-radius: var(--rounded-sm);
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: var(--body-sm);
+  font-weight: var(--weight-regular);
+  line-height: 1.4;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s var(--ease);
+}
+.dropdown-item:hover { background: var(--hairline-soft); }
+.dropdown-item-danger:hover { color: #c0392b; }
+
+.dropdown-enter-active,
+.dropdown-leave-active {
+  transition: opacity 0.15s var(--ease), transform 0.15s var(--ease);
+}
+.dropdown-enter-from,
+.dropdown-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
 }
 
 /* Button primary */
@@ -448,6 +617,8 @@ onMounted(() => {
   font-weight: var(--weight-medium);
   line-height: var(--leading-button);
   cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
   transition: background 0.15s var(--ease);
 }
 .btn-primary:hover { background: var(--primary-pressed); }

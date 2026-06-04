@@ -5,7 +5,7 @@
 -->
 <template>
   <div class="write-page">
-    <EditorView v-if="articleId" :article-id="articleId" @close="handleClose" />
+    <EditorView :article-id="articleId" @close="handleClose" />
   </div>
 </template>
 

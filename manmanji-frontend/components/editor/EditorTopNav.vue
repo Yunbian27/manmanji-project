@@ -7,7 +7,7 @@
   <header class="editor-topnav">
     <div class="topnav-left">
       <div class="nav-logo">
-        <span class="logo-icon">慢</span>
+        <img src="/favicon.svg" alt="慢慢记" class="logo-icon" />
         <span class="logo-text">慢慢记</span>
       </div>
       <button class="back-btn" @click="handleBack">

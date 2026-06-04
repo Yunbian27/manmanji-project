@@ -84,11 +84,14 @@ export function createEditorState(articleId: number) {
     publishError.value = null
     try {
       const { saveArticle } = useArticle()
-      await saveArticle({
+      const id = await saveArticle({
         id: currentArticleId.value,
         title: title.value.trim(),
         content: content.value,
       })
+      if (currentArticleId.value === 0) {
+        currentArticleId.value = id
+      }
       lastSavedAt.value = new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
     } catch (e: any) {
       publishError.value = e?.message || '保存失败，请稍后重试'
@@ -103,7 +106,7 @@ export function createEditorState(articleId: number) {
     publishError.value = null
     try {
       const { publishArticle } = useArticle()
-      await publishArticle({
+      const id = await publishArticle({
         id: currentArticleId.value,
         title: title.value.trim(),
         content: content.value,
@@ -114,6 +117,10 @@ export function createEditorState(articleId: number) {
         isOriginal: publishSettings.isOriginal,
         sourceUrl: publishSettings.sourceUrl || undefined,
       })
+      if (currentArticleId.value === 0) {
+        currentArticleId.value = id
+      }
+      lastSavedAt.value = new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
     } catch (e: any) {
       publishError.value = e?.message || '发布失败，请稍后重试'
     } finally {

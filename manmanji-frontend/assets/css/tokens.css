@@ -73,7 +73,7 @@
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
 
   /* === 布局 === */
-  --sidebar-width: 336px;
+  --sidebar-width: 280px;
   --topbar-height: 51px;
 
   /* === z-index === */

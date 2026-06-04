@@ -20,6 +20,7 @@ useHead({
     { name: 'viewport', content: 'width=device-width, initial-scale=1' },
     { name: 'description', content: '慢慢记 — 个人博客 + 技术社区 + AI 对话助手' },
   ],
-  htmlAttrs: { lang: 'zh-CN' },
+  link: [ { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' } ],
+    htmlAttrs: { lang: 'zh-CN' },
 })
 </script>
