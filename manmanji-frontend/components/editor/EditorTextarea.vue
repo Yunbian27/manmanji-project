@@ -33,11 +33,6 @@ function syncScroll(ratio: number) {
   el.scrollTop = ratio * maxScroll
 }
 
-/**
- * 在光标处插入文本。若有选中文字则包裹（before + 选中 + after）。
- * 插入后光标定位到 placeholder 处（before 和 after 之间），
- * 若无 placeholder 则定位到插入文本末尾。
- */
 function insertAtCursor(before: string, after = '', placeholder = '') {
   const el = textareaRef.value
   if (!el) return
@@ -76,10 +71,10 @@ defineExpose({ syncScroll, insertAtCursor })
   background: var(--canvas);
   color: var(--ink);
   font-family: var(--font-mono);
-  font-size: var(--text-code);
-  line-height: var(--leading-relaxed);
-  padding: var(--space-xl);
+  font-size: var(--body-sm);
+  line-height: var(--leading-body);
+  padding: var(--spacing-xl);
   tab-size: 2;
 }
-.editor-textarea::placeholder { color: var(--muted-soft); }
+.editor-textarea::placeholder { color: var(--muted); }
 </style>

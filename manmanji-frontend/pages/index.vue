@@ -1,5 +1,5 @@
 <!--
-  pages/index.vue — 项目介绍页
+  pages/index.vue — 项目介绍页（Landing Page）
   未登录用户统一入口，已登录自动跳转 /home
 -->
 <template>
@@ -22,7 +22,6 @@ definePageMeta({ layout: 'blank' })
 const router = useRouter()
 const auth = useAuthStore()
 
-// SSR: 直接检查 cookie（store 在服务端未被水合，isAuthenticated 恒为 false）
 if (import.meta.server) {
   const event = useRequestEvent()
   const cookieHeader = event?.headers.get('cookie') || ''
@@ -38,7 +37,7 @@ function handleGetStarted() {
 }
 
 function handleLearnMore() {
-  // TODO: 滚动到下方详细介绍区
+  // TODO: scroll to details section
 }
 </script>
 
@@ -54,33 +53,34 @@ function handleLearnMore() {
 .landing-hero {
   text-align: center;
   max-width: 600px;
-  padding: var(--space-3xl);
+  padding: var(--spacing-xxl);
 }
 
 .hero-title {
-  font-size: var(--display-xxl);
-  font-weight: var(--weight-bold);
+  font-size: 52px;
+  font-weight: var(--weight-semibold);
   color: var(--ink);
-  margin-bottom: var(--space-md);
+  margin-bottom: var(--spacing-md);
+  line-height: 1.15;
 }
 
 .hero-subtitle {
-  font-size: var(--text-display-md);
+  font-size: var(--heading-4);
   font-weight: var(--weight-medium);
-  color: var(--body);
-  margin-bottom: var(--space-lg);
+  color: var(--steel);
+  margin-bottom: var(--spacing-md);
 }
 
 .hero-desc {
-  font-size: var(--text-body-lg);
+  font-size: var(--subtitle);
   color: var(--muted);
-  margin-bottom: var(--space-3xl);
-  line-height: var(--leading-relaxed);
+  margin-bottom: var(--spacing-xxl);
+  line-height: var(--leading-body);
 }
 
 .hero-actions {
   display: flex;
-  gap: var(--space-md);
+  gap: var(--spacing-md);
   justify-content: center;
 }
 </style>

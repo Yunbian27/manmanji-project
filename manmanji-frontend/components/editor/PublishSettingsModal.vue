@@ -1,14 +1,11 @@
 <!--
-  PublishSettingsModal.vue — 发布设置弹窗
-  从 EditorNav 左侧栏迁移而来，点击"发布设置"按钮时弹出
-  DESIGN.md ex-modal-card: canvas bg, radius-xl 16px, space-2xl 24px, shadow-2
+  PublishSettingsModal.vue — 发布设置弹窗（Notion DESIGN.md 规范）
 -->
 <template>
   <Teleport to="body">
     <Transition name="modal">
       <div v-if="visible" class="modal-overlay" @click.self="close">
         <div class="modal-card">
-          <!-- 头部：标题 + 关闭按钮 -->
           <div class="modal-header">
             <h3 class="modal-title">发布设置</h3>
             <button class="modal-close" @click="close" aria-label="关闭">
@@ -16,7 +13,6 @@
             </button>
           </div>
 
-          <!-- 表单 -->
           <form class="modal-form" @submit.prevent="handlePublish">
             <label class="form-field">
               <span class="field-label">分类</span>
@@ -76,10 +72,8 @@
               <input v-model="local.sourceUrl" class="form-input" placeholder="https://..." />
             </label>
 
-            <!-- 错误提示 -->
             <p v-if="publishError" class="form-error">{{ publishError }}</p>
 
-            <!-- 底部按钮 -->
             <div class="form-actions">
               <button type="button" class="action-btn secondary" :disabled="isSaving" @click="close">取消</button>
               <button type="submit" class="action-btn primary" :disabled="isSaving">
@@ -147,7 +141,7 @@ async function handlePublish() {
     emit('update:visible', false)
     emit('published')
   } catch {
-    // error is shown via publishError from editor state
+    // error shown via publishError
   }
 }
 
@@ -179,19 +173,17 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
 </script>
 
 <style scoped>
-/* 遮罩层 — DESIGN.md: 半透明黑色 */
 .modal-overlay {
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.6);
-  z-index: var(--z-modal, 200);
+  z-index: var(--z-modal);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: var(--space-md);
+  padding: var(--spacing-md);
 }
 
-/* 卡片 — DESIGN.md ex-modal-card */
 .modal-card {
   width: 100%;
   max-width: 440px;
@@ -199,105 +191,98 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
   overflow-y: auto;
   background: var(--canvas);
   border: 1px solid var(--hairline);
-  border-radius: var(--radius-xl);
-  padding: var(--space-2xl);
-  box-shadow: var(--shadow-2);
+  border-radius: var(--rounded-xl);
+  padding: var(--spacing-xl);
+  box-shadow: rgba(15, 15, 15, 0.08) 0px 4px 12px 0px;
 }
 
 .modal-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: var(--space-lg);
+  margin-bottom: var(--spacing-md);
 }
 
-/* 标题 — DESIGN.md button-md: 16px/500 */
 .modal-title {
-  font-size: var(--text-body);
+  font-size: var(--body-md);
   font-weight: var(--weight-medium);
   color: var(--ink);
 }
 
-/* 关闭按钮 — DESIGN.md icon-button-circular: 36×36 circle */
 .modal-close {
   width: 36px; height: 36px;
-  border-radius: var(--radius-full);
+  border-radius: var(--rounded-full);
   border: none;
   background: transparent;
-  color: var(--muted);
+  color: var(--steel);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: var(--transition-hover);
+  transition: background-color 0.15s var(--ease), color 0.15s var(--ease);
 }
-.modal-close:hover { background: var(--canvas-soft); color: var(--ink); }
+.modal-close:hover { background: var(--hairline-soft); color: var(--ink); }
 
-/* 表单 */
 .modal-form {
   display: flex;
   flex-direction: column;
-  gap: var(--space-md);
+  gap: var(--spacing-md);
 }
 
-/* 错误消息 */
 .form-error {
-  font-size: var(--text-body-sm);
+  font-size: var(--body-sm);
   color: #c0392b;
-  padding: var(--space-xs) var(--space-sm);
+  padding: var(--spacing-xs) var(--spacing-sm);
   background: #fde8e8;
-  border-radius: var(--radius-md);
+  border-radius: var(--rounded-md);
   margin: 0;
 }
 
-/* 表单字段 — DESIGN.md body-sm-strong label */
 .form-field {
   display: flex;
   flex-direction: column;
-  gap: var(--space-xxs);
+  gap: 4px;
 }
 
 .field-label {
-  font-size: var(--text-body-sm);
+  font-size: var(--body-sm);
   font-weight: var(--weight-medium);
-  color: var(--body);
+  color: var(--steel);
 }
 
-/* 输入框 — DESIGN.md text-input: 16px/400, canvas-soft bg, radius-md, padding lg */
 .form-input,
 .form-select,
 .form-textarea {
   font-family: var(--font-sans);
-  font-size: var(--text-body);
+  font-size: var(--body-md);
   font-weight: var(--weight-regular);
   color: var(--ink);
-  background: var(--canvas-soft);
-  border: 1px solid var(--hairline);
-  border-radius: var(--radius-md);
-  padding: var(--space-md) var(--space-lg);
+  background: var(--surface);
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--rounded-md);
+  padding: var(--spacing-sm) var(--spacing-md);
   outline: none;
-  transition: border-color 0.15s ease;
+  transition: border-color 0.15s var(--ease);
 }
 .form-input::placeholder,
 .form-textarea::placeholder { color: var(--muted); }
 .form-input:focus,
 .form-select:focus,
-.form-textarea:focus { border-color: var(--hairline-strong); }
+.form-textarea:focus { border-color: var(--primary); }
 
 .form-select {
   cursor: pointer;
   appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%235e5e5e' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%23787671' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 12px center;
   padding-right: 32px;
 }
 
-.form-textarea { resize: vertical; line-height: var(--leading-normal); }
+.form-textarea { resize: vertical; line-height: 1.4; }
 
-/* 标签 */
-.tag-input-area { display: flex; flex-direction: column; gap: var(--space-xxs); }
-.tag-list { display: flex; flex-wrap: wrap; gap: var(--space-xxs); }
+.tag-input-area { display: flex; flex-direction: column; gap: 4px; }
+.tag-list { display: flex; flex-wrap: wrap; gap: 4px; }
 .tag-remove {
   display: inline-flex;
   align-items: center;
@@ -310,7 +295,6 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
 }
 .tag-remove:hover { color: #c0392b; }
 
-/* 原创开关 — DESIGN.md toggle */
 .form-toggle-row {
   flex-direction: row;
   align-items: center;
@@ -325,7 +309,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
   background: var(--hairline-strong);
   border: none;
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  transition: background-color 0.2s var(--ease);
   padding: 0;
   flex-shrink: 0;
 }
@@ -338,28 +322,27 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
   height: 16px;
   border-radius: 50%;
   background: var(--on-primary);
-  transition: transform 0.2s ease;
+  transition: transform 0.2s var(--ease);
 }
 .toggle-btn.on .toggle-knob { transform: translateX(16px); }
 
-/* 底部按钮 — DESIGN.md button-primary / button-secondary */
 .form-actions {
   display: flex;
-  gap: var(--space-sm);
-  margin-top: var(--space-xs);
+  gap: var(--spacing-xs);
+  margin-top: var(--spacing-xs);
 }
 
 .action-btn {
   flex: 1;
   height: 40px;
-  padding: 0 var(--space-md);
+  padding: 0 var(--spacing-md);
   font-family: var(--font-sans);
-  font-size: var(--text-body);
+  font-size: var(--button-md);
   font-weight: var(--weight-medium);
-  line-height: 1;
-  border-radius: var(--radius-pill);
+  line-height: var(--leading-button);
+  border-radius: var(--rounded-md);
   cursor: pointer;
-  transition: var(--transition-hover);
+  transition: background-color 0.15s var(--ease);
 }
 .action-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
@@ -368,12 +351,12 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
   color: var(--on-primary);
   border: none;
 }
-.action-btn.primary:hover:not(:disabled) { background: var(--primary-active); }
+.action-btn.primary:hover:not(:disabled) { background: var(--primary-pressed); }
 
 .action-btn.secondary {
   background: var(--canvas);
   color: var(--ink);
-  border: 1px solid var(--hairline);
+  border: 1px solid var(--hairline-strong);
 }
-.action-btn.secondary:hover:not(:disabled) { background: var(--canvas-soft); }
+.action-btn.secondary:hover:not(:disabled) { background: var(--hairline-soft); }
 </style>

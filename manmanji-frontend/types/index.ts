@@ -28,12 +28,7 @@ export interface RegisterDTO {
   nickname?: string
 }
 
-// 刷新令牌请求体
-export interface RefreshDTO {
-  refreshToken: string
-}
-
-// 登录/注册/刷新成功后统一返回此结构
+// 登录/注册成功后统一返回此结构
 export interface LoginVO {
   accessToken: string          // JWT，15 分钟有效
   refreshToken: string         // JWT，7 天有效
@@ -97,53 +92,6 @@ export interface ArticlePublishDTO {
   sourceUrl?: string
 }
 
-// 文章详情（含嵌套的作者、分类、标签信息）
-export interface ArticleDetailVO {
-  id: number
-  title: string
-  slug: string
-  content: string
-  summary: string | null
-  coverUrl: string | null
-  author: AuthorInfo           // 嵌套对象，非扁平字段
-  category: CategoryInfo | null
-  tags: TagInfo[]              // 数组类型
-  status: string
-  sourceType: string
-  sourcePrompt: string | null
-  viewCount: number
-  likeCount: number
-  commentCount: number
-  bookmarkCount: number
-  isOriginal: boolean | null
-  sourceUrl: string | null
-  liked: boolean               // 当前用户是否已点赞
-  bookmarked: boolean          // 当前用户是否已收藏
-  publishedAt: string | null
-  createdAt: string
-  updatedAt: string
-}
-
-export interface AuthorInfo {
-  id: number
-  username: string
-  nickname: string
-  avatarUrl: string | null
-}
-
-export interface CategoryInfo {
-  id: number
-  name: string
-  slug: string
-}
-
-export interface TagInfo {
-  id: number
-  name: string
-  slug: string
-  color: string | null         // 标签颜色（如 #FF6600）
-}
-
 // ---------- 文件夹树 (user) ----------
 
 export interface ArticleItem {
@@ -166,57 +114,23 @@ export interface FolderTreeVO {
   rootArticles: ArticleItem[]  // folder_id 为空的文章
 }
 
-// ---------- LLM Provider ----------
-export interface LlmProviderVO {
-  id: string
-  baseUrl: string
-  model: string
-  embeddingModel: string | null
-  embeddingDimensions: number | null
-  supportsEmbedding: boolean
-  temperature: number | null
-  enabled: boolean
-  builtin: boolean
-  hasApiKey: boolean           // API Key 是否已存储（不暴露具体值）
-  createdAt: string
-  updatedAt: string
-}
-
-export interface CreateProviderDTO {
-  id: string
-  baseUrl: string
-  model: string
-  apiKey?: string
-  embeddingModel?: string
-  embeddingDimensions?: number
-  supportsEmbedding?: boolean
-  temperature?: number
-}
-
-// ---------- 分页 ----------
-// 泛型接口：<T> 表示 records 可以是任意类型的数组
-export interface PageDTO<T> {
-  total: number
-  page: number
-  size: number
-  records: T[]                 // T 由调用方指定，如 PageDTO<ArticleVO>
-}
-
 // ---------- 目录导航 ----------
-// 从文章 Markdown 中提取的 h2/h3/h4 标题列表
 export interface TocItem {
-  id: string                   // 锚点 id，如 "heading-0"
-  text: string                 // 标题文字
-  level: 2 | 3 | 4 | 5 | 6       // 标题级别
+  id: string
+  text: string
+  level: 2 | 3 | 4 | 5 | 6
 }
 
-// ---------- 评论（mock 类型，后端控制器暂未实现） ----------
-export interface CommentVO {
+// ---------- 书房（study） ----------
+// 书房文章列表项，用于 home.vue
+export interface StudyArticle {
   id: number
-  articleId: number
-  author: AuthorInfo
-  content: string
-  parentId: number | null      // 父评论 id，null 表示顶层评论
-  likeCount: number
-  createdAt: string
+  title: string
+  status: 'UNPUBLISHED' | 'PUBLISHED' | 'BOOKMARKED'
+  tags: string[]                  // 标签名称列表
+  updatedAt: string               // 最后修改时间
+  // 仅收藏文章
+  sourceAuthor?: string           // 原作者昵称
+  bookmarkedAt?: string           // 收藏时间
 }
+

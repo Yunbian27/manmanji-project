@@ -1,12 +1,3 @@
 <template>
-  <div class="layout-blank">
-    <slot />
-  </div>
+  <slot />
 </template>
-
-<style scoped>
-.layout-blank {
-  min-height: 100vh;
-  background: var(--canvas);
-}
-</style>

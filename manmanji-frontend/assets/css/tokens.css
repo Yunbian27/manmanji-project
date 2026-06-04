@@ -1,111 +1,82 @@
 /* ============================================================
  * tokens.css — 设计令牌（CSS 自定义属性）
- * Uber-inspired black-and-white design system
- * 黑 (#000000) + 白 (#ffffff) 双色系统，无第三强调色
- * 胶囊形 (999px) 是所有可交互元素的签名形状
+ * 基于 Notion DESIGN.md 设计规范
+ * 主色 #2563eb，Inter 字体，8px 圆角按钮，12px 圆角卡片
  * ============================================================ */
 
 :root {
-  /* === 品牌色 === */
-  --primary: #000000;               /* 唯一品牌色 — 主 CTA 胶囊按钮 */
-  --on-primary: #ffffff;            /* 黑色表面上的文字 (DESIGN.md colors.on-primary) */
-  --primary-active: #282828;        /* hover/按下 (black-elevated) */
-  --primary-disabled: #e2e2e2;      /* 禁用态 */
+  /* === Notion 色板 === */
+  --primary:            #2563eb;
+  --primary-pressed:    #1d4ed8;
+  --on-primary:         #ffffff;
+  --link-blue:          #0075de;
+  --canvas:             #ffffff;
+  --surface:            #f6f5f4;
+  --surface-soft:       #fafaf9;
+  --hairline:           #e5e3df;
+  --hairline-soft:      #ede9e4;
+  --hairline-strong:    #c8c4be;
+  --ink-deep:           #000000;
+  --ink:                #1a1a1a;
+  --charcoal:           #37352f;
+  --slate:              #5d5b54;
+  --steel:              #787671;
+  --stone:              #a4a097;
+  --muted:              #bbb8b1;
+  --on-dark:            #ffffff;
 
-  /* === 表面色 === */
-  --canvas: #ffffff;                /* 页面底色 */
-  --canvas-soft: #efefef;           /* 分类 chip、表单输入行 */
-  --canvas-softer: #f3f3f3;         /* 嵌套输入框 */
-  --surface-soft: #efefef;          /* alias: canvas-soft */
-  --surface-card: #ffffff;          /* 卡片背景 */
-  --surface-elevated: #e2e2e2;      /* 按压态 (surface-pressed) */
-  --hairline: #efefef;              /* 1px 边框 */
-  --hairline-strong: #d1d5db;       /* 较深分割线 */
-
-  /* === 文字色 === */
-  --ink: #000000;                   /* 标题、重要文字 */
-  --on-dark: #ffffff;               /* 深色表面的文字 */
-  --body: #5e5e5e;                  /* 正文 */
-  --body-strong: #000000;           /* 强调文字 */
-  --muted: #afafaf;                 /* 次要文字、placeholder */
-  --muted-soft: #d1d5db;            /* 三级文字 */
-
-  /* === 链接色 === */
-  --link: #0000ee;                  /* 浏览器默认蓝，行内链接 */
-  --black-elevated: #282828;        /* tab 切换 hover 态 */
-
-  /* === 字体 === */
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  /* === 字体: Notion Sans (Inter) === */
+  --font-sans: 'Inter', -apple-system, system-ui, 'Segoe UI', Helvetica, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
 
   /* === 字号 === */
-  --display-xxl: 52px;              /* 英雄大标题 */
-  --display-xl: 36px;               /* 页面章节标题 */
-  --text-display-lg: 32px;          /* 文章标题 (原 display-lg) */
-  --text-display-md: 24px;          /* 卡片标题 (原 display-md) */
-  --display-sm: 20px;               /* 子卡片标题 */
-  --text-body-lg: 18px;             /* 导语/大段正文 */
-  --text-body-md: 16px;             /* 默认正文 */
-  --text-body-md-strong: 16px;      /* 加粗正文 (16px/500) */
-  --text-body: 16px;                /* alias: 正文 */
-  --text-body-sm: 14px;             /* 辅助文字 */
-  --text-caption: 12px;             /* 脚注/细字 */
-  --text-code: 14px;                /* 代码块 */
-  --text-code-inline: 13px;         /* 内联代码 */
+  --heading-3: 28px;
+  --heading-4: 22px;
+  --heading-5: 18px;
+  --subtitle:  18px;
+  --body-md:   16px;
+  --body-sm:   14px;
+  --body-sm-medium: 14px;
+  --caption:   13px;
+  --caption-bold: 13px;
+  --button-md: 14px;
 
   /* === 字重 === */
-  --weight-bold: 700;               /* 仅用于标题 (display) */
-  --weight-medium: 500;             /* 按钮和强调正文 */
-  --weight-regular: 400;            /* 默认正文 */
+  --weight-semibold: 600;
+  --weight-medium:   500;
+  --weight-regular:  400;
 
   /* === 行高 === */
-  --leading-tight: 1.2;             /* 标题 */
-  --leading-normal: 1.4;            /* UI 文字 */
-  --leading-relaxed: 1.55;          /* 正文 */
+  --leading-heading: 1.25;
+  --leading-body:    1.55;
+  --leading-sm:      1.50;
+  --leading-button:  1.30;
 
   /* === 间距 === */
-  --space-xxs: 4px;
-  --space-xs: 6px;
-  --space-sm: 8px;
-  --space-md: 12px;
-  --space-lg: 16px;
-  --space-xl: 20px;
-  --space-2xl: 24px;
-  --space-xxl: 24px;                /* alias: 2xl */
-  --space-3xl: 32px;
+  --spacing-xs:   8px;
+  --spacing-sm:   12px;
+  --spacing-md:   16px;
+  --spacing-lg:   20px;
+  --spacing-xl:   24px;
+  --spacing-xxl:  32px;
+  --spacing-xxxl: 40px;
 
   /* === 圆角 === */
-  --radius-md: 8px;                 /* 表单输入框 */
-  --radius-lg: 12px;                /* 次级卡片 */
-  --radius-xl: 16px;                /* 标准卡片 */
-  --radius-pill: 999px;             /* 所有可交互元素的签名形状 */
-  --radius-pill-tab: 36px;          /* tab 切换 */
-  --radius-full: 9999px;            /* 圆形 (头像等) */
+  --rounded-xs:   4px;
+  --rounded-sm:   6px;
+  --rounded-md:   8px;
+  --rounded-lg:   12px;
+  --rounded-xl:   16px;
+  --rounded-full: 9999px;
 
-  /* === 阴影层级 === */
-  --shadow-1: 0px 4px 16px 0px rgba(0, 0, 0, 0.12);   /* 悬浮卡片 */
-  --shadow-2: 0px 4px 16px 0px rgba(0, 0, 0, 0.16);   /* 表单卡片/模态框 */
-  --shadow-3: 0px 2px 8px 0px rgba(0, 0, 0, 0.16);    /* 悬浮按钮 */
+  /* === 过渡 === */
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
 
-  /* === 布局尺寸 === */
-  --nav-height: 64px;
-  --sidebar-max: 280px;
-  --content-max: 1000px;
-  --right-sidebar-width: 220px;
+  /* === 布局 === */
+  --sidebar-width: 336px;
+  --topbar-height: 51px;
 
-  /* === z-index 层级 === */
-  --z-ai-panel: 89;
-  --z-ai-button: 90;
+  /* === z-index === */
   --z-nav: 100;
   --z-modal: 200;
-
-  /* === 滚动条 === */
-  --scrollbar-width: 6px;
-  --scrollbar-track: #efefef;
-  --scrollbar-thumb: #d1d5db;
-  --scrollbar-thumb-hover: #9ca3af;
-
-  /* === 过渡动画 === */
-  --transition-hover: background-color 0.15s ease, color 0.15s ease;
-  --transition-collapse: max-height 0.25s ease;
 }

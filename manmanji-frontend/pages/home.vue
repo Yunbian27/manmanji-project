@@ -1,614 +1,593 @@
 <!--
-  pages/home.vue — 个人知识库主页（文章阅读页）
-  Nuxt 路由：pages/home.vue → URL "/home"
-  需要登录才能访问
-
-  负责：
-  1. 组合所有子组件形成完整页面
-  2. 管理五层状态（loading / error / empty / data / mobile toggle）
-  3. 协调组件间通信（选文章 → 更新 TOC → 更新右侧栏）
-
-  Vue 3 关键概念在本文件中的应用：
-  - <template> 中使用 v-if / v-else-if / v-else 条件渲染
-  - <script setup> 中使用 ref / computed / onMounted / watch
-  - 组件通过 props 向下传数据，通过 events 向上传事件
-  - 命名 slot (#left-sidebar, #right-sidebar) 向 AppLayout 传递内容
-  - Pinia store (useAuthStore, useFolderStore) 全局状态共享
+  pages/home.vue — 个人知识库主页
+  语雀式 2 栏布局：左侧栏满高 + 内容区自有顶栏
+  1:1 复刻 sujian-demo.html
 -->
 <template>
-  <div class="page">
-    <!-- ===== 手机端汉堡菜单按钮 ===== -->
-    <button
-      v-if="isMobile && !mobileSidebarOpen"
-      class="hamburger-btn"
-      @click="mobileSidebarOpen = true"
-    >
-      <IconMenu :size="24" />
-    </button>
+  <div class="body">
+    <!-- ===== Left Sidebar ===== -->
+    <aside class="sidebar">
+      <div class="sidebar-logo">慢慢记</div>
 
-    <!-- ===== 手机端半透明遮罩层 ===== -->
-    <div
-      v-if="isMobile && mobileSidebarOpen"
-      class="mobile-overlay"
-      @click="mobileSidebarOpen = false"
-    />
-
-    <!-- ===== 三栏布局容器 ===== -->
-    <AppLayout>
-      <!-- 左侧栏 -->
-      <template #left-sidebar>
-        <LeftSidebar
-          :folders="folderStore.folders"
-          :root-articles="folderStore.rootArticles"
-          :loading="folderStore.loading"
-          :error="folderStore.error"
-          :current-article-id="currentArticleId"
-          :mobile-open="mobileSidebarOpen"
-          @select-article="selectArticle"
-          @new-article="onNewArticle"
-          @create-folder="onNewFolder"
-        />
-      </template>
-
-      <!-- === 主内容区：五层条件渲染 === -->
-
-      <!-- 状态1：加载中 — 骨架屏 -->
-      <template v-if="articleLoading">
-        <div class="skeleton-article">
-          <div class="skeleton-title-bar" />
-          <div class="skeleton-meta" />
-          <div v-for="i in 8" :key="i" class="skeleton-line" :style="{ width: `${40 + Math.random() * 60}%` }" />
-        </div>
-      </template>
-
-      <!-- 状态2：加载出错 — 错误 + 重试按钮 -->
-      <template v-else-if="articleError">
-        <div class="error-state">
-          <p class="error-msg">{{ articleError }}</p>
-          <AppButton variant="primary" @click="retryLoad">重试</AppButton>
-        </div>
-      </template>
-
-      <!-- 状态3：正常 — 渲染完整文章 -->
-      <template v-else-if="currentArticle">
-        <div class="article-card">
-          <ArticleHeader
-            :title="currentArticle.title"
-            :author="{ id: currentArticle.authorId, username: '', nickname: '作者', avatarUrl: null }"
-            :category="null"
-            :tags="[]"
-            :published-at="currentArticle.publishedAt"
-            :view-count="currentArticle.viewCount"
-            :read-time="readTime"
-          />
-          <ArticleBody
-            :content="currentArticle.content"
-            @toc-updated="tocItems = $event"
-          />
-          <ArticleActions
-            :like-count="currentArticle.likeCount"
-            :comment-count="currentArticle.commentCount"
-            :bookmark-count="currentArticle.bookmarkCount"
-            :liked="false"
-            :bookmarked="false"
-            @like="onLike"
-            @bookmark="onBookmark"
-            @share="onShare"
-            @comment-click="scrollToComments"
-          />
-        </div>
-        <CommentSection
-          :comments="comments"
-          @add-comment="onAddComment"
-          @reply="onReply"
-        />
-      </template>
-
-      <!-- 状态4：空 — 未选择文章 -->
-      <template v-else>
-        <div class="empty-state">
-          <div class="empty-icon">
-            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" opacity="0.3">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-              <polyline points="14 2 14 8 20 8" />
-              <line x1="16" y1="13" x2="8" y2="13" />
-              <line x1="16" y1="17" x2="8" y2="17" />
-            </svg>
+      <div class="sidebar-fixed">
+        <div class="tag-filter-wrap">
+          <button class="sidebar-action-btn" @click="popoverVisible = !popoverVisible">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+            分组管理
+          </button>
+          <div class="tag-popover" :class="{ visible: popoverVisible }">
+            <span
+              v-for="tag in allTags"
+              :key="tag"
+              class="tag-popover-chip"
+              :class="{ selected: activeTags.includes(tag) }"
+              @click="toggleTag(tag)"
+            >{{ tag }}</span>
           </div>
-          <h3>选择一篇文章</h3>
-          <p>从左侧列表选择一篇文章开始阅读</p>
         </div>
-      </template>
+      </div>
 
-      <!-- 右侧目录栏：平板以下隐藏 -->
-      <template #right-sidebar>
-        <RightSidebar
-          v-if="!isTablet"
-          :toc-items="tocItems"
-          :active-section-id="activeSectionId"
-        />
-      </template>
-    </AppLayout>
+      <div class="sidebar-scroll" ref="sidebarScrollRef">
+        <div class="sidebar-actions">
+          <button
+            v-for="item in statusItems"
+            :key="item.key"
+            class="sidebar-action-btn"
+            :class="{ active: activeStatus === item.key }"
+            @click="activeStatus = item.key"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" v-html="item.icon" />
+            {{ item.label }}
+            <span class="sidebar-action-count">{{ item.count }}</span>
+          </button>
+        </div>
 
-    <!-- AI 浮动助手 -->
-    <AiAssistant />
+        <div class="note-list-header">文章列表</div>
+        <div class="note-list">
+          <div
+            v-for="article in filteredNotes"
+            :key="article.id"
+            class="note-item"
+            :class="{ active: selectedArticle?.id === article.id }"
+            @click="selectArticle(article)"
+          >
+            <div class="note-item-title">{{ article.title }}</div>
+          </div>
+        </div>
+        <div v-if="searchQuery && filteredNotes.length === 0" class="note-empty">未找到相关笔记</div>
+      </div>
 
-    <!-- 右键上下文菜单 -->
-    <ContextMenu
-      :visible="contextVisible"
-      :items="contextItems"
-      :position="contextPosition"
-      @select="onContextSelect"
-      @close="contextVisible = false"
-    />
+    </aside>
 
-    <!-- 文本输入弹窗（新建文件夹 / 重命名文件夹 / 重命名文章） -->
-    <PromptModal
-      :visible="prompt.visible"
-      :title="prompt.title"
-      :placeholder="prompt.placeholder"
-      :confirm-text="prompt.confirmText"
-      :loading="prompt.loading"
-      :error="prompt.error"
-      @confirm="onPromptConfirm"
-      @cancel="onPromptCancel"
-    />
+    <!-- ===== Content Area ===== -->
+    <main class="content-area">
+      <div class="content-topbar">
+        <div class="content-topbar-left">
+          <div class="content-topbar-search-wrap">
+            <svg class="content-topbar-search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <input
+              class="content-topbar-search"
+              v-model="searchQuery"
+              type="text"
+              placeholder="搜索笔记..."
+            />
+          </div>
+        </div>
+        <div class="content-topbar-center">{{ selectedArticle?.title || '' }}</div>
+        <div class="content-topbar-right">
+          <button class="btn-primary" @click="onPublish">发布文章</button>
+          <div class="topbar-avatar">{{ avatarChar }}</div>
+        </div>
+      </div>
 
-    <!-- 确认删除弹窗 -->
-    <ConfirmModal
-      :visible="confirm.visible"
-      :title="confirm.title"
-      :message="confirm.message"
-      :confirm-text="confirm.confirmText"
-      :loading="confirm.loading"
-      :error="confirm.error"
-      @confirm="onConfirmConfirm"
-      @cancel="onConfirmCancel"
-    />
+      <div class="content-body" ref="contentBodyRef">
+        <div v-if="selectedArticle" class="content-inner">
+          <div class="article-header">
+            <h1 class="article-title">{{ selectedArticle.title }}</h1>
+            <div class="article-meta">
+              <span class="article-status" :class="selectedArticle.status === 'PUBLISHED' ? 'published' : 'draft'">
+                {{ selectedArticle.status === 'PUBLISHED' ? '已发布' : '草稿' }}
+              </span>
+              <span>{{ selectedArticle.updatedAt }}</span>
+              <span v-if="selectedArticle.status === 'PUBLISHED'">1,234 次阅读</span>
+            </div>
+          </div>
+          <div v-if="selectedArticle.tags?.length" class="article-tags-row">
+            <span v-for="tag in selectedArticle.tags" :key="tag" class="article-tag-chip">{{ tag }}</span>
+          </div>
+          <div class="article-body">
+            <p>{{ mockContent }}</p>
+          </div>
+        </div>
+        <div v-else class="content-empty">
+          <p>选择左侧笔记开始阅读</p>
+        </div>
+      </div>
+    </main>
   </div>
 </template>
 
 <script setup lang="ts">
-import type { ArticleVO, TocItem, CommentVO } from '~/types'
-// 演示用 mock 数据 — 从独立文件导入，避免模板字面量与 Vue SFC 编译器的转义冲突
-import { mockArticle } from '~/data/mockArticle'
-import type { MenuItem } from '~/components/common/ContextMenu.vue'
+import type { StudyArticle } from '~/types'
 
-// ---- 设备检测（响应式） ----
-const { isMobile, isTablet } = useDevice()
-const mobileSidebarOpen = ref(false)
+definePageMeta({ layout: 'blank' })
 
-// ---- Pinia 全局状态 ----
-const folderStore = useFolderStore()
+const authStore = useAuthStore()
+const router = useRouter()
 
-// ---- 右键上下文菜单状态 ----
-const contextVisible = ref(false)
-const contextPosition = ref({ x: 0, y: 0 })
-const contextItems = ref<MenuItem[]>([])
-let contextTargetId: number | undefined
+// --- Data ---
+const articles = ref<StudyArticle[]>([])
+const selectedArticle = ref<StudyArticle | null>(null)
+const activeStatus = ref('ALL')
+const activeTags = ref<string[]>([])
+const searchQuery = ref('')
+const popoverVisible = ref(false)
 
-function openContextMenu(event: MouseEvent, type: 'blank' | 'folder' | 'article', targetId?: number) {
-  contextTargetId = targetId
+// --- Refs for scrollbar ---
+const sidebarScrollRef = ref<HTMLElement | null>(null)
+const contentBodyRef = ref<HTMLElement | null>(null)
 
-  switch (type) {
-    case 'blank':
-      contextItems.value = [
-        { key: 'new-folder', label: '新建文件夹' },
-        { key: 'new-article', label: '新建文章' },
-      ]
-      break
-    case 'folder':
-      contextItems.value = [
-        { key: 'new-subfolder', label: '新建子文件夹' },
-        { key: 'new-article-in-folder', label: '新建文章' },
-        { key: 'rename-folder', label: '重命名' },
-        { key: 'delete-folder', label: '删除', danger: true },
-      ]
-      break
-    case 'article':
-      contextItems.value = [
-        { key: 'edit-article', label: '编辑' },
-        { key: 'rename-article', label: '重命名' },
-        { key: 'delete-article', label: '删除', danger: true },
-        { key: 'copy-link', label: '复制链接' },
-      ]
-      break
-  }
+// --- Compute ---
+const avatarChar = computed(() => authStore.user?.nickname?.charAt(0) || '慢')
 
-  contextPosition.value = { x: event.clientX, y: event.clientY }
-  contextVisible.value = true
-}
-
-function onContextSelect(key: string) {
-  contextVisible.value = false
-
-  switch (key) {
-    case 'new-folder':
-      handleCreateFolder()
-      break
-    case 'new-subfolder':
-      handleCreateFolder(contextTargetId)
-      break
-    case 'new-article':
-      handleNewArticle()
-      break
-    case 'new-article-in-folder':
-      handleNewArticle(contextTargetId)
-      break
-    case 'edit-article':
-      if (contextTargetId) navigateTo(`/write?articleId=${contextTargetId}`)
-      break
-    case 'rename-folder':
-      if (contextTargetId) handleRenameFolder(contextTargetId)
-      break
-    case 'rename-article':
-      if (contextTargetId) handleRenameArticle(contextTargetId)
-      break
-    case 'delete-folder':
-      if (contextTargetId) handleDeleteFolder(contextTargetId)
-      break
-    case 'delete-article':
-      if (contextTargetId) handleDeleteArticle(contextTargetId)
-      break
-    case 'copy-link':
-      if (contextTargetId) handleCopyLink(contextTargetId)
-      break
-  }
-}
-
-// ---- 文本输入弹窗状态 ----
-const prompt = reactive({
-  visible: false,
-  title: '',
-  placeholder: '',
-  confirmText: '确定',
-  loading: false,
-  error: null as string | null,
+const allTags = computed(() => {
+  const tagSet = new Set<string>()
+  articles.value.forEach(a => a.tags?.forEach(t => tagSet.add(t)))
+  return Array.from(tagSet)
 })
 
-let promptResolve: ((value: string | null) => void) | null = null
+const statusItems = computed(() => [
+  {
+    key: 'ALL',
+    label: '全部',
+    icon: '<line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>',
+    count: articles.value.length,
+  },
+  {
+    key: 'PUBLISHED',
+    label: '已发布',
+    icon: '<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>',
+    count: articles.value.filter(a => a.status === 'PUBLISHED').length,
+  },
+  {
+    key: 'UNPUBLISHED',
+    label: '草稿',
+    icon: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>',
+    count: articles.value.filter(a => a.status === 'UNPUBLISHED').length,
+  },
+  {
+    key: 'BOOKMARKED',
+    label: '收藏',
+    icon: '<path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>',
+    count: articles.value.filter(a => a.status === 'BOOKMARKED').length,
+  },
+])
 
-function showPrompt(config: { title: string; placeholder: string; confirmText?: string }): Promise<string | null> {
-  prompt.title = config.title
-  prompt.placeholder = config.placeholder
-  prompt.confirmText = config.confirmText || '确定'
-  prompt.loading = false
-  prompt.error = null
-  prompt.visible = true
-  return new Promise((resolve) => {
-    promptResolve = resolve
+const filteredNotes = computed(() => {
+  let list = articles.value
+  if (activeStatus.value !== 'ALL') {
+    list = list.filter(a => a.status === activeStatus.value)
+  }
+  if (activeTags.value.length) {
+    list = list.filter(a => activeTags.value.some(t => a.tags?.includes(t)))
+  }
+  if (searchQuery.value.trim()) {
+    const q = searchQuery.value.trim().toLowerCase()
+    list = list.filter(a => a.title.toLowerCase().includes(q))
+  }
+  return list
+})
+
+const mockContent = '在构建分布式系统时，一致性模型的选择往往是架构决策中最关键、也最困难的一环。从严格到宽松，每种模型都代表着一组特定的取舍——在可用性、性能和正确性之间寻找平衡点。理解每种模型的能力边界和适用场景，是成为优秀后端工程师的必经之路。'
+
+// --- Methods ---
+function toggleTag(tag: string) {
+  const idx = activeTags.value.indexOf(tag)
+  if (idx >= 0) {
+    activeTags.value.splice(idx, 1)
+  } else {
+    activeTags.value.push(tag)
+  }
+}
+
+function selectArticle(article: StudyArticle) {
+  selectedArticle.value = article
+}
+
+function onPublish() {
+  router.push('/write')
+}
+
+// --- Init ---
+onMounted(async () => {
+  const { listStudyArticles } = useArticle()
+  articles.value = await listStudyArticles()
+  if (articles.value.length > 0 && articles.value[0]) {
+    selectedArticle.value = articles.value[0]
+  }
+})
+
+// --- Auto-hide scrollbar ---
+function initScrollbar(el: HTMLElement) {
+  let timer: ReturnType<typeof setTimeout>
+  el.addEventListener('scroll', () => {
+    if (!timer) el.classList.add('scrolling')
+    clearTimeout(timer)
+    timer = setTimeout(() => {
+      el.classList.remove('scrolling')
+      timer = null as unknown as ReturnType<typeof setTimeout>
+    }, 400)
   })
 }
 
-function onPromptConfirm(value: string) {
-  promptResolve?.(value)
-}
-
-function onPromptCancel() {
-  promptResolve?.(null)
-  prompt.visible = false
-}
-
-// ---- 确认弹窗状态 ----
-const confirm = reactive({
-  visible: false,
-  title: '',
-  message: '',
-  confirmText: '删除',
-  loading: false,
-  error: null as string | null,
-})
-
-let confirmResolve: (() => void) | null = null
-
-function showConfirmDialog(config: { title: string; message: string; confirmText?: string }): Promise<void> {
-  confirm.title = config.title
-  confirm.message = config.message
-  confirm.confirmText = config.confirmText || '删除'
-  confirm.loading = false
-  confirm.error = null
-  confirm.visible = true
-  return new Promise((resolve) => {
-    confirmResolve = resolve
-  })
-}
-
-function onConfirmConfirm() {
-  confirmResolve?.()
-}
-
-function onConfirmCancel() {
-  confirm.visible = false
-}
-
-async function handleCreateFolder(parentId?: number) {
-  const name = await showPrompt({ title: '新建文件夹', placeholder: '输入文件夹名称' })
-  if (!name) return
-  prompt.loading = true
-  prompt.error = null
-  try {
-    await folderStore.createFolder(name, parentId)
-    prompt.visible = false
-  } catch (e) {
-    prompt.error = e instanceof Error ? e.message : '创建文件夹失败'
-  } finally {
-    prompt.loading = false
-  }
-}
-
-async function handleRenameFolder(id: number) {
-  const name = await showPrompt({ title: '重命名文件夹', placeholder: '输入新名称' })
-  if (!name) return
-  prompt.loading = true
-  prompt.error = null
-  try {
-    await folderStore.renameFolder(id, name)
-    prompt.visible = false
-  } catch (e) {
-    prompt.error = e instanceof Error ? e.message : '重命名失败'
-  } finally {
-    prompt.loading = false
-  }
-}
-
-async function handleDeleteFolder(id: number) {
-  await showConfirmDialog({ title: '删除文件夹', message: '确定删除此文件夹？子文件夹和文章也会被删除。' })
-  confirm.loading = true
-  confirm.error = null
-  try {
-    await folderStore.deleteFolder(id)
-    confirm.visible = false
-  } catch (e) {
-    confirm.error = e instanceof Error ? e.message : '删除失败'
-  } finally {
-    confirm.loading = false
-  }
-}
-
-async function handleNewArticle(folderId?: number) {
-  try {
-    const { createArticle } = useArticle()
-    const articleId = await createArticle(folderId)
-    await navigateTo(`/write?articleId=${articleId}`)
-  } catch {
-    // API 失败时留在当前页
-  }
-}
-
-async function handleRenameArticle(id: number) {
-  const title = await showPrompt({ title: '重命名文章', placeholder: '输入新标题' })
-  if (!title) return
-  prompt.loading = true
-  prompt.error = null
-  try {
-    await folderStore.renameArticle(id, title)
-    prompt.visible = false
-  } catch (e) {
-    prompt.error = e instanceof Error ? e.message : '重命名失败'
-  } finally {
-    prompt.loading = false
-  }
-}
-
-async function handleDeleteArticle(id: number) {
-  await showConfirmDialog({ title: '删除文章', message: '确定删除此文章？' })
-  confirm.loading = true
-  confirm.error = null
-  try {
-    await folderStore.deleteArticle(id)
-    confirm.visible = false
-    if (currentArticleId.value === id) {
-      currentArticle.value = null
-      currentArticleId.value = undefined
-    }
-  } catch (e) {
-    confirm.error = e instanceof Error ? e.message : '删除失败'
-  } finally {
-    confirm.loading = false
-  }
-}
-
-function handleCopyLink(articleId: number) {
-  const url = `${window.location.origin}?article=${articleId}`
-  navigator.clipboard.writeText(url).then(() => {
-    // 复制成功
-  }).catch(() => {
-    const ta = document.createElement('textarea')
-    ta.value = url
-    ta.style.position = 'fixed'
-    ta.style.opacity = '0'
-    document.body.appendChild(ta)
-    ta.select()
-    document.execCommand('copy')
-    document.body.removeChild(ta)
-  })
-}
-
-provide('openContextMenu', openContextMenu)
-
-// ---- 文章状态 ----
-const currentArticleId = ref<number | undefined>(undefined)
-const currentArticle = ref<ArticleVO | null>(null)
-const articleLoading = ref(false)
-const articleError = ref<string | null>(null)
-
-// ---- TOC 目录（由 ArticleBody emit 更新） ----
-const tocItems = ref<TocItem[]>([])
-const activeSectionId = ref<string | undefined>()
-
-// ---- 评论（前端模拟，后端控制器暂未实现） ----
-const comments = ref<CommentVO[]>([])
-
-// ---- 计算属性 ----
-/** 预估阅读时长 = 总字符数 / 500（中文平均阅读速度），最少显示 1 分钟 */
-const readTime = computed(() => {
-  if (!currentArticle.value?.content) return 0
-  return Math.max(1, Math.round(currentArticle.value.content.length / 500))
-})
-
-// ---- 生命周期 ----
 onMounted(() => {
-  folderStore.fetchFolders()
-  // 加载演示文章（实际应用中应根据路由参数加载）
-  currentArticle.value = mockArticle
-  currentArticleId.value = mockArticle.id
+  if (sidebarScrollRef.value) initScrollbar(sidebarScrollRef.value)
+  if (contentBodyRef.value) initScrollbar(contentBodyRef.value)
 })
 
-// ---- 事件处理 ----
-/** 用户点击左侧栏某篇文章 */
-async function selectArticle(id: number) {
-  currentArticleId.value = id
-  mobileSidebarOpen.value = false
-  articleLoading.value = true
-  articleError.value = null
-  try {
-    const { getArticle } = useArticle()
-    currentArticle.value = await getArticle(id)
-  } catch {
-    if (id === mockArticle.id) {
-      currentArticle.value = mockArticle
-    } else {
-      articleError.value = '文章加载失败'
+// --- Close popover on outside click ---
+onMounted(() => {
+  document.addEventListener('click', (e) => {
+    const target = e.target as HTMLElement
+    if (!target.closest('.tag-filter-wrap')) {
+      popoverVisible.value = false
     }
-  } finally {
-    articleLoading.value = false
-  }
-}
-
-function retryLoad() {
-  if (currentArticleId.value) selectArticle(currentArticleId.value)
-}
-
-function onLike() { /* TODO: 调用后端点赞 API */ }
-function onBookmark() { /* TODO: 调用后端收藏 API */ }
-function onShare() { /* TODO: 调用浏览器分享 API 或复制链接 */ }
-
-/** 添加评论（前端模拟，实际应调用后端 API） */
-function onAddComment(content: string) {
-  comments.value.push({
-    id: Date.now(),
-    articleId: currentArticleId.value || 0,
-    author: { id: 1, username: 'user', nickname: '我', avatarUrl: null },
-    content,
-    parentId: null,
-    likeCount: 0,
-    createdAt: new Date().toISOString(),
   })
-}
-
-function onReply(_commentId: number) { /* TODO */ }
-
-/** 滚动到评论区（由 ArticleActions 的 @comment-click 触发） */
-function scrollToComments() {
-  document.getElementById('comments')?.scrollIntoView({ behavior: 'smooth' })
-}
-
-function onNewFolder() { handleCreateFolder() }
-async function onNewArticle() {
-  try {
-    const { createArticle } = useArticle()
-    const articleId = await createArticle()
-    await navigateTo(`/write?articleId=${articleId}`)
-  } catch {
-    // API 失败时留在当前页，错误会在控制台显示
-  }
-}
+})
 </script>
 
 <style scoped>
+/* ===== Root ===== */
+.body {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+  background: var(--surface-soft);
+}
 
-/* === 手机端汉堡菜单按钮 === */
-.hamburger-btn {
-  display: none;
-  position: fixed;
-  top: calc(var(--nav-height) + 8px);
-  left: 12px;
-  z-index: calc(var(--z-nav) + 1);
-  width: 36px; height: 36px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--hairline);
-  background: var(--canvas);
+/* ===== Left Sidebar ===== */
+.sidebar {
+  width: var(--sidebar-width);
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border-right: 1px solid var(--hairline);
+}
+
+.sidebar-logo {
+  padding: var(--spacing-lg) var(--spacing-md) var(--spacing-sm);
+  font-family: var(--font-sans);
+  font-size: var(--heading-4);
+  font-weight: var(--weight-semibold);
   color: var(--ink);
+  flex-shrink: 0;
+}
+
+/* Fixed top zone */
+.sidebar-fixed {
+  flex-shrink: 0;
+  padding: 0 var(--spacing-md);
+}
+
+.sidebar-action-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  width: 100%;
+  padding: 6px var(--spacing-sm);
+  border: none;
+  border-radius: var(--rounded-sm);
+  background: transparent;
+  color: var(--steel);
+  font-family: var(--font-sans);
+  font-size: var(--body-sm);
+  font-weight: var(--weight-regular);
   cursor: pointer;
-  align-items: center;
-  justify-content: center;
+  white-space: nowrap;
+  transition: background 0.15s var(--ease), color 0.15s var(--ease);
+  text-align: left;
 }
-
-.mobile-overlay {
-  display: none;
-  position: fixed;
-  inset: 0;
-  top: var(--nav-height);
-  background: rgba(0, 0, 0, 0.5);
-  z-index: calc(var(--z-nav) - 1);
-}
-
-@media (max-width: 599px) {
-  .hamburger-btn { display: flex; }
-  .mobile-overlay { display: block; }
-}
-
-/* === 骨架屏（loading 状态） === */
-.skeleton-article { max-width: 780px; }
-.skeleton-title-bar {
-  height: 36px;
-  background: var(--canvas-soft);
-  border-radius: var(--radius-sm);
-  width: 70%;
-  margin-bottom: var(--space-lg);
-}
-.skeleton-meta {
-  height: 14px;
-  background: var(--canvas-soft);
-  border-radius: var(--radius-sm);
-  width: 40%;
-  margin-bottom: var(--space-xxl);
-}
-.skeleton-line {
-  height: 16px;
-  background: var(--canvas-soft);
-  border-radius: var(--radius-sm);
-  margin-bottom: var(--space-md);
-}
-
-/* === 文章卡片 (BLUEPRINT 7.3) === */
-.article-card {
-  background: var(--canvas);
-  border: 1px solid var(--surface-elevated); /* #e2e2e2 */
-  border-radius: var(--radius-xl);          /* 16px */
-  padding: var(--space-2xl);                /* 24px */
-}
-
-/* === 错误状态 === */
-.error-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-md);
-  padding: var(--space-xxl);
-  text-align: center;
-}
-.error-msg { color: var(--muted); font-size: var(--text-body); }
-
-/* === 空状态（未选文章） === */
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: var(--space-3xl) 0;
-  color: var(--muted);
-  text-align: center;
-}
-.empty-icon { margin-bottom: var(--space-md); color: var(--muted-soft); }
-.empty-state h3 {
-  font-size: var(--text-title-md);
+.sidebar-action-btn:hover { background: var(--hairline-soft); color: var(--ink); }
+.sidebar-action-btn.active {
+  background: var(--hairline-soft);
   color: var(--ink);
-  margin-bottom: var(--space-xs);
+  font-weight: var(--weight-medium);
 }
-.empty-state p {
-  font-size: var(--text-caption);
-  color: var(--muted-soft);
+.sidebar-action-btn svg { opacity: 0.5; flex-shrink: 0; }
+.sidebar-action-btn.active svg { opacity: 1; }
+
+.sidebar-action-count {
+  margin-left: auto;
+  font-size: var(--caption);
+  color: var(--muted);
+}
+
+/* Scrollable zone */
+.sidebar-scroll {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  padding: 0 var(--spacing-md);
+}
+.sidebar-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--spacing-xs) 0;
+}
+
+/* Note list */
+.note-list-header {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: var(--spacing-sm) var(--spacing-sm) var(--spacing-xs);
+  background: var(--surface);
+  font-size: var(--caption);
+  font-weight: var(--weight-semibold);
+  color: var(--muted);
+  letter-spacing: 0.04em;
+}
+.note-list { flex: 1; }
+.note-item {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--rounded-sm);
+  cursor: pointer;
+  transition: background 0.15s var(--ease);
+}
+.note-item:hover { background: var(--hairline-soft); }
+.note-item.active { background: var(--hairline); }
+.note-item-title {
+  font-family: var(--font-sans);
+  font-size: var(--body-sm);
+  font-weight: var(--weight-regular);
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.note-item.active .note-item-title { font-weight: var(--weight-medium); }
+.note-empty {
+  display: flex;
+  justify-content: center;
+  padding: var(--spacing-xxl) var(--spacing-md);
+  font-size: var(--body-sm);
+  color: var(--muted);
+}
+
+/* Sidebar scrollable zone */
+
+/* ===== Content Area ===== */
+.content-area {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--canvas);
+}
+
+/* Content topbar */
+.content-topbar {
+  flex-shrink: 0;
+  height: var(--topbar-height);
+  display: flex;
+  align-items: center;
+  padding: 0 var(--spacing-xxl);
+  border-bottom: 1px solid var(--hairline);
+  background: var(--canvas);
+}
+.content-topbar-left { flex: 1; display: flex; align-items: center; }
+.content-topbar-search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.content-topbar-search-icon {
+  position: absolute;
+  left: 10px;
+  pointer-events: none;
+  color: var(--muted);
+}
+.content-topbar-search {
+  width: 300px;
+  height: 36px;
+  padding: var(--spacing-xs) var(--spacing-sm) var(--spacing-xs) 32px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--rounded-md);
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: var(--body-sm);
+  font-weight: var(--weight-regular);
+  outline: none;
+  transition: border-color 0.15s var(--ease);
+}
+.content-topbar-search::placeholder { color: var(--muted); }
+.content-topbar-search:focus { border-color: var(--primary); }
+.content-topbar-center {
+  text-align: center;
+  font-size: var(--body-sm);
+  font-weight: var(--weight-medium);
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 400px;
+}
+.content-topbar-right {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--spacing-md);
+}
+.topbar-avatar {
+  width: 28px; height: 28px;
+  border-radius: var(--rounded-full);
+  background: var(--primary);
+  color: var(--on-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--body-sm-medium);
+  font-weight: var(--weight-medium);
+  flex-shrink: 0;
+}
+
+/* Button primary */
+.btn-primary {
+  padding: 10px 18px;
+  border: none;
+  border-radius: var(--rounded-md);
+  background: var(--primary);
+  color: var(--on-primary);
+  font-family: var(--font-sans);
+  font-size: var(--button-md);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-button);
+  cursor: pointer;
+  transition: background 0.15s var(--ease);
+}
+.btn-primary:hover { background: var(--primary-pressed); }
+
+/* Content body */
+.content-body {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  justify-content: center;
+  padding: var(--spacing-xxxl) var(--spacing-xxl);
+}
+.content-inner {
+  width: 100%;
+  max-width: 720px;
+  background: var(--canvas);
+  border-radius: var(--rounded-lg);
+  box-shadow: rgba(15, 15, 15, 0.04) 0px 1px 2px 0px;
+  padding: var(--spacing-xl);
+  height: fit-content;
+}
+.content-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--muted);
+  font-size: var(--body-md);
+}
+
+/* Article */
+.article-header {
+  margin-bottom: var(--spacing-xl);
+  padding-bottom: var(--spacing-lg);
+  border-bottom: 1px solid var(--hairline-soft);
+}
+.article-title {
+  font-family: var(--font-sans);
+  font-size: var(--heading-3);
+  font-weight: var(--weight-semibold);
+  color: var(--ink);
+  line-height: var(--leading-heading);
+  margin-bottom: var(--spacing-sm);
+}
+.article-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-lg);
+  font-size: var(--body-sm);
+  color: var(--steel);
+}
+.article-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: var(--rounded-sm);
+  font-size: var(--caption-bold);
+  font-weight: var(--weight-semibold);
+}
+.article-status.published { background: var(--hairline-soft); color: var(--primary); }
+.article-status.draft { background: var(--hairline-soft); color: var(--muted); }
+
+.article-tags-row {
+  display: flex;
+  gap: var(--spacing-xs);
+  margin: var(--spacing-md) 0 var(--spacing-xl);
+}
+.article-tag-chip {
+  padding: 2px 8px;
+  border-radius: var(--rounded-xs);
+  font-size: var(--caption-bold);
+  font-weight: var(--weight-semibold);
+  background: var(--surface);
+  color: var(--slate);
+}
+
+.article-body {
+  font-family: var(--font-sans);
+  font-size: var(--body-md);
+  font-weight: var(--weight-regular);
+  line-height: var(--leading-body);
+  color: var(--charcoal);
+}
+.article-body p { margin-bottom: var(--spacing-md); }
+
+/* ===== Tag popover ===== */
+.tag-filter-wrap { position: relative; }
+.tag-popover {
+  display: none;
+  position: absolute;
+  left: 0;
+  top: 100%;
+  margin-top: var(--spacing-xs);
+  background: var(--canvas);
+  border: 1px solid var(--hairline);
+  border-radius: var(--rounded-lg);
+  padding: var(--spacing-sm);
+  min-width: 240px;
+  z-index: 200;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
+  box-shadow: rgba(15, 15, 15, 0.08) 0px 4px 12px 0px;
+}
+.tag-popover.visible { display: flex; }
+.tag-popover-chip {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid var(--hairline);
+  border-radius: var(--rounded-full);
+  background: transparent;
+  color: var(--steel);
+  font-size: var(--body-sm-medium);
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s var(--ease);
+}
+.tag-popover-chip:hover { border-color: var(--hairline-strong); }
+.tag-popover-chip.selected {
+  background: var(--ink-deep);
+  border-color: var(--ink-deep);
+  color: var(--on-dark);
+}
+
+/* ===== Scrollbar auto-hide ===== */
+.sidebar-scroll::-webkit-scrollbar,
+.content-body::-webkit-scrollbar { width: 5px; }
+.sidebar-scroll::-webkit-scrollbar-track,
+.content-body::-webkit-scrollbar-track { background: transparent; }
+.sidebar-scroll::-webkit-scrollbar-thumb,
+.content-body::-webkit-scrollbar-thumb { background: transparent; border-radius: 3px; }
+.sidebar-scroll.scrolling::-webkit-scrollbar-thumb,
+.content-body.scrolling::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); }
+.sidebar-scroll::-webkit-scrollbar-thumb:hover,
+.content-body::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.25); }
+
+/* ===== Responsive ===== */
+@media (max-width: 767px) {
+  .sidebar { display: none; }
+  .content-body { padding: var(--spacing-md); }
+  .content-inner { padding: var(--spacing-md); }
 }
 </style>

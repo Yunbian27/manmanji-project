@@ -46,7 +46,7 @@ defineExpose({ syncScroll })
 .editor-preview {
   height: 100%;
   overflow-y: auto;
-  padding: var(--space-xl);
+  padding: var(--spacing-xl);
   background: var(--canvas);
 }
 </style>

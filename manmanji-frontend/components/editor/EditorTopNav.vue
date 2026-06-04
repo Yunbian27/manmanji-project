@@ -1,6 +1,6 @@
 <!--
-  EditorTopNav.vue — 编辑器顶部导航栏
-  常驻顶部不随滚动消失
+  EditorTopNav.vue — 编辑器顶部导航栏（Notion DESIGN.md 规范）
+  51px 高，sticky 定位
   左侧: logo + 返回 + 标题输入 | 右侧: 用户头像
 -->
 <template>
@@ -39,9 +39,7 @@
               <p class="dropdown-username">{{ auth.user?.username }}</p>
             </div>
             <div class="dropdown-divider" />
-            <button class="dropdown-item dropdown-item-danger" @click="handleLogout">
-              退出登录
-            </button>
+            <button class="dropdown-item dropdown-item-danger" @click="handleLogout">退出登录</button>
           </div>
         </Transition>
       </div>
@@ -55,7 +53,7 @@ import { onClickOutside } from '@vueuse/core'
 const router = useRouter()
 const auth = useAuthStore()
 const editor = injectEditor()
-const { title, titleError, content } = editor
+const { title, titleError } = editor
 
 const showDropdown = ref(false)
 const avatarError = ref(false)
@@ -83,13 +81,13 @@ async function handleLogout() {
 
 <style scoped>
 .editor-topnav {
-  height: var(--nav-height);
+  height: var(--topbar-height);
   position: sticky;
   top: 0;
   z-index: var(--z-nav);
   background: var(--canvas);
   border-bottom: 1px solid var(--hairline);
-  padding: 0 var(--space-3xl);
+  padding: 0 var(--spacing-xxl);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -98,14 +96,14 @@ async function handleLogout() {
 .topnav-left {
   display: flex;
   align-items: center;
-  gap: var(--space-lg);
+  gap: var(--spacing-md);
   flex-shrink: 0;
 }
 
 .nav-logo {
   display: flex;
   align-items: center;
-  gap: var(--space-xs);
+  gap: var(--spacing-xs);
   color: var(--ink);
 }
 
@@ -114,33 +112,33 @@ async function handleLogout() {
   height: 32px;
   background: var(--primary);
   color: var(--on-primary);
-  border-radius: var(--radius-md);
+  border-radius: var(--rounded-md);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: var(--text-body-md-strong);
-  font-weight: var(--weight-bold);
+  font-size: var(--body-md);
+  font-weight: var(--weight-semibold);
 }
 
 .logo-text {
   font-size: 18px;
-  font-weight: var(--weight-bold);
+  font-weight: var(--weight-semibold);
 }
 
 .back-btn {
   display: inline-flex;
   align-items: center;
-  gap: var(--space-xxs);
+  gap: 4px;
   font-family: var(--font-sans);
-  font-size: var(--text-body-sm);
+  font-size: var(--body-sm);
   font-weight: var(--weight-medium);
-  color: var(--muted);
+  color: var(--steel);
   background: transparent;
   border: none;
   cursor: pointer;
-  padding: var(--space-xxs) var(--space-xs);
-  border-radius: var(--radius-md);
-  transition: color 0.15s ease;
+  padding: 4px var(--spacing-xs);
+  border-radius: var(--rounded-md);
+  transition: color 0.15s var(--ease);
 }
 .back-btn:hover { color: var(--ink); }
 .back-icon { transform: rotate(180deg); flex-shrink: 0; }
@@ -148,18 +146,18 @@ async function handleLogout() {
 .title-input {
   width: 320px;
   height: 40px;
-  padding: 0 var(--space-md);
+  padding: 0 var(--spacing-md);
   font-family: var(--font-sans);
-  font-size: var(--text-body-md-strong);
+  font-size: var(--body-md);
   font-weight: var(--weight-medium);
   color: var(--ink);
-  background: var(--canvas-soft);
+  background: var(--surface);
   border: 1px solid var(--hairline);
-  border-radius: var(--radius-pill);
+  border-radius: var(--rounded-md);
   outline: none;
-  transition: border-color 0.15s ease;
+  transition: border-color 0.15s var(--ease);
 }
-.title-input::placeholder { color: var(--muted-soft); }
+.title-input::placeholder { color: var(--muted); }
 .title-input:focus { border-color: var(--primary); }
 .title-input.has-error { border-color: #c0392b; }
 
@@ -176,46 +174,46 @@ async function handleLogout() {
 
 .nav-avatar {
   width: 36px; height: 36px;
-  border-radius: var(--radius-full);
-  background: var(--canvas-soft);
+  border-radius: var(--rounded-full);
+  background: var(--surface);
   color: var(--ink);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: var(--text-body-sm);
+  font-size: var(--body-sm);
   font-weight: var(--weight-medium);
   flex-shrink: 0;
   cursor: pointer;
-  transition: var(--transition-hover);
+  transition: background 0.15s var(--ease);
 }
-.nav-avatar:hover { background: var(--surface-elevated); }
-.avatar-img { width: 100%; height: 100%; object-fit: cover; border-radius: var(--radius-full); }
+.nav-avatar:hover { background: var(--hairline-soft); }
+.avatar-img { width: 100%; height: 100%; object-fit: cover; border-radius: var(--rounded-full); }
 
 .avatar-dropdown {
   position: absolute;
   top: calc(100% + 8px);
   right: 0;
   min-width: 160px;
-  padding: var(--space-xs);
+  padding: var(--spacing-xs);
   background: var(--canvas);
   border: 1px solid var(--hairline);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-2);
+  border-radius: var(--rounded-xl);
+  box-shadow: rgba(15, 15, 15, 0.08) 0px 4px 12px 0px;
 }
 
 .dropdown-user { padding: 8px 12px; }
 .dropdown-nickname {
-  font-size: var(--text-body-sm);
+  font-size: var(--body-sm);
   font-weight: var(--weight-medium);
   color: var(--ink);
   margin: 0;
-  line-height: var(--leading-normal);
+  line-height: 1.4;
 }
 .dropdown-username {
-  font-size: var(--text-caption);
+  font-size: var(--caption);
   color: var(--muted);
   margin: 2px 0 0;
-  line-height: var(--leading-normal);
+  line-height: 1.4;
 }
 
 .dropdown-divider {
@@ -229,23 +227,23 @@ async function handleLogout() {
   width: 100%;
   padding: 8px 12px;
   border: none;
-  border-radius: var(--radius-pill);
+  border-radius: var(--rounded-sm);
   background: transparent;
   color: var(--ink);
   font-family: var(--font-sans);
-  font-size: var(--text-body-sm);
+  font-size: var(--body-sm);
   font-weight: var(--weight-regular);
-  line-height: var(--leading-normal);
+  line-height: 1.4;
   text-align: left;
   cursor: pointer;
-  transition: var(--transition-hover);
+  transition: background 0.15s var(--ease);
 }
-.dropdown-item:hover { background: var(--canvas-soft); }
+.dropdown-item:hover { background: var(--hairline-soft); }
 .dropdown-item-danger:hover { color: #c0392b; }
 
 .dropdown-enter-active,
 .dropdown-leave-active {
-  transition: opacity 0.15s ease, transform 0.15s ease;
+  transition: opacity 0.15s var(--ease), transform 0.15s var(--ease);
 }
 .dropdown-enter-from,
 .dropdown-leave-to {
@@ -254,7 +252,7 @@ async function handleLogout() {
 }
 
 @media (max-width: 599px) {
-  .editor-topnav { padding: 0 var(--space-lg); }
+  .editor-topnav { padding: 0 var(--spacing-md); }
   .logo-text { display: none; }
   .title-input { width: 200px; }
 }

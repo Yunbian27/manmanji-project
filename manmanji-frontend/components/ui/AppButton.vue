@@ -1,9 +1,8 @@
 <!--
-  AppButton.vue — 统一按钮组件（Uber 风格）
-  三种变体：
-  - primary: 黑色胶囊（主要 CTA）
-  - secondary: 白色胶囊 + 描边（次要操作）
-  - subtle: 浅灰胶囊（三级操作）
+  AppButton.vue — 统一按钮组件（Notion DESIGN.md 规范）
+  - primary: #2563eb 蓝底白字，8px 圆角
+  - secondary: 透明 + 描边，8px 圆角
+  - subtle: 透明幽灵按钮，6px 圆角
 -->
 <template>
   <button
@@ -28,41 +27,44 @@ defineEmits<{ click: [] }>()
 <style scoped>
 .app-btn {
   font-family: var(--font-sans);
-  font-size: var(--text-body-sm);
+  font-size: var(--button-md);
   font-weight: var(--weight-medium);
-  line-height: 1;
-  border-radius: var(--radius-pill);        /* 999px — 胶囊形签名形状 */
+  line-height: var(--leading-button);
   cursor: pointer;
   border: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: var(--space-xs);
-  padding: var(--space-md) var(--space-md); /* 12px — 标准胶囊内边距 */
-  height: 40px;
-  transition: var(--transition-hover);
+  gap: var(--spacing-xs);
+  transition: background-color 0.15s var(--ease), color 0.15s var(--ease);
 }
 .app-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-/* 主按钮：黑色背景 + 白色文字 */
+/* primary: 蓝底白字，8px 圆角 */
 .app-btn--primary {
   background: var(--primary);
   color: var(--on-primary);
+  border-radius: var(--rounded-md);
+  padding: 10px 18px;
 }
-.app-btn--primary:hover:not(:disabled) { background: var(--primary-active); }
+.app-btn--primary:hover:not(:disabled) { background: var(--primary-pressed); }
 
-/* 次按钮：白色背景 + 黑色文字 + 细边框 */
+/* secondary: 透明 + 描边，8px 圆角 */
 .app-btn--secondary {
   background: transparent;
   color: var(--ink);
-  border: 1px solid var(--hairline);
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--rounded-md);
+  padding: 10px 18px;
 }
-.app-btn--secondary:hover:not(:disabled) { background: var(--canvas-soft); }
+.app-btn--secondary:hover:not(:disabled) { background: var(--hairline-soft); }
 
-/* 弱按钮：浅灰背景 + 黑色文字 */
+/* subtle: 透明幽灵按钮，6px 圆角 */
 .app-btn--subtle {
-  background: var(--canvas-soft);
+  background: transparent;
   color: var(--ink);
+  border-radius: var(--rounded-sm);
+  padding: 8px 12px;
 }
-.app-btn--subtle:hover:not(:disabled) { background: var(--surface-elevated); }
+.app-btn--subtle:hover:not(:disabled) { background: var(--hairline-soft); }
 </style>

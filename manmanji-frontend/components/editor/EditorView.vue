@@ -102,10 +102,11 @@ onMounted(async () => {
 
 <style scoped>
 .editor-view {
-  height: 100%;
+  height: 100vh;
   background: var(--canvas);
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .editor-body {
@@ -121,37 +122,26 @@ onMounted(async () => {
   overflow: hidden;
 }
 
-.editor-main--edit {
-  grid-template-columns: 1fr;
-}
-
-.editor-main--split {
-  grid-template-columns: 1fr 1fr;
-}
-
-.editor-main--preview {
-  grid-template-columns: 1fr;
-}
+.editor-main--edit { grid-template-columns: 1fr; }
+.editor-main--split { grid-template-columns: 1fr 1fr; }
+.editor-main--preview { grid-template-columns: 1fr; }
 
 .editor-toast {
   position: fixed;
-  bottom: var(--space-lg);
+  bottom: var(--spacing-md);
   left: 50%;
   transform: translateX(-50%);
   display: flex;
   align-items: center;
-  gap: var(--space-sm);
-  padding: var(--space-sm) var(--space-lg);
-  border-radius: var(--radius-md);
-  font-size: var(--text-body-sm);
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs) var(--spacing-md);
+  border-radius: var(--rounded-md);
+  font-size: var(--body-sm);
   font-weight: var(--weight-medium);
   z-index: 200;
-  animation: toast-in 0.2s ease;
+  animation: toast-in 0.2s var(--ease);
 }
-.editor-toast.error {
-  background: #c0392b;
-  color: #fff;
-}
+.editor-toast.error { background: #c0392b; color: #fff; }
 .editor-toast button {
   display: flex;
   align-items: center;

@@ -1,8 +1,6 @@
 <!--
-  EditorNav.vue — 编辑器左侧功能区
-  - 视图切换
-  - Markdown 快捷插入
-  - 发布设置 / 保存
+  EditorNav.vue — 编辑器左侧功能区（Notion DESIGN.md 规范）
+  视图切换 | Markdown 快捷插入 | 图片上传 | 保存/发布
 -->
 <template>
   <aside class="editor-sidebar">
@@ -36,18 +34,8 @@
     <!-- 插入图片 -->
     <div class="sidebar-section">
       <span class="section-label">插入图片</span>
-      <input
-        ref="fileInput"
-        type="file"
-        accept="image/*"
-        hidden
-        @change="onFileSelected"
-      />
-      <button
-        class="action-btn secondary"
-        :disabled="uploading"
-        @click="fileInput?.click()"
-      >
+      <input ref="fileInput" type="file" accept="image/*" hidden @change="onFileSelected" />
+      <button class="action-btn secondary" :disabled="uploading" @click="fileInput?.click()">
         {{ uploading ? '上传中...' : '选择图片' }}
       </button>
     </div>
@@ -100,7 +88,6 @@ async function onFileSelected(e: Event) {
   const input = e.target as HTMLInputElement
   const file = input.files?.[0]
   if (!file) return
-
   uploading.value = true
   try {
     const { uploadImage } = useArticle()
@@ -128,17 +115,17 @@ async function onFileSelected(e: Event) {
 }
 
 .sidebar-section {
-  padding: var(--space-md) var(--space-sm);
+  padding: var(--spacing-md) var(--spacing-sm);
   border-bottom: 1px solid var(--hairline);
 }
 
 .section-label {
-  font-size: var(--text-caption);
+  font-size: var(--caption);
   font-weight: var(--weight-medium);
   color: var(--muted);
-  margin-bottom: var(--space-sm);
+  margin-bottom: var(--spacing-xs);
   display: block;
-  padding: 0 var(--space-xs);
+  padding: 0 var(--spacing-xs);
 }
 
 /* Markdown 按钮网格 */
@@ -154,85 +141,86 @@ async function onFileSelected(e: Event) {
   align-items: center;
   justify-content: center;
   gap: 2px;
-  padding: var(--space-xxs);
+  padding: 4px;
   height: 44px;
   border: none;
-  border-radius: var(--radius-md);
+  border-radius: var(--rounded-md);
   background: transparent;
-  color: var(--muted);
+  color: var(--steel);
   font-family: var(--font-sans);
   font-size: 13px;
   cursor: pointer;
-  transition: var(--transition-hover);
+  transition: background-color 0.15s var(--ease), color 0.15s var(--ease);
 }
-.md-btn:hover { background: var(--canvas-soft); color: var(--ink); }
+.md-btn:hover { background: var(--hairline-soft); color: var(--ink); }
 .md-btn-label {
-  font-size: var(--text-caption);
-  color: var(--muted-soft);
+  font-size: var(--caption);
+  color: var(--muted);
 }
 
 /* 视图切换 */
 .view-mode-btns {
   display: flex;
-  border-radius: var(--radius-pill);
+  border-radius: var(--rounded-md);
   border: 1px solid var(--hairline);
   overflow: hidden;
 }
 .view-btn {
   flex: 1;
   font-family: var(--font-sans);
-  font-size: var(--text-caption);
+  font-size: var(--caption);
   font-weight: var(--weight-medium);
-  color: var(--muted);
+  color: var(--steel);
   background: transparent;
   border: none;
-  padding: var(--space-xxs) 0;
+  padding: 6px 0;
   cursor: pointer;
-  transition: var(--transition-hover);
+  transition: background-color 0.15s var(--ease), color 0.15s var(--ease);
 }
 .view-btn:not(:last-child) { border-right: 1px solid var(--hairline); }
-.view-btn:hover { color: var(--body); }
-.view-btn.active { background: var(--canvas-soft); color: var(--ink); }
+.view-btn:hover { color: var(--ink); }
+.view-btn.active { background: var(--hairline-soft); color: var(--ink); }
 
-/* 操作按钮 — DESIGN.md button-primary / button-secondary */
+/* 操作按钮 */
 .sidebar-actions {
   margin-top: auto;
   border-bottom: none;
   display: flex;
   flex-direction: column;
-  gap: var(--space-xs);
+  gap: var(--spacing-xs);
 }
 
 .action-btn {
   width: 100%;
   height: 40px;
-  padding: 0 var(--space-md);
+  padding: 0 var(--spacing-md);
   font-family: var(--font-sans);
-  font-size: var(--text-body);
+  font-size: var(--button-md);
   font-weight: var(--weight-medium);
-  line-height: 1;
-  border-radius: var(--radius-pill);
+  line-height: var(--leading-button);
+  border-radius: var(--rounded-md);
   cursor: pointer;
-  transition: var(--transition-hover);
+  transition: background-color 0.15s var(--ease);
 }
 .action-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .action-btn.primary {
   background: var(--primary);
   color: var(--on-primary);
+  border: none;
 }
-.action-btn.primary:hover:not(:disabled) { background: var(--primary-active); }
+.action-btn.primary:hover:not(:disabled) { background: var(--primary-pressed); }
 
 .action-btn.secondary {
   background: var(--canvas);
   color: var(--ink);
-  border: 1px solid var(--hairline);
+  border: 1px solid var(--hairline-strong);
 }
-.action-btn.secondary:hover:not(:disabled) { background: var(--canvas-soft); }
+.action-btn.secondary:hover:not(:disabled) { background: var(--hairline-soft); }
 
 .save-status {
-  font-size: var(--text-caption);
-  color: var(--muted-soft);
+  font-size: var(--caption);
+  color: var(--muted);
   text-align: center;
 }
 </style>
