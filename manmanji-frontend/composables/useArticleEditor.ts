@@ -1,12 +1,14 @@
 import type { ArticleSaveDTO, ArticlePublishDTO } from '~/types'
 
 export interface PublishSettings {
-  categoryId: number | null
   tagIds: number[]
+  groupNames: string[]
   coverUrl: string
+  articleType: 'ORIGINAL' | 'REPOST'
   summary: string
-  isOriginal: boolean
   sourceUrl: string
+  visibility: 'PUBLIC' | 'PRIVATE'
+  creationStatement: 'NONE' | 'AI_ASSISTED' | 'NETWORK_SOURCED' | 'PERSONAL_OPINION'
 }
 
 const EDITOR_KEY = Symbol('editor')
@@ -23,12 +25,14 @@ export function createEditorState(articleId: number) {
   const titleError = ref<string | null>(null)
 
   const publishSettings = reactive<PublishSettings>({
-    categoryId: null,
     tagIds: [],
+    groupNames: [],
     coverUrl: '',
+    articleType: 'ORIGINAL',
     summary: '',
-    isOriginal: true,
     sourceUrl: '',
+    visibility: 'PUBLIC',
+    creationStatement: 'NONE',
   })
 
   async function loadFromServer() {
@@ -37,11 +41,11 @@ export function createEditorState(articleId: number) {
       const article = await getArticle(currentArticleId.value)
       title.value = article.title || ''
       content.value = article.content || ''
-      publishSettings.categoryId = article.categoryId ?? null
       publishSettings.coverUrl = article.coverUrl ?? ''
       publishSettings.summary = article.summary ?? ''
-      publishSettings.isOriginal = article.isOriginal ?? true
+      publishSettings.articleType = article.articleType ?? 'ORIGINAL'
       publishSettings.sourceUrl = article.sourceUrl ?? ''
+      publishSettings.visibility = article.visibility ?? 'PUBLIC'
     } catch {
       // article not found or network error, stay with empty state
     }
@@ -56,12 +60,14 @@ export function createEditorState(articleId: number) {
     lastSavedAt.value = null
     publishError.value = null
     titleError.value = null
-    publishSettings.categoryId = null
     publishSettings.tagIds = []
+    publishSettings.groupNames = []
     publishSettings.coverUrl = ''
+    publishSettings.articleType = 'ORIGINAL'
     publishSettings.summary = ''
-    publishSettings.isOriginal = true
     publishSettings.sourceUrl = ''
+    publishSettings.visibility = 'PUBLIC'
+    publishSettings.creationStatement = 'NONE'
   }
 
   function validate(): boolean {
@@ -112,10 +118,12 @@ export function createEditorState(articleId: number) {
         content: content.value,
         summary: publishSettings.summary || undefined,
         coverUrl: publishSettings.coverUrl || undefined,
-        categoryId: publishSettings.categoryId || undefined,
         tagIds: publishSettings.tagIds.length > 0 ? publishSettings.tagIds : undefined,
-        isOriginal: publishSettings.isOriginal,
+        groupNames: publishSettings.groupNames.length > 0 ? publishSettings.groupNames : undefined,
+        articleType: publishSettings.articleType,
         sourceUrl: publishSettings.sourceUrl || undefined,
+        visibility: publishSettings.visibility,
+        creationStatement: publishSettings.creationStatement !== 'NONE' ? publishSettings.creationStatement : undefined,
       })
       if (currentArticleId.value === 0) {
         currentArticleId.value = id

@@ -207,7 +207,7 @@ watch(mode, () => {
 
 .login-error {
   font-size: var(--caption);
-  color: #c0392b;
+  color: var(--semantic-error);
   padding: var(--spacing-xs) var(--spacing-sm);
   background: #fde8e8;
   border-radius: var(--rounded-md);

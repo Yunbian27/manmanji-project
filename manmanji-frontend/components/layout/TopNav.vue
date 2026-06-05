@@ -249,7 +249,7 @@ const navLinks = [
   transition: background 0.15s var(--ease);
 }
 .dropdown-item:hover { background: var(--hairline-soft); }
-.dropdown-item-danger:hover { color: #c0392b; }
+.dropdown-item-danger:hover { color: var(--semantic-error); }
 
 .dropdown-enter-active,
 .dropdown-leave-active {

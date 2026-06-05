@@ -34,6 +34,18 @@ body {
 
 a { color: inherit; text-decoration: none; }
 
+/* --- 文章内容区链接样式 --- */
+.article-content a {
+  color: var(--link-blue);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: opacity 0.12s var(--ease);
+}
+
+.article-content a:hover {
+  opacity: 0.75;
+}
+
 /* --- 键盘焦点 --- */
 :focus-visible {
   outline: 2px solid var(--primary);

@@ -25,6 +25,9 @@
   --muted:              #bbb8b1;
   --on-dark:            #ffffff;
 
+  /* === 语义色 === */
+  --semantic-error:     #e03131;
+
   /* === 字体: Notion Sans (Inter) === */
   --font-sans: 'Inter', -apple-system, system-ui, 'Segoe UI', Helvetica, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;

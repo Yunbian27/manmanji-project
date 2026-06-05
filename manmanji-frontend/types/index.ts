@@ -59,6 +59,7 @@ export interface ArticleVO {
   folderId: number | null
   categoryId: number | null
   status: 'UNPUBLISHED' | 'PUBLISHED'
+  visibility?: 'PUBLIC' | 'PRIVATE'
   sourceType: 'MANUAL' | 'AI_GENERATED'
   sourcePrompt: string | null
   viewCount: number
@@ -67,6 +68,9 @@ export interface ArticleVO {
   bookmarkCount: number
   isOriginal: boolean | null
   sourceUrl: string | null
+  articleType?: 'ORIGINAL' | 'REPOST'
+  groupNames?: string[]
+  creationStatement?: string
   createdAt: string
   updatedAt: string
   publishedAt: string | null
@@ -86,10 +90,12 @@ export interface ArticlePublishDTO {
   content: string
   summary?: string
   coverUrl?: string
-  categoryId?: number
   tagIds?: number[]
-  isOriginal?: boolean
+  groupNames?: string[]
+  articleType?: 'ORIGINAL' | 'REPOST'
   sourceUrl?: string
+  visibility?: 'PUBLIC' | 'PRIVATE'
+  creationStatement?: string
 }
 
 // ---------- 文件夹树 (user) ----------
@@ -127,6 +133,7 @@ export interface StudyArticle {
   id: number
   title: string
   status: 'UNPUBLISHED' | 'PUBLISHED' | 'BOOKMARKED'
+  visibility?: 'PUBLIC' | 'PRIVATE'
   tags: string[]                  // 标签名称列表
   updatedAt: string               // 最后修改时间
   // 仅收藏文章

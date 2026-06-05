@@ -32,17 +32,52 @@
 
       <div class="sidebar-scroll" ref="sidebarScrollRef">
         <div class="sidebar-actions">
-          <button
-            v-for="item in statusItems"
-            :key="item.key"
-            class="sidebar-action-btn"
-            :class="{ active: activeStatus === item.key }"
-            @click="activeStatus = item.key"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" v-html="item.icon" />
-            {{ item.label }}
-            <span class="sidebar-action-count">{{ item.count }}</span>
-          </button>
+          <template v-for="item in statusItems" :key="item.key">
+            <!-- 已发布: collapsible dropdown -->
+            <template v-if="item.key === 'PUBLISHED'">
+              <button
+                class="sidebar-action-btn"
+                :class="{ active: activeStatus === 'PUBLISHED' && !publishedSubFilter }"
+                @click="togglePublished"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" v-html="item.icon" />
+                {{ item.label }}
+                <span class="sidebar-action-chevron" :class="{ expanded: publishedExpanded }">
+                  <svg width="10" height="6" viewBox="0 0 10 6" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 1L5 5L9 1"/></svg>
+                </span>
+                <span class="sidebar-action-count">{{ item.count }}</span>
+              </button>
+              <div v-if="publishedExpanded" class="sidebar-sub-items">
+                <button
+                  class="sidebar-sub-btn"
+                  :class="{ active: publishedSubFilter === 'PUBLIC' }"
+                  @click="selectPublishedSub('PUBLIC')"
+                >
+                  公开文章
+                  <span class="sidebar-action-count">{{ item.publicCount }}</span>
+                </button>
+                <button
+                  class="sidebar-sub-btn"
+                  :class="{ active: publishedSubFilter === 'PRIVATE' }"
+                  @click="selectPublishedSub('PRIVATE')"
+                >
+                  私密笔记
+                  <span class="sidebar-action-count">{{ item.privateCount }}</span>
+                </button>
+              </div>
+            </template>
+            <!-- 其他菜单: 原样不动 -->
+            <button
+              v-else
+              class="sidebar-action-btn"
+              :class="{ active: activeStatus === item.key }"
+              @click="activeStatus = item.key"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" v-html="item.icon" />
+              {{ item.label }}
+              <span class="sidebar-action-count">{{ item.count }}</span>
+            </button>
+          </template>
         </div>
 
         <div class="note-list-header">文章列表</div>
@@ -82,7 +117,15 @@
             />
           </div>
         </div>
-        <div class="content-topbar-center">{{ selectedArticle?.title || '' }}</div>
+        <div class="content-topbar-center">
+          <div class="center-title-row">
+            <span class="center-title-text">{{ selectedArticle?.title || '' }}</span>
+            <button class="center-detail-btn" @click="viewDetail">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            </button>
+          </div>
+          <span class="center-meta-text" v-if="selectedArticle">{{ selectedArticle.updatedAt }}</span>
+        </div>
         <div class="content-topbar-right">
           <button class="btn-primary" @click="onPublish">发布文章</button>
           <div ref="avatarContainer" class="avatar-wrapper">
@@ -107,19 +150,6 @@
 
       <div class="content-body" ref="contentBodyRef">
         <div v-if="selectedArticle" class="content-inner">
-          <div class="article-header">
-            <h1 class="article-title">{{ selectedArticle.title }}</h1>
-            <div class="article-meta">
-              <span class="article-status" :class="selectedArticle.status === 'PUBLISHED' ? 'published' : 'draft'">
-                {{ selectedArticle.status === 'PUBLISHED' ? '已发布' : '草稿' }}
-              </span>
-              <span>{{ selectedArticle.updatedAt }}</span>
-              <span v-if="selectedArticle.status === 'PUBLISHED'">1,234 次阅读</span>
-            </div>
-          </div>
-          <div v-if="selectedArticle.tags?.length" class="article-tags-row">
-            <span v-for="tag in selectedArticle.tags" :key="tag" class="article-tag-chip">{{ tag }}</span>
-          </div>
           <div class="article-body">
             <p>{{ mockContent }}</p>
           </div>
@@ -149,6 +179,8 @@ const activeTags = ref<string[]>([])
 const searchQuery = ref('')
 const popoverVisible = ref(false)
 const showDropdown = ref(false)
+const publishedExpanded = ref(false)
+const publishedSubFilter = ref<'PUBLIC' | 'PRIVATE' | null>(null)
 
 // --- Refs for scrollbar ---
 const sidebarScrollRef = ref<HTMLElement | null>(null)
@@ -176,6 +208,8 @@ const statusItems = computed(() => [
     label: '已发布',
     icon: '<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>',
     count: articles.value.filter(a => a.status === 'PUBLISHED').length,
+    publicCount: articles.value.filter(a => a.status === 'PUBLISHED' && a.visibility === 'PUBLIC').length,
+    privateCount: articles.value.filter(a => a.status === 'PUBLISHED' && a.visibility === 'PRIVATE').length,
   },
   {
     key: 'UNPUBLISHED',
@@ -194,7 +228,11 @@ const statusItems = computed(() => [
 const filteredNotes = computed(() => {
   let list = articles.value
   if (activeStatus.value !== 'ALL') {
-    list = list.filter(a => a.status === activeStatus.value)
+    if (activeStatus.value === 'PUBLISHED' && publishedSubFilter.value) {
+      list = list.filter(a => a.status === 'PUBLISHED' && a.visibility === publishedSubFilter.value)
+    } else {
+      list = list.filter(a => a.status === activeStatus.value)
+    }
   }
   if (activeTags.value.length) {
     list = list.filter(a => activeTags.value.some(t => a.tags?.includes(t)))
@@ -220,6 +258,26 @@ function toggleTag(tag: string) {
 
 function selectArticle(article: StudyArticle) {
   selectedArticle.value = article
+}
+
+function togglePublished() {
+  if (publishedExpanded.value) {
+    publishedExpanded.value = false
+  } else {
+    publishedExpanded.value = true
+    activeStatus.value = 'PUBLISHED'
+    publishedSubFilter.value = null
+  }
+}
+
+function selectPublishedSub(visibility: 'PUBLIC' | 'PRIVATE') {
+  activeStatus.value = 'PUBLISHED'
+  publishedSubFilter.value = visibility
+}
+
+function viewDetail() {
+  if (!selectedArticle.value) return
+  window.open(`/write?articleId=${selectedArticle.value.id}`, '_blank')
 }
 
 function onPublish() {
@@ -360,6 +418,51 @@ onMounted(() => {
   color: var(--muted);
 }
 
+.sidebar-action-chevron {
+  display: inline-flex;
+  align-items: center;
+  color: var(--muted);
+  transition: transform 0.2s var(--ease);
+}
+.sidebar-action-chevron.expanded {
+  transform: rotate(180deg);
+}
+
+.sidebar-sub-items {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sidebar-sub-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  width: 100%;
+  padding: 5px var(--spacing-sm) 5px 32px;
+  border: none;
+  border-radius: var(--rounded-sm);
+  background: transparent;
+  color: var(--steel);
+  font-family: var(--font-sans);
+  font-size: var(--body-sm);
+  font-weight: var(--weight-regular);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s var(--ease), color 0.15s var(--ease);
+  text-align: left;
+}
+.sidebar-sub-btn:hover {
+  background: var(--hairline-soft);
+  color: var(--ink);
+}
+.sidebar-sub-btn.active {
+  background: var(--canvas);
+  color: var(--ink);
+  font-weight: var(--weight-medium);
+  box-shadow: rgba(15, 15, 15, 0.06) 0px 1px 3px 0px;
+}
+
 /* Scrollable zone */
 .sidebar-scroll {
   flex: 1;
@@ -495,15 +598,84 @@ onMounted(() => {
 .content-topbar-search::placeholder { color: var(--muted); }
 .content-topbar-search:focus { border-color: var(--primary); }
 .content-topbar-center {
-  text-align: center;
-  font-size: var(--body-sm);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  max-width: 400px;
+  min-width: 0;
+}
+
+.center-title-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  max-width: 100%;
+  min-width: 0;
+}
+
+.center-title-text {
+  font-size: var(--body-md);
   font-weight: var(--weight-medium);
   color: var(--ink);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  max-width: 400px;
   min-width: 0;
+}
+
+.center-detail-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: var(--rounded-sm);
+  background: transparent;
+  color: var(--steel);
+  cursor: pointer;
+  flex-shrink: 0;
+  position: relative;
+  transition: background 0.15s var(--ease), color 0.15s var(--ease);
+}
+.center-detail-btn:hover {
+  background: var(--hairline-soft);
+  color: var(--ink);
+}
+
+.center-detail-btn::after {
+  content: '查看详情';
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 8px;
+  background: var(--ink);
+  color: var(--on-dark);
+  font-family: var(--font-sans);
+  font-size: var(--caption);
+  border-radius: var(--rounded-xs);
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s var(--ease);
+  box-shadow: rgba(15, 15, 15, 0.08) 0px 4px 12px 0px;
+}
+.center-detail-btn:hover::after {
+  opacity: 1;
+}
+
+.center-meta-text {
+  font-size: var(--caption);
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
 }
 .content-topbar-right {
   flex: 1;
@@ -593,7 +765,7 @@ onMounted(() => {
   transition: background 0.15s var(--ease);
 }
 .dropdown-item:hover { background: var(--hairline-soft); }
-.dropdown-item-danger:hover { color: #c0392b; }
+.dropdown-item-danger:hover { color: var(--semantic-error); }
 
 .dropdown-enter-active,
 .dropdown-leave-active {
@@ -650,52 +822,6 @@ onMounted(() => {
 }
 
 /* Article */
-.article-header {
-  margin-bottom: var(--spacing-xl);
-  padding-bottom: var(--spacing-lg);
-  border-bottom: 1px solid var(--hairline-soft);
-}
-.article-title {
-  font-family: var(--font-sans);
-  font-size: var(--heading-3);
-  font-weight: var(--weight-semibold);
-  color: var(--ink);
-  line-height: var(--leading-heading);
-  margin-bottom: var(--spacing-sm);
-}
-.article-meta {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-lg);
-  font-size: var(--body-sm);
-  color: var(--steel);
-}
-.article-status {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 2px 8px;
-  border-radius: var(--rounded-sm);
-  font-size: var(--caption-bold);
-  font-weight: var(--weight-semibold);
-}
-.article-status.published { background: var(--hairline-soft); color: var(--primary); }
-.article-status.draft { background: var(--hairline-soft); color: var(--muted); }
-
-.article-tags-row {
-  display: flex;
-  gap: var(--spacing-xs);
-  margin: var(--spacing-md) 0 var(--spacing-xl);
-}
-.article-tag-chip {
-  padding: 2px 8px;
-  border-radius: var(--rounded-xs);
-  font-size: var(--caption-bold);
-  font-weight: var(--weight-semibold);
-  background: var(--surface);
-  color: var(--slate);
-}
-
 .article-body {
   font-family: var(--font-sans);
   font-size: var(--body-md);

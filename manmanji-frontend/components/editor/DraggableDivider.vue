@@ -53,66 +53,37 @@ function startDrag(e: MouseEvent) {
   flex-shrink: 0;
   cursor: col-resize;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
   position: relative;
   z-index: 1;
-  gap: 4px;
-  background: linear-gradient(to right, var(--canvas) 50%, var(--surface) 50%);
+  background: transparent;
 }
 
 .divider-line {
-  position: absolute;
-  inset: 0;
-  width: 1px;
-  margin: 0 auto;
-  background: var(--hairline);
-  transition: width 0.2s var(--ease), background-color 0.2s var(--ease);
+  display: none;
 }
 
 .divider-handle {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  border-radius: var(--rounded-xs);
-  background: transparent;
-  opacity: 0;
+  width: 5px;
+  height: 24px;
+  border-radius: 999px;
+  background: var(--muted);
+  opacity: 0.25;
   transition: opacity 0.2s var(--ease), background 0.2s var(--ease);
 }
 
 .divider-handle svg {
-  fill: var(--steel);
-  transition: fill 0.2s var(--ease);
-}
-
-.draggable-divider:hover .divider-line {
-  width: 2px;
-  background: var(--slate);
+  display: none;
 }
 
 .draggable-divider:hover .divider-handle {
-  opacity: 1;
-  background: var(--canvas);
-  box-shadow: 0 1px 3px rgba(15, 15, 15, 0.1);
-}
-
-.draggable-divider:active .divider-line {
-  width: 2px;
-  background: var(--primary);
+  opacity: 0.7;
+  background: var(--slate);
 }
 
 .draggable-divider:active .divider-handle {
   opacity: 1;
-  background: var(--canvas);
-  box-shadow: 0 1px 3px rgba(15, 15, 15, 0.1);
-}
-
-.draggable-divider:active .divider-handle svg {
-  fill: var(--primary);
+  background: var(--primary);
 }
 </style>

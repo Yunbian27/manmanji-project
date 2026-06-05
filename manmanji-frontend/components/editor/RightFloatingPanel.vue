@@ -144,7 +144,7 @@ function togglePanel(id: string) {
   top: var(--spacing-lg);
   bottom: var(--spacing-lg);
   right: 56px;
-  width: 280px;
+  width: var(--panel-width, 280px);
   background: var(--canvas);
   border-radius: var(--rounded-lg);
   box-shadow: rgba(15, 15, 15, 0.08) 0px 4px 12px 0px;
@@ -152,6 +152,7 @@ function togglePanel(id: string) {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  transition: width 0.25s var(--ease);
 }
 
 .panel-header {
@@ -326,6 +327,7 @@ function togglePanel(id: string) {
   line-height: 1.5;
   word-break: break-all;
 }
+</style>
 
 .panel-backdrop {
   display: none;
@@ -342,18 +344,3 @@ function togglePanel(id: string) {
   opacity: 0;
 }
 
-@media (max-width: 900px) {
-  .slide-panel { width: 240px; }
-}
-
-@media (max-width: 768px) {
-  .slide-panel { width: 200px; }
-}
-
-@media (max-width: 640px) {
-  .slide-panel {
-    width: 180px;
-    right: 48px;
-  }
-}
-</style>

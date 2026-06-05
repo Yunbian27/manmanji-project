@@ -29,51 +29,36 @@ CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
 
 -- ============================================
--- 2.文件夹
--- ============================================
-CREATE TABLE IF NOT EXISTS folders (
-    id          BIGSERIAL PRIMARY KEY,
-    user_id     BIGINT NOT NULL,                                 -- 所属用户
-    parent_id   BIGINT,                                          -- 父文件夹 ID，NULL 表示一级文件夹
-    name        VARCHAR(50) NOT NULL,                             -- 文件夹名称
-    created_at  TIMESTAMP DEFAULT NOW(),
-    updated_at  TIMESTAMP DEFAULT NOW(),
-    UNIQUE(user_id, parent_id, name)                             -- 同一用户同一层级下文件夹名不重名
-);
-
-CREATE INDEX IF NOT EXISTS idx_folders_user ON folders(user_id);
-CREATE INDEX IF NOT EXISTS idx_folders_parent ON folders(user_id, parent_id);   -- 查"某用户某文件夹下的子文件夹"
-
--- ============================================
 -- 3. 文章
 -- ============================================
 
 CREATE TABLE IF NOT EXISTS articles (
-    id              BIGSERIAL PRIMARY KEY,                                    -- 主键
-    title           VARCHAR(200) NOT NULL DEFAULT '未命名',                    -- 文章标题
-    slug            VARCHAR(200) NOT NULL UNIQUE,                            -- URL 标识，全局唯一，如 java-21-virtual-thread-xxx
-    content         TEXT,                                                     -- Markdown 正文
-    summary         VARCHAR(500),                                            -- 文章摘要，feed 列表展示用
-    cover_url       VARCHAR(500),                                            -- 封面图链接
+    id                  BIGSERIAL PRIMARY KEY,                                    -- 主键
+    title               VARCHAR(200) NOT NULL DEFAULT '未命名',                    -- 文章标题
+    slug                VARCHAR(200) NOT NULL UNIQUE,                            -- URL 标识，全局唯一，如 java-21-virtual-thread-xxx
+    content             TEXT,                                                     -- Markdown 正文
+    summary             VARCHAR(500),                                            -- 文章摘要，feed 列表展示用
+    cover_url           VARCHAR(500),                                            -- 封面图链接
 
-    user_id       BIGINT NOT NULL,                                         -- 用户 ID
-    folder_id       BIGINT,                                                  -- 个人文件夹 ID（个人博客侧分类）
-    category_id     BIGINT,                                                  -- 社区分类 ID（社区页分类筛选）
+    user_id             BIGINT NOT NULL,                                         -- 用户 ID
+    folder_id           BIGINT,                                                  -- 个人文件夹 ID（个人博客侧分类）
 
-    status          VARCHAR(15) NOT NULL DEFAULT 'UNPUBLISHED',              -- UNPUBLISHED / PUBLISHED
+    status              VARCHAR(15) NOT NULL DEFAULT 'UNPUBLISHED',              -- UNPUBLISHED / PUBLISHED / DRAFT
+    visibility          VARCHAR(10) NOT NULL DEFAULT 'PUBLIC',                   -- PUBLIC / PRIVATE
+    article_type        VARCHAR(10) NOT NULL DEFAULT 'ORIGINAL',                 -- ORIGINAL / REPOST
+    creation_statement  VARCHAR(30) NOT NULL DEFAULT 'NONE',                     -- NONE / AI_ASSISTED / NETWORK_SOURCED / PERSONAL_OPINION
+    source_type         VARCHAR(15) NOT NULL DEFAULT 'MANUAL',                   -- MANUAL / AI_GENERATED
+    source_url          VARCHAR(500),                                            -- 转载来源链接（article_type=REPOST 时必填）
 
-    view_count      INT NOT NULL DEFAULT 0,                                  -- 阅读量（冗余计数）
-    like_count      INT NOT NULL DEFAULT 0,                                  -- 点赞数（冗余计数）
-    comment_count   INT NOT NULL DEFAULT 0,                                  -- 评论数（冗余计数）
-    bookmark_count  INT NOT NULL DEFAULT 0,                                  -- 收藏数（冗余计数）
+    view_count          INT NOT NULL DEFAULT 0,                                  -- 阅读量（冗余计数）
+    like_count          INT NOT NULL DEFAULT 0,                                  -- 点赞数（冗余计数）
+    comment_count       INT NOT NULL DEFAULT 0,                                  -- 评论数（冗余计数）
+    bookmark_count      INT NOT NULL DEFAULT 0,                                  -- 收藏数（冗余计数）
 
-    is_original     BOOLEAN NOT NULL DEFAULT TRUE,                           -- 是否原创
-    source_url      VARCHAR(500),                                            -- 转载来源链接
-
-    created_at      TIMESTAMP NOT NULL DEFAULT NOW(),                        -- 创建时间
-    updated_at      TIMESTAMP NOT NULL DEFAULT NOW(),                        -- 更新时间
-    published_at    TIMESTAMP                                                -- 发布时间
-    );
+    created_at          TIMESTAMP NOT NULL DEFAULT NOW(),                        -- 创建时间
+    updated_at          TIMESTAMP NOT NULL DEFAULT NOW(),                        -- 更新时间
+    published_at        TIMESTAMP                                                -- 发布时间
+);
 
 -- ============================================
 -- 标签
@@ -92,12 +77,34 @@ CREATE TABLE IF NOT EXISTS tags (
 -- ============================================
 
 CREATE TABLE IF NOT EXISTS article_tags (
-                                            article_id      BIGINT NOT NULL REFERENCES articles(id) ON DELETE CASCADE,
-    tag_id          BIGINT NOT NULL REFERENCES tags(id) ON DELETE CASCADE,
+    article_id      BIGINT NOT NULL,
+    tag_id          BIGINT NOT NULL,
     PRIMARY KEY (article_id, tag_id)
-    );
+);
 
 CREATE INDEX IF NOT EXISTS idx_article_tags_tag ON article_tags(tag_id);
+
+-- ============================================
+-- 分组
+-- ============================================
+
+CREATE TABLE IF NOT EXISTS groups (
+    id          BIGSERIAL PRIMARY KEY,
+    user_id     BIGINT       NOT NULL,
+    name        VARCHAR(50)  NOT NULL,
+    created_at  TIMESTAMP    NOT NULL DEFAULT NOW(),
+    UNIQUE(user_id, name)
+);
+
+CREATE TABLE IF NOT EXISTS article_groups (
+    article_id  BIGINT NOT NULL,
+    group_id    BIGINT NOT NULL,
+    PRIMARY KEY (article_id, group_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_groups_user            ON groups(user_id);
+CREATE INDEX IF NOT EXISTS idx_article_groups_article ON article_groups(article_id);
+CREATE INDEX IF NOT EXISTS idx_article_groups_group   ON article_groups(group_id);
 
 -- ============================================
 -- 14. AI — LLM Provider 配置

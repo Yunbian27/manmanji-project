@@ -158,7 +158,7 @@ async function handleLogout() {
 
 .title-input:focus { border-color: var(--primary); }
 
-.title-input.has-error { border-color: #c0392b; }
+.title-input.has-error { border-color: var(--semantic-error); }
 
 .title-count {
   font-size: var(--caption);
@@ -252,7 +252,7 @@ async function handleLogout() {
 
 .dropdown-item:hover { background: var(--hairline-soft); }
 
-.dropdown-item-danger:hover { color: #c0392b; }
+.dropdown-item-danger:hover { color: var(--semantic-error); }
 
 .dropdown-enter-active,
 .dropdown-leave-active {

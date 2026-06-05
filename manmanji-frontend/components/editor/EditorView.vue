@@ -15,11 +15,12 @@
       />
     </Transition>
 
-    <div class="editor-body">
+    <div class="editor-body" :style="{ '--panel-ratio': panelRatio }">
       <!-- 单卡片容器 -->
       <div class="editor-card">
         <!-- 卡片顶部工具栏 -->
         <div class="card-toolbar">
+          <div class="toolbar-left-group">
           <div class="toolbar-left">
             <button
               v-for="btn in formatButtons"
@@ -117,12 +118,13 @@
               @change="onFileSelected"
             />
             <!-- 链接 -->
-            <button class="toolbar-btn" title="链接" @click="onInsertMarkdown('[', '](url)', '链接文字')">
+            <button class="toolbar-btn" title="链接" @click="showLinkDialog = true">
               <svg class="btn-icon-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
                 <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
               </svg>
             </button>
+          </div>
           </div>
 
           <div class="toolbar-view-toggle">
@@ -208,11 +210,14 @@
               {{ isSaving ? '保存中...' : '保存草稿' }}
             </button>
             <button class="statusbar-btn statusbar-btn--publish" :disabled="isSaving" @click="showPublishSettings = true">
-              发布文章
+              发布设置
             </button>
           </div>
         </div>
       </div>
+
+      <!-- 卡片与面板分隔线 -->
+      <DraggableDivider v-model:split-ratio="panelRatio" class="card-divider" />
 
       <!-- 右侧悬浮按钮（卡片外部） -->
       <RightFloatingPanel :toc-items="outlineItems" @navigate-to-heading="handleNavigateToHeading" />
@@ -224,6 +229,35 @@
         <IconX :size="14" />
       </button>
     </div>
+
+    <!-- 链接插入弹窗 -->
+    <Transition name="link-dialog">
+      <div v-if="showLinkDialog" class="link-dialog-backdrop" @click.self="closeLinkDialog">
+        <div class="link-dialog">
+          <div class="link-dialog-header">插入链接</div>
+          <div class="link-dialog-body">
+            <input
+              ref="linkTextInput"
+              v-model="linkText"
+              class="link-dialog-input"
+              placeholder="链接名称"
+              @keydown.enter="linkUrlInput?.focus()"
+            />
+            <input
+              ref="linkUrlInput"
+              v-model="linkUrl"
+              class="link-dialog-input"
+              placeholder="链接地址（https://...）"
+              @keydown.enter="confirmInsertLink"
+            />
+          </div>
+          <div class="link-dialog-footer">
+            <button class="link-dialog-btn link-dialog-btn--cancel" @click="closeLinkDialog">取消</button>
+            <button class="link-dialog-btn link-dialog-btn--confirm" :disabled="!linkText.trim() || !linkUrl.trim()" @click="confirmInsertLink">确定</button>
+          </div>
+        </div>
+      </div>
+    </Transition>
 
     <PublishSettingsModal
       v-model:visible="showPublishSettings"
@@ -243,6 +277,7 @@ const editor = createEditorState(props.articleId)
 provideEditor(editor)
 
 const { content, title, viewMode, publishError, isSaving, lastSavedAt, loadFromServer } = editor
+const panelRatio = ref(0.5)
 
 // ── Topnav hide/show ──────────────────────────────────────
 const topnavHidden = ref(false)
@@ -504,6 +539,31 @@ function handleNavigateToHeading(index: number) {
   }
 }
 
+// ── Link dialog ──────────────────────────────────────────────
+const showLinkDialog = ref(false)
+const linkText = ref('')
+const linkUrl = ref('')
+const linkTextInput = ref<HTMLInputElement | null>(null)
+const linkUrlInput = ref<HTMLInputElement | null>(null)
+
+watch(showLinkDialog, (val) => {
+  if (val) {
+    linkText.value = ''
+    linkUrl.value = ''
+    nextTick(() => linkTextInput.value?.focus())
+  }
+})
+
+function confirmInsertLink() {
+  if (!linkText.value.trim() || !linkUrl.value.trim()) return
+  textareaRef.value?.insertAtCursor('[', `](${linkUrl.value.trim()})`, linkText.value.trim())
+  closeLinkDialog()
+}
+
+function closeLinkDialog() {
+  showLinkDialog.value = false
+}
+
 // ── Scroll sync ─────────────────────────────────────────────
 interface TextareaExposed {
   syncScroll: (ratio: number) => void
@@ -589,6 +649,7 @@ onMounted(async () => {
 
 /* ── Body ─────────────────────────────────────────────── */
 .editor-body {
+  --panel-width: calc(200px + 160px * min(var(--panel-ratio), 0.5) + max(0px, (100vw - 1092px) * max(var(--panel-ratio) - 0.5, 0) / 0.5));
   flex: 1;
   overflow: hidden;
   padding: var(--spacing-lg);
@@ -598,11 +659,26 @@ onMounted(async () => {
 }
 
 .editor-body:has(.slide-panel) {
-  padding-right: 352px;
+  padding-right: calc(var(--panel-width, 280px) + 72px);
+}
+
+/* ── Card-Panel Divider ────────────────────────────────── */
+.card-divider {
+  display: none;
+  position: absolute;
+  top: var(--spacing-lg);
+  bottom: var(--spacing-lg);
+  right: calc(var(--panel-width, 280px) + 56px);
+  z-index: 5;
+}
+
+.editor-body:has(.slide-panel) .card-divider {
+  display: flex;
 }
 
 /* ── Single Card ──────────────────────────────────────── */
 .editor-card {
+  container-type: inline-size;
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -618,9 +694,14 @@ onMounted(async () => {
   flex-shrink: 0;
   border-bottom: 1px solid var(--hairline);
   padding: 0 var(--spacing-md);
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+}
+
+.toolbar-left-group {
   display: flex;
   align-items: center;
-  position: relative;
 }
 
 .toolbar-left,
@@ -649,9 +730,7 @@ onMounted(async () => {
 }
 
 .toolbar-view-toggle {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
+  /* centered by grid column */
 }
 
 .view-toggle {
@@ -684,7 +763,7 @@ onMounted(async () => {
 .toolbar-right {
   gap: var(--spacing-xs);
   flex-shrink: 0;
-  margin-left: auto;
+  justify-self: end;
 }
 
 .toolbar-btn {
@@ -955,7 +1034,7 @@ onMounted(async () => {
   animation: toast-in 0.2s var(--ease);
 }
 
-.editor-toast.error { background: #c0392b; color: #fff; }
+.editor-toast.error { background: var(--semantic-error); color: var(--on-primary); }
 
 .editor-toast button {
   display: flex;
@@ -969,13 +1048,131 @@ onMounted(async () => {
 
 .editor-toast button:hover { opacity: 1; }
 
+/* ── Link Dialog ──────────────────────────────────────── */
+.link-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.2);
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.link-dialog {
+  background: var(--canvas);
+  border-radius: var(--rounded-lg);
+  box-shadow: rgba(15, 15, 15, 0.16) 0px 16px 48px -8px;
+  width: 400px;
+  max-width: calc(100vw - 40px);
+  overflow: hidden;
+}
+
+.link-dialog-header {
+  font-size: var(--body-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--ink);
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-bottom: 1px solid var(--hairline);
+}
+
+.link-dialog-body {
+  padding: var(--spacing-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.link-dialog-input {
+  height: 40px;
+  padding: 0 var(--spacing-md);
+  font-family: var(--font-sans);
+  font-size: var(--body-sm);
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--rounded-md);
+  outline: none;
+  transition: border-color 0.15s var(--ease);
+}
+
+.link-dialog-input::placeholder { color: var(--muted); }
+.link-dialog-input:focus { border-color: var(--primary); }
+
+.link-dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-top: 1px solid var(--hairline);
+}
+
+.link-dialog-btn {
+  height: 36px;
+  padding: 0 var(--spacing-md);
+  font-family: var(--font-sans);
+  font-size: var(--body-sm);
+  font-weight: var(--weight-medium);
+  border: none;
+  border-radius: var(--rounded-md);
+  cursor: pointer;
+  transition: background 0.12s var(--ease), opacity 0.12s var(--ease);
+}
+
+.link-dialog-btn--cancel {
+  background: var(--surface);
+  color: var(--steel);
+}
+
+.link-dialog-btn--cancel:hover {
+  background: var(--hairline-soft);
+}
+
+.link-dialog-btn--confirm {
+  background: var(--primary);
+  color: var(--on-primary);
+}
+
+.link-dialog-btn--confirm:hover:not(:disabled) {
+  background: var(--primary-pressed);
+}
+
+.link-dialog-btn--confirm:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Link dialog transition */
+.link-dialog-enter-active,
+.link-dialog-leave-active {
+  transition: opacity 0.15s var(--ease);
+}
+
+.link-dialog-enter-active .link-dialog,
+.link-dialog-leave-active .link-dialog {
+  transition: transform 0.15s var(--ease);
+}
+
+.link-dialog-enter-from,
+.link-dialog-leave-to {
+  opacity: 0;
+}
+
+.link-dialog-enter-from .link-dialog {
+  transform: scale(0.96);
+}
+
+.link-dialog-leave-to .link-dialog {
+  transform: scale(0.96);
+}
+
 @keyframes toast-in {
   from { opacity: 0; transform: translateX(-50%) translateY(8px); }
   to { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
 
-/* ── Responsive ───────────────────────────────────────── */
-@media (max-width: 900px) {
+/* ── Container Queries（卡片宽度响应，面板挤压时也会触发）── */
+@container (max-width: 900px) {
   .toolbar-btn--labeled .btn-label { display: none; }
   .toolbar-btn--labeled {
     padding: 0 6px;
@@ -983,16 +1180,19 @@ onMounted(async () => {
   }
   .toolbar-divider { margin: 0 4px; }
   .view-btn { padding: 4px 8px; font-size: var(--caption); }
-  .editor-body:has(.slide-panel) { padding-right: 312px; }
 }
 
-@media (max-width: 768px) {
+@container (max-width: 768px) {
   .card-toolbar {
+    display: flex;
     overflow-x: auto;
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
   .card-toolbar::-webkit-scrollbar { display: none; }
+  .toolbar-left-group { flex-shrink: 0; }
+  .toolbar-view-toggle { flex-shrink: 0; }
+  .toolbar-right { flex-shrink: 0; margin-left: 0; }
   .toolbar-btn { width: 28px; height: 28px; }
   .btn-icon { font-size: 14px; }
   .toolbar-btn--labeled {
@@ -1008,21 +1208,36 @@ onMounted(async () => {
     margin-right: 4px;
   }
   .view-btn { padding: 3px 6px; font-size: 12px; }
-  .editor-body:has(.slide-panel) { padding-right: 272px; }
 }
 
-@media (max-width: 640px) {
-  .editor-body { padding: var(--spacing-xs); padding-right: var(--spacing-xs); }
-  .editor-body:has(.slide-panel) { padding-right: 240px; }
-  .card-toolbar { padding: 0 var(--spacing-xs); }
+@container (max-width: 640px) {
+  .card-toolbar { padding: 0 var(--spacing-xs); display: flex; }
+  .toolbar-left-group { flex-shrink: 0; }
+  .toolbar-view-toggle { flex-shrink: 0; }
+  .toolbar-right { flex-shrink: 0; margin-left: auto; }
   .toolbar-left { border-right: none; margin-right: 0; padding-right: 0; }
   .toolbar-center { border-right: none; margin-right: 0; padding-right: 0; }
-  .toolbar-view-toggle { position: static; transform: none; flex-shrink: 0; }
-  .toolbar-right { margin-left: auto; }
   .view-btn { padding: 3px 6px; font-size: 11px; }
   .statusbar-stat,
   .statusbar-divider,
   .statusbar-timestamp { display: none; }
+}
+
+/* ── Media Queries（视口级布局）────────────────────────── */
+@media (max-width: 900px) {
+  .editor-body { --panel-width: calc(180px + 80px * min(var(--panel-ratio), 0.5) + max(0px, (100vw - 897px) * max(var(--panel-ratio) - 0.5, 0) / 0.5)); }
+  .editor-body:has(.slide-panel) { padding-right: calc(var(--panel-width) + 72px); }
+}
+
+@media (max-width: 768px) {
+  .editor-body { --panel-width: calc(160px + 40px * min(var(--panel-ratio), 0.5) + max(0px, (100vw - 772px) * max(var(--panel-ratio) - 0.5, 0) / 0.5)); }
+  .editor-body:has(.slide-panel) { padding-right: calc(var(--panel-width) + 72px); }
+}
+
+@media (max-width: 640px) {
+  .editor-body { padding: var(--spacing-xs); padding-right: var(--spacing-xs); }
+  .editor-body:has(.slide-panel) { padding-right: calc(var(--panel-width) + 56px); }
+  .card-divider { right: calc(var(--panel-width) + 56px); }
   .pane-edit--centered .pane-edit-inner { max-width: none; }
 }
 </style>
