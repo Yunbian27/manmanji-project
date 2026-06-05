@@ -659,7 +659,7 @@ onMounted(async () => {
 }
 
 .editor-body:has(.slide-panel) {
-  padding-right: calc(var(--panel-width, 280px) + 72px);
+  padding-right: calc(var(--panel-px, var(--panel-width, 280px)) + 72px);
 }
 
 /* ── Card-Panel Divider ────────────────────────────────── */
@@ -668,7 +668,7 @@ onMounted(async () => {
   position: absolute;
   top: var(--spacing-lg);
   bottom: var(--spacing-lg);
-  right: calc(var(--panel-width, 280px) + 56px);
+  right: calc(var(--panel-px, var(--panel-width, 280px)) + 56px);
   z-index: 5;
 }
 
@@ -686,6 +686,8 @@ onMounted(async () => {
   border-radius: var(--rounded-lg);
   box-shadow: rgba(15, 15, 15, 0.08) 0px 4px 12px 0px;
   overflow: hidden;
+  will-change: width;
+  transform: translateZ(0);
 }
 
 /* ── Toolbar ──────────────────────────────────────────── */
@@ -1226,18 +1228,18 @@ onMounted(async () => {
 /* ── Media Queries（视口级布局）────────────────────────── */
 @media (max-width: 900px) {
   .editor-body { --panel-width: calc(180px + 80px * min(var(--panel-ratio), 0.5) + max(0px, (100vw - 897px) * max(var(--panel-ratio) - 0.5, 0) / 0.5)); }
-  .editor-body:has(.slide-panel) { padding-right: calc(var(--panel-width) + 72px); }
+  .editor-body:has(.slide-panel) { padding-right: calc(var(--panel-px, var(--panel-width)) + 72px); }
 }
 
 @media (max-width: 768px) {
   .editor-body { --panel-width: calc(160px + 40px * min(var(--panel-ratio), 0.5) + max(0px, (100vw - 772px) * max(var(--panel-ratio) - 0.5, 0) / 0.5)); }
-  .editor-body:has(.slide-panel) { padding-right: calc(var(--panel-width) + 72px); }
+  .editor-body:has(.slide-panel) { padding-right: calc(var(--panel-px, var(--panel-width)) + 72px); }
 }
 
 @media (max-width: 640px) {
   .editor-body { padding: var(--spacing-xs); padding-right: var(--spacing-xs); }
-  .editor-body:has(.slide-panel) { padding-right: calc(var(--panel-width) + 56px); }
-  .card-divider { right: calc(var(--panel-width) + 56px); }
+  .editor-body:has(.slide-panel) { padding-right: calc(var(--panel-px, var(--panel-width)) + 56px); }
+  .card-divider { right: calc(var(--panel-px, var(--panel-width)) + 56px); }
   .pane-edit--centered .pane-edit-inner { max-width: none; }
 }
 </style>

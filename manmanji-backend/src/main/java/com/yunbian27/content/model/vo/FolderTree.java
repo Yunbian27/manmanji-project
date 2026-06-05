@@ -18,6 +18,5 @@ public class FolderTree {
         private Long id;
         private String title;
         private String status;
-        private Long folderId;
     }
 }

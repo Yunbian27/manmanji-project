@@ -9,8 +9,8 @@ import com.yunbian27.common.constant.RedisKeys;
 import com.yunbian27.common.constant.RedisTTL;
 import com.yunbian27.common.exception.BusinessException;
 import com.yunbian27.common.exception.ErrorCode;
-import com.yunbian27.content.model.dto.ArticleMoveDTO;
 import com.yunbian27.content.model.dto.ArticleSaveDTO;
+import com.yunbian27.content.model.vo.ArticleTitlesVO;
 import com.yunbian27.content.model.vo.ArticleVO;
 import com.yunbian27.ai.mapper.LlmGlobalSettingMapper;
 import com.yunbian27.ai.model.LlmGlobalSettingEntity;
@@ -51,14 +51,13 @@ public class ArticleService {
      * @param id 文件夹id，可为null
      * @return 新文章id
      */
-    public Long create(Long id) {
+    public Long create() {
         Long userId = SecurityUtils.getCurrentUserId();
         Article article = new Article();
         article.setUserId(userId);
         article.setTitle(SystemConstants.DEFAULT_ARTICLE_TITLE);
         article.setSlug(generateSlug(SystemConstants.DEFAULT_ARTICLE_TITLE));
         article.setStatus(CommonConstants.ArticleStatus.UNPUBLISHED);
-        article.setFolderId(id);
         articleMapper.insert(article);
         log.info("文章创建成功: id={}, title={}, status={}", article.getId(), article.getTitle(), article.getStatus());
         return article.getId();
@@ -102,9 +101,10 @@ public class ArticleService {
                 .set(Article::getSlug, generateSlug(dto.getTitle()))
                 .set(Article::getSummary, dto.getSummary())
                 .set(Article::getCoverUrl, dto.getCoverUrl())
-                .set(Article::getCategoryId, dto.getCategoryId())
-                .set(Article::getIsOriginal, dto.getIsOriginal())
+                .set(Article::getArticleType, dto.getArticleType())
                 .set(Article::getSourceUrl, dto.getSourceUrl())
+                .set(Article::getVisibility, dto.getVisibility())
+                .set(Article::getCreationStatement, dto.getCreationStatement())
                 .set(Article::getStatus, CommonConstants.ArticleStatus.PUBLISHED)
                 .set(Article::getPublishedAt, LocalDateTime.now())
                 .set(Article::getUpdatedAt, LocalDateTime.now())
@@ -191,22 +191,6 @@ public class ArticleService {
         return articleVO;
     }
 
-    public FolderTreeVO move(ArticleMoveDTO dto) {
-        if (dto == null) {
-            throw new BusinessException(ErrorCode.BAD_REQUEST);
-        }
-        if (dto.getFolderId() == null) {
-            throw new BusinessException(ErrorCode.BAD_REQUEST);
-        }
-        if (dto.getArticleId() == null) {
-            throw new BusinessException(ErrorCode.BAD_REQUEST);
-        }
-        articleMapper.update(new LambdaUpdateWrapper<Article>()
-                .set(Article::getFolderId, dto.getFolderId())
-                .eq(Article::getId, dto.getArticleId()));
-        return folderService.show();
-    }
-
     public FolderTreeVO rename(Long id, String title) {
         if (id == null) {
             throw new BusinessException(ErrorCode.BAD_REQUEST);
@@ -246,4 +230,17 @@ public class ArticleService {
     }
 
 
+    /**
+     * 显示用户的文章列表
+     * @return
+     */
+    public ArticleTitlesVO showArticleTitles() {
+        // 1、获取用户id
+        Long userId = SecurityUtils.getCurrentUserId();
+
+
+        // 2、根据用户id查库
+
+        // 3、返回
+    }
 }

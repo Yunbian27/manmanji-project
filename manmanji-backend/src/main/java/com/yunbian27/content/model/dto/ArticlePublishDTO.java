@@ -29,13 +29,16 @@ public class ArticlePublishDTO {
 
     /** 封面图链接 */
     private String coverUrl;
-    /** 分类ID */
-    private Long categoryId;
     /** 标签ID列表 */
     private List<Long> tagIds;
-    /** 是否原创 */
-    private Boolean isOriginal;
+    /** 分组名称列表 */
+    private List<String> groupNames;
+    /** 文章类型(ORIGINAL/REPOST) */
+    private String articleType;
     /** 转载来源链接 */
     private String sourceUrl;
+    /** 可见范围(PUBLIC/PRIVATE) */
+    private String visibility;
+    /** 创作声明(NONE/AI_ASSISTED/NETWORK_SOURCED/PERSONAL_OPINION) */
+    private String creationStatement;
 }
-

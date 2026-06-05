@@ -144,7 +144,7 @@ function togglePanel(id: string) {
   top: var(--spacing-lg);
   bottom: var(--spacing-lg);
   right: 56px;
-  width: var(--panel-width, 280px);
+  width: var(--panel-px, var(--panel-width, 280px));
   background: var(--canvas);
   border-radius: var(--rounded-lg);
   box-shadow: rgba(15, 15, 15, 0.08) 0px 4px 12px 0px;
@@ -153,6 +153,8 @@ function togglePanel(id: string) {
   flex-direction: column;
   overflow: hidden;
   transition: width 0.25s var(--ease);
+  will-change: width;
+  transform: translateZ(0);
 }
 
 .panel-header {

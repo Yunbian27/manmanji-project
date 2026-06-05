@@ -9,8 +9,8 @@ public class ArticlePageQueryDTO {
     private Integer page = 1;
     /** 每页条数(默认10) */
     private Integer size = 10;
-    /** 分类ID筛选 */
-    private Long categoryId;
+    /** 文章类型筛选 */
+    private String articleType;
     /** 标签ID筛选 */
     private Long tagId;
     /** 关键词搜索 */

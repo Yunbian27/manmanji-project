@@ -4,11 +4,9 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.yunbian27.common.utils.SecurityUtils;
 import com.yunbian27.common.exception.BusinessException;
-import com.yunbian27.content.mapper.ArticleMapper;
 import com.yunbian27.content.mapper.FolderMapper;
 import com.yunbian27.content.model.dto.FolderCreateDTO;
 import com.yunbian27.content.model.dto.FolderMoveDTO;
-import com.yunbian27.content.model.entity.Article;
 import com.yunbian27.content.model.entity.Folder;
 import com.yunbian27.content.model.vo.FolderTree;
 import com.yunbian27.content.model.vo.FolderTreeVO;
@@ -19,14 +17,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class FolderService {
 
-    private final ArticleMapper articleMapper;
     private final FolderMapper folderMapper;
 
     /**
@@ -38,22 +34,15 @@ public class FolderService {
 
         List<Folder> folders = folderMapper.selectList(new LambdaQueryWrapper<Folder>()
                 .eq(Folder::getUserId, userId));
-        List<FolderTree.ArticleBasic> articleBasics = articleMapper.getArticleBasics(userId);
 
-        List<FolderTree> folderTree = buildFolderTree(folders, articleBasics, null);
-
-        List<FolderTree.ArticleBasic> rootArticles = articleBasics.stream()
-                .filter(a -> a.getFolderId() == null)
-                .collect(Collectors.toList());
+        List<FolderTree> folderTree = buildFolderTree(folders, null);
 
         FolderTreeVO result = new FolderTreeVO();
         result.setFolders(folderTree);
-        result.setRootArticles(rootArticles);
         return result;
     }
 
-    private List<FolderTree> buildFolderTree(
-            List<Folder> folders, List<FolderTree.ArticleBasic> articleBasics, Long parentId) {
+    private List<FolderTree> buildFolderTree(List<Folder> folders, Long parentId) {
         List<FolderTree> result = new ArrayList<>();
 
         for (Folder folder : folders) {
@@ -64,13 +53,7 @@ public class FolderService {
             FolderTree vo = new FolderTree();
             vo.setId(folder.getId());
             vo.setName(folder.getName());
-
-            vo.setChildren(buildFolderTree(folders, articleBasics, folder.getId()));
-
-            List<FolderTree.ArticleBasic> itemList = articleBasics.stream()
-                    .filter(a -> folder.getId().equals(a.getFolderId()))
-                    .collect(Collectors.toList());
-            vo.setArticles(itemList);
+            vo.setChildren(buildFolderTree(folders, folder.getId()));
             result.add(vo);
         }
         return result;
@@ -159,9 +142,6 @@ public class FolderService {
         List<Long> idsToDelete = new ArrayList<>();
         idsToDelete.add(id);
         collectDescendantIds(id, allFolders, idsToDelete);
-
-        articleMapper.delete(new LambdaQueryWrapper<Article>()
-                .in(Article::getFolderId, idsToDelete));
 
         folderMapper.deleteBatchIds(idsToDelete);
         return show();

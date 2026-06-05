@@ -21,16 +21,18 @@ public class ArticleVO {
     private String coverUrl;
     /** 作者用户ID */
     private Long userId;
-    /** 个人文件夹ID */
-    private Long folderId;
-    /** 分类ID */
-    private Long categoryId;
     /** 状态(UNPUBLISHED/PUBLISHED) */
     private String status;
+    /** 可见范围(PUBLIC/PRIVATE) */
+    private String visibility;
+    /** 文章类型(ORIGINAL/REPOST) */
+    private String articleType;
+    /** 创作声明(NONE/AI_ASSISTED/NETWORK_SOURCED/PERSONAL_OPINION) */
+    private String creationStatement;
     /** 来源(MANUAL/AI_GENERATED) */
     private String sourceType;
-    /** AI生成原始输入 */
-    private String sourcePrompt;
+    /** 转载来源链接 */
+    private String sourceUrl;
     /** 阅读量(冗余计数) */
     private Integer viewCount;
     /** 点赞数(冗余计数) */
@@ -39,10 +41,6 @@ public class ArticleVO {
     private Integer commentCount;
     /** 收藏数(冗余计数) */
     private Integer bookmarkCount;
-    /** 是否原创 */
-    private Boolean isOriginal;
-    /** 转载来源链接 */
-    private String sourceUrl;
     /** 创建时间 */
     private LocalDateTime createdAt;
     /** 更新时间 */

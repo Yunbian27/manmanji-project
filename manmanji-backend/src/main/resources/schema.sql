@@ -41,7 +41,6 @@ CREATE TABLE IF NOT EXISTS articles (
     cover_url           VARCHAR(500),                                            -- 封面图链接
 
     user_id             BIGINT NOT NULL,                                         -- 用户 ID
-    folder_id           BIGINT,                                                  -- 个人文件夹 ID（个人博客侧分类）
 
     status              VARCHAR(15) NOT NULL DEFAULT 'UNPUBLISHED',              -- UNPUBLISHED / PUBLISHED / DRAFT
     visibility          VARCHAR(10) NOT NULL DEFAULT 'PUBLIC',                   -- PUBLIC / PRIVATE

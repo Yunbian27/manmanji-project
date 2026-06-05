@@ -11,6 +11,6 @@ import java.util.List;
 @Mapper
 public interface ArticleMapper extends BaseMapper<Article> {
 
-    @Select("select id, title, status, folder_id from articles where user_id = #{userId}")
+    @Select("select id, title, status from articles where user_id = #{userId}")
     List<FolderTree.ArticleBasic> getArticleBasics(Long userId);
 }

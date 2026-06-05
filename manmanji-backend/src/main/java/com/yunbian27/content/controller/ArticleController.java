@@ -1,9 +1,9 @@
 package com.yunbian27.content.controller;
 
 import com.yunbian27.content.model.dto.ArticlePublishDTO;
-import com.yunbian27.content.model.dto.ArticleMoveDTO;
 import com.yunbian27.content.model.dto.ArticleRenameDTO;
 import com.yunbian27.content.model.dto.ArticleSaveDTO;
+import com.yunbian27.content.model.vo.ArticleTitlesVO;
 import com.yunbian27.content.model.vo.ArticleVO;
 import com.yunbian27.content.model.vo.FolderTreeVO;
 import com.yunbian27.content.service.ArticleService;
@@ -21,16 +21,9 @@ public class ArticleController {
 
     private final ArticleService articleService;
 
-    /** 创建文章（无文件夹） */
     @PostMapping("/create")
     public Result<Long> create() {
-        return Result.success(articleService.create(null));
-    }
-
-    /** 创建文章（指定文件夹） */
-    @PostMapping("/create/{folderId}")
-    public Result<Long> createInFolder(@PathVariable Long folderId) {
-        return Result.success(articleService.create(folderId));
+        return Result.success(articleService.create());
     }
 
     @PutMapping("/save")
@@ -55,11 +48,6 @@ public class ArticleController {
         return Result.success(articleService.showArticle(id));
     }
 
-    @PutMapping("/move")
-    public Result<FolderTreeVO> move(@RequestBody ArticleMoveDTO dto) {
-        return Result.success(articleService.move(dto));
-    }
-
     @PutMapping("/{id}")
     public Result<FolderTreeVO> rename(@PathVariable Long id, @RequestBody ArticleRenameDTO dto) {
         return Result.success(articleService.rename(id, dto.getTitle()));
@@ -68,6 +56,15 @@ public class ArticleController {
     @DeleteMapping("/{id}")
     public Result<FolderTreeVO> delete(@PathVariable Long id) {
         return Result.success(articleService.delete(id));
+    }
+
+    /**
+     * 显示用户的文章列表
+     * @return
+     */
+    @GetMapping("/titles")
+    public Result<ArticleTitlesVO> showArticleTitles() {
+        return Result.success(articleService.showArticleTitles());
     }
 
 }

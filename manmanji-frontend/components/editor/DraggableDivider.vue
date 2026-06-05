@@ -4,13 +4,7 @@
     @mousedown.prevent="startDrag"
     @dblclick="emit('update:splitRatio', 0.5)"
   >
-    <div class="divider-line" />
-    <div class="divider-handle">
-      <svg width="4" height="16" viewBox="0 0 4 16" fill="none">
-        <rect x="0" y="1" width="1" height="14" rx="0.5" />
-        <rect x="3" y="1" width="1" height="14" rx="0.5" />
-      </svg>
-    </div>
+    <div class="divider-handle" />
   </div>
 </template>
 
@@ -18,32 +12,64 @@
 const props = defineProps<{ splitRatio: number }>()
 const emit = defineEmits<{ 'update:splitRatio': [value: number] }>()
 
+/** Minimum width for the right panel (px) */
+const MIN_RIGHT = 250
+
+/**
+ * Convert a 0-1 ratio to a pixel panel width using viewport-responsive scaling.
+ * Only used as fallback when the slide panel DOM element is not available.
+ */
+function ratioToPx(ratio: number): number {
+  const vw = window.innerWidth
+  let base: number, factor: number, threshold: number
+  if (vw <= 768)      { base = 160; factor = 40;  threshold = 772 }
+  else if (vw <= 900) { base = 180; factor = 80;  threshold = 897 }
+  else                { base = 200; factor = 160; threshold = 1092 }
+  return base + factor * Math.min(ratio, 0.5)
+    + Math.max(0, (vw - threshold) * Math.max(ratio - 0.5, 0) / 0.5)
+}
+
 function startDrag(e: MouseEvent) {
+  const container = (e.currentTarget as HTMLElement).parentElement!
+  const slidePanel = container.querySelector('.slide-panel') as HTMLElement | null
   const startX = e.clientX
-  const startRatio = props.splitRatio
-  const container = (e.target as HTMLElement).parentElement!
-  const containerWidth = container.offsetWidth
+  const startWidth = slidePanel?.offsetWidth ?? ratioToPx(props.splitRatio)
+  // Max and min right-panel width: derived from the same viewport-responsive
+  // formula used in EditorView CSS, so the right panel never squeezes the
+  // editor card beyond its design-intended minimum.
+  const maxWidth = ratioToPx(1)
+  const minWidth = MIN_RIGHT
+  let rafId = 0
 
-  function onMove(ev: MouseEvent) {
-    const dx = ev.clientX - startX
-    let newRatio = startRatio + dx / containerWidth
-    if (newRatio < 0.05) newRatio = 0
-    else if (newRatio > 0.95) newRatio = 1
-    else newRatio = Math.min(0.95, Math.max(0.05, newRatio))
-    emit('update:splitRatio', newRatio)
-  }
-
-  function onUp() {
-    document.removeEventListener('mousemove', onMove)
-    document.removeEventListener('mouseup', onUp)
-    document.body.style.cursor = ''
-    document.body.style.userSelect = ''
-  }
-
-  document.addEventListener('mousemove', onMove)
-  document.addEventListener('mouseup', onUp)
+  if (slidePanel) slidePanel.style.transition = 'none'
   document.body.style.cursor = 'col-resize'
   document.body.style.userSelect = 'none'
+
+  const onMove = (ev: MouseEvent) => {
+    const width = Math.max(minWidth, Math.min(maxWidth, startWidth + startX - ev.clientX))
+    if (!rafId) {
+      rafId = requestAnimationFrame(() => {
+        rafId = 0
+        container.style.setProperty('--panel-px', width + 'px')
+      })
+    }
+  }
+
+  const onUp = () => {
+    window.removeEventListener('mousemove', onMove)
+    window.removeEventListener('mouseup', onUp)
+    if (rafId) cancelAnimationFrame(rafId)
+
+    if (slidePanel) slidePanel.style.transition = ''
+    document.body.style.cursor = ''
+    document.body.style.userSelect = ''
+
+    const finalPx = parseFloat(container.style.getPropertyValue('--panel-px')) || startWidth
+    emit('update:splitRatio', Math.max(0, Math.min(1, finalPx / (maxWidth + MIN_LEFT))))
+  }
+
+  window.addEventListener('mousemove', onMove)
+  window.addEventListener('mouseup', onUp)
 }
 </script>
 
@@ -55,13 +81,8 @@ function startDrag(e: MouseEvent) {
   display: flex;
   align-items: center;
   justify-content: center;
-  position: relative;
-  z-index: 1;
   background: transparent;
-}
-
-.divider-line {
-  display: none;
+  transform: translateZ(0);
 }
 
 .divider-handle {
@@ -71,10 +92,6 @@ function startDrag(e: MouseEvent) {
   background: var(--muted);
   opacity: 0.25;
   transition: opacity 0.2s var(--ease), background 0.2s var(--ease);
-}
-
-.divider-handle svg {
-  display: none;
 }
 
 .draggable-divider:hover .divider-handle {
