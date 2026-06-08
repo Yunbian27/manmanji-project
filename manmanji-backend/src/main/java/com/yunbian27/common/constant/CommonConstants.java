@@ -35,10 +35,12 @@ public final class CommonConstants {
     /**
      * 文章状态
      */
-    public static final class ArticleStatus {
-        public static final String UNPUBLISHED = "UNPUBLISHED";
+    public static final class Article {
+        public static final String DRAFT = "DRAFT";
         public static final String PUBLISHED = "PUBLISHED";
 
-        private ArticleStatus() {}
+        public static final String PRIVATE = "PRIVATE";
+
+        private Article() {}
     }
 }

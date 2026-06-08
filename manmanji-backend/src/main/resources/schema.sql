@@ -35,14 +35,14 @@ CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
 CREATE TABLE IF NOT EXISTS articles (
     id                  BIGSERIAL PRIMARY KEY,                                    -- 主键
     title               VARCHAR(200) NOT NULL DEFAULT '未命名',                    -- 文章标题
-    slug                VARCHAR(200) NOT NULL UNIQUE,                            -- URL 标识，全局唯一，如 java-21-virtual-thread-xxx
+    slug                VARCHAR(200) UNIQUE,                                      -- URL 标识，全局唯一，如 java-21-virtual-thread-xxx
     content             TEXT,                                                     -- Markdown 正文
     summary             VARCHAR(500),                                            -- 文章摘要，feed 列表展示用
     cover_url           VARCHAR(500),                                            -- 封面图链接
 
     user_id             BIGINT NOT NULL,                                         -- 用户 ID
 
-    status              VARCHAR(15) NOT NULL DEFAULT 'UNPUBLISHED',              -- UNPUBLISHED / PUBLISHED / DRAFT
+    status              VARCHAR(15) NOT NULL DEFAULT 'UNPUBLISHED',              -- PUBLISHED / DRAFT
     visibility          VARCHAR(10) NOT NULL DEFAULT 'PUBLIC',                   -- PUBLIC / PRIVATE
     article_type        VARCHAR(10) NOT NULL DEFAULT 'ORIGINAL',                 -- ORIGINAL / REPOST
     creation_statement  VARCHAR(30) NOT NULL DEFAULT 'NONE',                     -- NONE / AI_ASSISTED / NETWORK_SOURCED / PERSONAL_OPINION

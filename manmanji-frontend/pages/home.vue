@@ -13,21 +13,10 @@
       </div>
 
       <div class="sidebar-fixed">
-        <div class="tag-filter-wrap">
-          <button class="sidebar-action-btn" @click="popoverVisible = !popoverVisible">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-            分组管理
-          </button>
-          <div class="tag-popover" :class="{ visible: popoverVisible }">
-            <span
-              v-for="tag in allTags"
-              :key="tag"
-              class="tag-popover-chip"
-              :class="{ selected: activeTags.includes(tag) }"
-              @click="toggleTag(tag)"
-            >{{ tag }}</span>
-          </div>
-        </div>
+        <button class="sidebar-action-btn" @click="groupModalVisible = true">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+          分组管理
+        </button>
       </div>
 
       <div class="sidebar-scroll" ref="sidebarScrollRef">
@@ -150,8 +139,9 @@
 
       <div class="content-body" ref="contentBodyRef">
         <div v-if="selectedArticle" class="content-inner">
-          <div class="article-body">
-            <p>{{ mockContent }}</p>
+          <div v-if="contentLoading" class="content-loading">加载中...</div>
+          <div v-else class="article-body">
+            <p>{{ articleContent }}</p>
           </div>
         </div>
         <div v-else class="content-empty">
@@ -159,11 +149,57 @@
         </div>
       </div>
     </main>
+
+    <!-- ===== 分组管理模态弹窗 ===== -->
+    <Transition name="group-modal">
+      <div v-if="groupModalVisible" class="group-modal-overlay" @click.self="groupModalVisible = false">
+        <div class="group-modal-card">
+          <div class="group-modal-header">
+            <h3 class="group-modal-title">分组管理</h3>
+            <button class="group-modal-close" @click="groupModalVisible = false" aria-label="关闭">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <div class="group-modal-search">
+            <svg class="group-modal-search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <input v-model="groupSearchQuery" class="group-modal-search-input" type="text" placeholder="搜索分组..." />
+          </div>
+          <div class="group-modal-grid">
+            <button
+              v-for="g in filteredModalGroups"
+              :key="typeof g === 'string' ? g : g.id"
+              class="group-modal-chip"
+              :class="{ active: activeGroupNames.includes(typeof g === 'string' ? g : g.name) }"
+              @click="toggleGroup(typeof g === 'string' ? g : g.name)"
+            >
+              {{ typeof g === 'string' ? g : g.name }}
+              <span class="group-modal-chip-remove" @click.stop="handleDeleteGroup(typeof g === 'string' ? g : g.name)">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </span>
+            </button>
+            <div v-if="filteredModalGroups.length === 0" class="group-modal-empty">暂无匹配分组</div>
+          </div>
+          <div v-if="groupCreateMode" class="group-modal-create">
+            <input
+              ref="newGroupInputRef"
+              v-model="newGroupName"
+              class="group-modal-create-input"
+              placeholder="输入分组名，按回车确认"
+              @keydown.enter.prevent="confirmCreateGroup"
+              @keydown.escape="groupCreateMode = false"
+            />
+          </div>
+          <div class="group-modal-actions">
+            <button class="group-modal-new-btn" @click="startCreateGroup">新建分组</button>
+          </div>
+        </div>
+      </div>
+    </Transition>
   </div>
 </template>
 
 <script setup lang="ts">
-import type { StudyArticle } from '~/types'
+import type { StudyArticle, GroupVO } from '~/types'
 import { onClickOutside } from '@vueuse/core'
 
 definePageMeta({ layout: 'blank' })
@@ -175,9 +211,14 @@ const router = useRouter()
 const articles = ref<StudyArticle[]>([])
 const selectedArticle = ref<StudyArticle | null>(null)
 const activeStatus = ref('ALL')
-const activeTags = ref<string[]>([])
+const activeTagNames = ref<string[]>([])
+const activeGroupNames = ref<string[]>([])
+const groups = ref<GroupVO[]>([])
 const searchQuery = ref('')
-const popoverVisible = ref(false)
+const groupModalVisible = ref(false)
+const groupSearchQuery = ref('')
+const groupCreateMode = ref(false)
+const newGroupName = ref('')
 const showDropdown = ref(false)
 const publishedExpanded = ref(false)
 const publishedSubFilter = ref<'PUBLIC' | 'PRIVATE' | null>(null)
@@ -189,12 +230,6 @@ const avatarContainer = ref<HTMLElement | null>(null)
 
 // --- Compute ---
 const avatarChar = computed(() => authStore.user?.nickname?.charAt(0) || '慢')
-
-const allTags = computed(() => {
-  const tagSet = new Set<string>()
-  articles.value.forEach(a => a.tags?.forEach(t => tagSet.add(t)))
-  return Array.from(tagSet)
-})
 
 const statusItems = computed(() => [
   {
@@ -234,8 +269,11 @@ const filteredNotes = computed(() => {
       list = list.filter(a => a.status === activeStatus.value)
     }
   }
-  if (activeTags.value.length) {
-    list = list.filter(a => activeTags.value.some(t => a.tags?.includes(t)))
+  if (activeTagNames.value.length) {
+    list = list.filter(a => activeTagNames.value.some(t => a.tags?.includes(t)))
+  }
+  if (activeGroupNames.value.length) {
+    list = list.filter(a => activeGroupNames.value.some(g => a.groupNames?.includes(g)))
   }
   if (searchQuery.value.trim()) {
     const q = searchQuery.value.trim().toLowerCase()
@@ -244,20 +282,84 @@ const filteredNotes = computed(() => {
   return list
 })
 
-const mockContent = '在构建分布式系统时，一致性模型的选择往往是架构决策中最关键、也最困难的一环。从严格到宽松，每种模型都代表着一组特定的取舍——在可用性、性能和正确性之间寻找平衡点。理解每种模型的能力边界和适用场景，是成为优秀后端工程师的必经之路。'
+const filteredModalGroups = computed(() => {
+  const q = groupSearchQuery.value.trim().toLowerCase()
+  if (!q) return groups.value
+  return groups.value.filter(g => {
+    const name = typeof g === 'string' ? g : g.name
+    return name.toLowerCase().includes(q)
+  })
+})
+
+const articleContent = ref<string | null>(null)
+const contentLoading = ref(false)
 
 // --- Methods ---
-function toggleTag(tag: string) {
-  const idx = activeTags.value.indexOf(tag)
-  if (idx >= 0) {
-    activeTags.value.splice(idx, 1)
-  } else {
-    activeTags.value.push(tag)
+function startCreateGroup() {
+  groupCreateMode.value = true
+  newGroupName.value = ''
+  nextTick(() => {
+    const el = document.querySelector('.group-modal-create-input') as HTMLInputElement
+    el?.focus()
+  })
+}
+
+async function confirmCreateGroup() {
+  const name = newGroupName.value.trim()
+  if (!name) return
+  const alreadyExists = groups.value.some(g =>
+    (typeof g === 'string' ? g : g.name) === name)
+  if (alreadyExists) return
+  try {
+    await useArticle().createGroup(name)
+    groups.value.push(name as unknown as GroupVO)
+    newGroupName.value = ''
+    groupCreateMode.value = false
+  } catch {
+    // 后端报错则忽略
   }
 }
 
-function selectArticle(article: StudyArticle) {
+async function handleDeleteGroup(name: string) {
+  try {
+    await useArticle().deleteGroup(name)
+    groups.value = groups.value.filter(g =>
+      (typeof g === 'string' ? g : g.name) !== name)
+    const idx = activeGroupNames.value.indexOf(name)
+    if (idx >= 0) activeGroupNames.value.splice(idx, 1)
+  } catch {
+    // 后端报错则忽略
+  }
+}
+function toggleTag(tag: string) {
+  const idx = activeTagNames.value.indexOf(tag)
+  if (idx >= 0) {
+    activeTagNames.value.splice(idx, 1)
+  } else {
+    activeTagNames.value.push(tag)
+  }
+}
+
+function toggleGroup(name: string) {
+  const idx = activeGroupNames.value.indexOf(name)
+  if (idx >= 0) {
+    activeGroupNames.value.splice(idx, 1)
+  } else {
+    activeGroupNames.value.push(name)
+  }
+}
+
+async function selectArticle(article: StudyArticle) {
   selectedArticle.value = article
+  contentLoading.value = true
+  try {
+    const vo = await useArticle().getArticle(article.id)
+    articleContent.value = vo.content
+  } catch {
+    articleContent.value = ''
+  } finally {
+    contentLoading.value = false
+  }
 }
 
 function togglePublished() {
@@ -291,12 +393,23 @@ async function handleLogout() {
   navigateTo('/login')
 }
 
+// --- Modal close cleanup ---
+watch(groupModalVisible, (v) => {
+  if (!v) {
+    groupCreateMode.value = false
+    newGroupName.value = ''
+    groupSearchQuery.value = ''
+  }
+})
+
 // --- Init ---
 onMounted(async () => {
-  const { listStudyArticles } = useArticle()
-  articles.value = await listStudyArticles()
+  const { listStudyArticles, listGroups } = useArticle()
+  const [arts, gs] = await Promise.all([listStudyArticles(), listGroups().catch(() => [] as GroupVO[])])
+  articles.value = arts
+  groups.value = gs
   if (articles.value.length > 0 && articles.value[0]) {
-    selectedArticle.value = articles.value[0]
+    await selectArticle(articles.value[0])
   }
 })
 
@@ -323,14 +436,7 @@ onClickOutside(avatarContainer, () => {
   showDropdown.value = false
 })
 
-onMounted(() => {
-  document.addEventListener('click', (e) => {
-    const target = e.target as HTMLElement
-    if (!target.closest('.tag-filter-wrap')) {
-      popoverVisible.value = false
-    }
-  })
-})
+
 </script>
 
 <style scoped>
@@ -812,7 +918,8 @@ onMounted(() => {
   padding: var(--spacing-xl);
   height: fit-content;
 }
-.content-empty {
+.content-empty,
+.content-loading {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -831,42 +938,208 @@ onMounted(() => {
 }
 .article-body p { margin-bottom: var(--spacing-md); }
 
-/* ===== Tag popover ===== */
-.tag-filter-wrap { position: relative; }
-.tag-popover {
-  display: none;
-  position: absolute;
-  left: 0;
-  top: 100%;
-  margin-top: var(--spacing-xs);
+/* ===== Group modal ===== */
+.group-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: var(--z-modal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-md);
+}
+
+.group-modal-card {
+  width: 100%;
+  max-width: 420px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
   background: var(--canvas);
   border: 1px solid var(--hairline);
-  border-radius: var(--rounded-lg);
-  padding: var(--spacing-sm);
-  min-width: 240px;
-  z-index: 200;
-  flex-wrap: wrap;
-  gap: var(--spacing-xs);
-  box-shadow: rgba(15, 15, 15, 0.08) 0px 4px 12px 0px;
+  border-radius: var(--rounded-xl);
+  padding: var(--spacing-xl);
+  box-shadow: rgba(15, 15, 15, 0.16) 0px 16px 48px -8px;
 }
-.tag-popover.visible { display: flex; }
-.tag-popover-chip {
-  padding: var(--spacing-xs) var(--spacing-sm);
-  border: 1px solid var(--hairline);
+
+.group-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-lg);
+  flex-shrink: 0;
+}
+
+.group-modal-title {
+  font-family: var(--font-sans);
+  font-size: var(--heading-3);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-heading);
+  color: var(--ink);
+  margin: 0;
+}
+
+.group-modal-close {
+  width: 36px; height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border-radius: var(--rounded-full);
+  border: none;
   background: transparent;
   color: var(--steel);
+  cursor: pointer;
+  transition: background-color 0.15s var(--ease), color 0.15s var(--ease);
+}
+.group-modal-close:hover { background: var(--hairline-soft); color: var(--ink); }
+
+.group-modal-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-bottom: var(--spacing-md);
+  flex-shrink: 0;
+}
+
+.group-modal-search-icon {
+  position: absolute;
+  left: 12px;
+  pointer-events: none;
+  color: var(--muted);
+}
+
+.group-modal-search-input {
+  width: 100%;
+  height: 44px;
+  padding: 0 var(--spacing-md) 0 36px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--rounded-md);
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: var(--body-md);
+  font-weight: var(--weight-regular);
+  outline: none;
+  transition: border-color 0.15s var(--ease);
+}
+.group-modal-search-input::placeholder { color: var(--muted); }
+.group-modal-search-input:focus { border-color: var(--primary); }
+
+.group-modal-grid {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
+  align-content: flex-start;
+  padding-bottom: var(--spacing-xs);
+}
+
+.group-modal-chip {
+  padding: var(--spacing-xs) var(--spacing-md);
+  border: 1px solid var(--hairline);
+  border-radius: var(--rounded-md);
+  background: var(--surface);
+  color: var(--steel);
+  font-family: var(--font-sans);
   font-size: var(--body-sm-medium);
   font-weight: var(--weight-medium);
   cursor: pointer;
   white-space: nowrap;
-  transition: all 0.15s var(--ease);
+  transition: background-color 0.15s var(--ease), border-color 0.15s var(--ease), color 0.15s var(--ease);
 }
-.tag-popover-chip:hover { border-color: var(--hairline-strong); }
-.tag-popover-chip.selected {
+.group-modal-chip:hover {
+  background: var(--hairline-soft);
+  border-color: var(--hairline-strong);
+  color: var(--ink);
+}
+.group-modal-chip.active {
   background: var(--ink-deep);
   border-color: var(--ink-deep);
   color: var(--on-dark);
+}
+
+.group-modal-chip-remove {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 6px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: color 0.15s var(--ease);
+}
+.group-modal-chip-remove:hover { color: var(--semantic-error); }
+.group-modal-chip.active .group-modal-chip-remove { color: var(--on-dark-muted); }
+.group-modal-chip.active .group-modal-chip-remove:hover { color: var(--on-dark); }
+
+.group-modal-empty {
+  width: 100%;
+  text-align: center;
+  font-size: var(--body-sm);
+  color: var(--muted);
+  padding: var(--spacing-xl) 0;
+}
+
+.group-modal-create {
+  padding-bottom: var(--spacing-sm);
+  flex-shrink: 0;
+}
+
+.group-modal-create-input {
+  width: 100%;
+  height: 40px;
+  padding: 0 var(--spacing-md);
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--rounded-md);
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: var(--body-sm);
+  font-weight: var(--weight-regular);
+  outline: none;
+  transition: border-color 0.15s var(--ease);
+}
+.group-modal-create-input::placeholder { color: var(--muted); }
+.group-modal-create-input:focus { border-color: var(--primary); }
+
+.group-modal-actions {
+  flex-shrink: 0;
+  padding-top: var(--spacing-xs);
+}
+
+.group-modal-new-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: none;
+  border-radius: var(--rounded-sm);
+  background: transparent;
+  color: var(--steel);
+  font-family: var(--font-sans);
+  font-size: var(--body-sm-medium);
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+  transition: background-color 0.15s var(--ease), color 0.15s var(--ease);
+}
+.group-modal-new-btn:hover { background: var(--hairline-soft); color: var(--ink); }
+
+.group-modal-enter-active,
+.group-modal-leave-active {
+  transition: opacity 0.15s var(--ease);
+}
+.group-modal-enter-active .group-modal-card,
+.group-modal-leave-active .group-modal-card {
+  transition: transform 0.15s var(--ease);
+}
+.group-modal-enter-from,
+.group-modal-leave-to {
+  opacity: 0;
+}
+.group-modal-enter-from .group-modal-card {
+  transform: scale(0.97);
 }
 
 /* ===== Scrollbar auto-hide ===== */

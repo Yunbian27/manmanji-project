@@ -1,7 +1,6 @@
 package com.yunbian27.content.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.yunbian27.common.constant.CommonConstants;
 import com.yunbian27.common.constant.SystemConstants;
 import com.yunbian27.common.utils.JsonUtils;
@@ -9,19 +8,21 @@ import com.yunbian27.common.constant.RedisKeys;
 import com.yunbian27.common.constant.RedisTTL;
 import com.yunbian27.common.exception.BusinessException;
 import com.yunbian27.common.exception.ErrorCode;
+import com.yunbian27.content.mapper.ArticleGroupMapper;
+import com.yunbian27.content.mapper.GroupMapper;
 import com.yunbian27.content.model.dto.ArticleSaveDTO;
+import com.yunbian27.content.model.entity.Article;
+import com.yunbian27.content.model.entity.ArticleGroup;
+import com.yunbian27.content.model.entity.Group;
 import com.yunbian27.content.model.vo.ArticleTitlesVO;
 import com.yunbian27.content.model.vo.ArticleVO;
 import com.yunbian27.ai.mapper.LlmGlobalSettingMapper;
 import com.yunbian27.ai.model.LlmGlobalSettingEntity;
 import com.yunbian27.ai.registry.LlmProviderRegistry;
 import com.yunbian27.content.model.dto.ArticlePublishDTO;
-import com.yunbian27.content.model.entity.Article;
-import com.yunbian27.content.model.entity.ArticleTag;
 import com.yunbian27.content.mapper.ArticleMapper;
 import com.yunbian27.content.mapper.ArticleTagMapper;
 import com.yunbian27.common.utils.SecurityUtils;
-import com.yunbian27.content.model.vo.FolderTreeVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
@@ -30,8 +31,11 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Set;
 import java.util.UUID;
+
+import static java.util.stream.Collectors.toSet;
 
 @Slf4j
 @Service
@@ -40,7 +44,8 @@ public class ArticleService {
 
     private final ArticleMapper articleMapper;
     private final ArticleTagMapper articleTagMapper;
-    private final FolderService folderService;
+    private final ArticleGroupMapper articleGroupMapper;
+    private final GroupMapper groupMapper;
 
     private final LlmProviderRegistry providerRegistry;
     private final LlmGlobalSettingMapper llmGlobalSettingMapper;
@@ -48,71 +53,131 @@ public class ArticleService {
     private final StringRedisTemplate stringRedisTemplate;
 
     /**
-     * @param id 文件夹id，可为null
-     * @return 新文章id
+     * 发布文章
+     * @param dto
      */
-    public Long create() {
+    @Transactional
+    public void publish(ArticlePublishDTO dto) {
         Long userId = SecurityUtils.getCurrentUserId();
         Article article = new Article();
+        BeanUtils.copyProperties(dto, article);
+
+        if (article.getTitle() == null)
+            article.setTitle(SystemConstants.DEFAULT_ARTICLE_TITLE);
+        if (article.getStatus() == null)
+            article.setStatus(CommonConstants.Article.DRAFT);
+
         article.setUserId(userId);
-        article.setTitle(SystemConstants.DEFAULT_ARTICLE_TITLE);
         article.setSlug(generateSlug(SystemConstants.DEFAULT_ARTICLE_TITLE));
-        article.setStatus(CommonConstants.ArticleStatus.UNPUBLISHED);
         articleMapper.insert(article);
-        log.info("文章创建成功: id={}, title={}, status={}", article.getId(), article.getTitle(), article.getStatus());
-        return article.getId();
+
+        // 插入分组表,已有分组和新增分组都放在同一个集合中
+        List<String> groupNames = dto.getGroupNames();
+        if (groupNames == null || groupNames.isEmpty())
+            throw new BusinessException(ErrorCode.BAD_REQUEST);
+
+        List<Long> groupIds = resolveGroupIds(userId, groupNames);
+
+        // 插入关系表
+        replaceArticleGroups(article.getId(), groupIds);
+
+        log.info("文章发布成功: id={}, title={}, status={}", article.getId(), article.getTitle(), article.getStatus());
     }
 
+    private List<Long> resolveGroupIds(Long userId, List<String> names) {
+        // 1、查已有
+        List<Group> existing = groupMapper.selectList(
+                new LambdaQueryWrapper<Group>()
+                        .eq(Group::getUserId, userId)
+                        .in(Group::getName, names)
+        );
+
+        // 2、插新的
+        Set<String> existingNames = existing.stream()
+                .map(Group::getName).collect(toSet());
+        List<String> newNames = names.stream()
+                .filter(n -> n != null && !n.isBlank() && !existingNames.contains(n)).toList();
+        if (!newNames.isEmpty()) {
+            groupMapper.insert(
+                    newNames.stream().map(n -> {
+                        Group g = new Group();
+                        g.setUserId(userId);
+                        g.setName(n);
+                        return g;
+                    }).toList()
+            );
+        }
+
+        // 3、返回ids
+        return groupMapper.selectList(
+                new LambdaQueryWrapper<Group>()
+                        .eq(Group::getUserId, userId)
+                        .in(Group::getName, names)
+        ).stream().map(Group::getId).toList();
+    }
+
+    private void replaceArticleGroups(Long articleId, List<Long> groupIds) {
+        articleGroupMapper.delete(
+                new LambdaQueryWrapper<ArticleGroup>()
+                        .eq(ArticleGroup::getArticleId, articleId)
+        );
+        articleGroupMapper.insert(
+                groupIds.stream().map(gid -> {
+                    ArticleGroup ag = new ArticleGroup();
+                    ag.setArticleId(articleId);
+                    ag.setGroupId(gid);
+                    return ag;
+                }).toList()
+        );
+    }
+
+    /*public void publish(ArticlePublishDTO dto) {
+        Long userId = SecurityUtils.getCurrentUserId();
+        if (dto == null) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST);
+        }
+
+        articleMapper.update(null,
+                new LambdaUpdateWrapper<Article>()
+                        .set(Article::getTitle, dto.getTitle())
+                        .set(Article::getContent, dto.getContent())
+                        .set(Article::getSlug, generateSlug(dto.getTitle()))
+                        .set(Article::getSummary, dto.getSummary())
+                        .set(Article::getCoverUrl, dto.getCoverUrl())
+                        .set(Article::getArticleType, dto.getArticleType())
+                        .set(Article::getSourceUrl, dto.getSourceUrl())
+                        .set(Article::getVisibility, dto.getVisibility())
+                        .set(Article::getCreationStatement, dto.getCreationStatement())
+                        .set(Article::getStatus, CommonConstants.ArticleStatus.PUBLISHED)
+                        .set(Article::getPublishedAt, LocalDateTime.now())
+                        .set(Article::getUpdatedAt, LocalDateTime.now())
+                        .eq(Article::getId, dto.getId())
+                        .eq(Article::getUserId, userId));
+
+        log.info("文章更新成功: id={}, title={}", dto.getId(), dto.getTitle());
+    }*/
+
     /**
-     * 文章保存
+     * 保持草稿
      * @param dto
      */
     public void save(ArticleSaveDTO dto) {
-        // 删除redis中缓存的文章
-        stringRedisTemplate.delete(RedisKeys.ARTICLE_CACHE_PREFIX + dto.getId());
+       if (dto.getTitle() == null)
+           throw new BusinessException(ErrorCode.BAD_REQUEST);
+       if (dto.getContent() == null)
+           throw new BusinessException(ErrorCode.BAD_REQUEST);
 
-        Long userId = SecurityUtils.getCurrentUserId();
-        if (dto == null) {
-            throw new BusinessException(ErrorCode.BAD_REQUEST);
-        }
+        Article article = new Article();
+        BeanUtils.copyProperties(dto, article);
 
-        articleMapper.update(null,
-            new LambdaUpdateWrapper<Article>()
-                .set(Article::getTitle, dto.getTitle())
-                .set(Article::getContent, dto.getContent())
-                .set(Article::getSlug, generateSlug(dto.getTitle()))
-                .set(Article::getUpdatedAt, LocalDateTime.now())
-                .eq(Article::getId, dto.getId())
-                .eq(Article::getUserId, userId));
+        article.setStatus(CommonConstants.Article.DRAFT);
+        article.setVisibility();
 
+        articleMapper.insert(article);
         log.info("文章保存成功: id={}, title={}", dto.getId(), dto.getTitle());
     }
 
-    public void publish(ArticlePublishDTO dto) {
-        Long userId = SecurityUtils.getCurrentUserId();
-        if (dto == null) {
-            throw new BusinessException(ErrorCode.BAD_REQUEST);
-        }
 
-        articleMapper.update(null,
-            new LambdaUpdateWrapper<Article>()
-                .set(Article::getTitle, dto.getTitle())
-                .set(Article::getContent, dto.getContent())
-                .set(Article::getSlug, generateSlug(dto.getTitle()))
-                .set(Article::getSummary, dto.getSummary())
-                .set(Article::getCoverUrl, dto.getCoverUrl())
-                .set(Article::getArticleType, dto.getArticleType())
-                .set(Article::getSourceUrl, dto.getSourceUrl())
-                .set(Article::getVisibility, dto.getVisibility())
-                .set(Article::getCreationStatement, dto.getCreationStatement())
-                .set(Article::getStatus, CommonConstants.ArticleStatus.PUBLISHED)
-                .set(Article::getPublishedAt, LocalDateTime.now())
-                .set(Article::getUpdatedAt, LocalDateTime.now())
-                .eq(Article::getId, dto.getId())
-                .eq(Article::getUserId, userId));
-
-        log.info("文章发布成功: id={}, title={}", dto.getId(), dto.getTitle());
-    }
 
     /**
      * 生成文章 slug 用于用户导航 美化url地址
@@ -137,7 +202,7 @@ public class ArticleService {
         String slug = base + "-" + suffix;
 
         while (articleMapper.selectCount(
-                new LambdaQueryWrapper<Article>().eq(Article::getSlug, slug)) > 0) {
+                new LambdaQueryWrapper<Article>().eq(com.yunbian27.content.model.entity.Article::getSlug, slug)) > 0) {
             suffix = UUID.randomUUID().toString().substring(0, 8);
             slug = base + "-" + suffix;
         }
@@ -177,8 +242,8 @@ public class ArticleService {
         if (article == null) {
             throw new BusinessException("文章不存在");
         }
-        // 未发布文章仅作者本人可读
-        if (CommonConstants.ArticleStatus.UNPUBLISHED.equals(article.getStatus())) {
+        // 私密文章仅作者本人可读
+        if (CommonConstants.Article.DRAFT.equals(article.getVisibility())) {
             Long userId = SecurityUtils.getCurrentUserId();
             if (!userId.equals(article.getUserId())) {
                 throw new BusinessException(ErrorCode.NOT_FOUND);
@@ -191,7 +256,7 @@ public class ArticleService {
         return articleVO;
     }
 
-    public FolderTreeVO rename(Long id, String title) {
+    /*public FolderTreeVO rename(Long id, String title) {
         if (id == null) {
             throw new BusinessException(ErrorCode.BAD_REQUEST);
         }
@@ -210,9 +275,9 @@ public class ArticleService {
                 .eq(Article::getId, id));
         stringRedisTemplate.delete(RedisKeys.ARTICLE_CACHE_PREFIX + id);
         return folderService.show();
-    }
+    }*/
 
-    @Transactional
+    /*@Transactional
     public FolderTreeVO delete(Long id) {
         if (id == null) {
             throw new BusinessException(ErrorCode.BAD_REQUEST);
@@ -227,20 +292,63 @@ public class ArticleService {
         articleMapper.deleteById(id);
         stringRedisTemplate.delete(RedisKeys.ARTICLE_CACHE_PREFIX + id);
         return folderService.show();
-    }
-
+    }*/
 
     /**
      * 显示用户的文章列表
      * @return
      */
-    public ArticleTitlesVO showArticleTitles() {
+    public List<ArticleTitlesVO> showArticleTitles() {
         // 1、获取用户id
         Long userId = SecurityUtils.getCurrentUserId();
 
+        return articleMapper.selectArticleTitlestByUserId(userId);
+    }
 
-        // 2、根据用户id查库
+    /**
+     * 显示分组
+     * @return
+     */
+    public List<String> showGroup() {
+        // 获取用户id
+        Long userId = SecurityUtils.getCurrentUserId();
 
-        // 3、返回
+        // 查表
+        return groupMapper.selectGroupNamesByUserId(userId);
+    }
+
+    /**
+     * 新建分组
+     * @param name 分组名
+     */
+    @Transactional
+    public void createGroup(String name) {
+        Long userId = SecurityUtils.getCurrentUserId();
+        List<String> existing = groupMapper.selectGroupNamesByUserId(userId);
+        if (existing.contains(name)) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST);
+        }
+        Group g = new Group();
+        g.setUserId(userId);
+        g.setName(name);
+        groupMapper.insert(g);
+    }
+
+    /**
+     * 删除分组（同时清理关联的文章分组关系）
+     * @param name 分组名
+     */
+    @Transactional
+    public void deleteGroup(String name) {
+        Long userId = SecurityUtils.getCurrentUserId();
+        Group group = groupMapper.selectOne(
+            new LambdaQueryWrapper<Group>()
+                .eq(Group::getUserId, userId)
+                .eq(Group::getName, name));
+        if (group == null) return;
+        articleGroupMapper.delete(
+            new LambdaQueryWrapper<ArticleGroup>()
+                .eq(ArticleGroup::getGroupId, group.getId()));
+        groupMapper.deleteById(group.getId());
     }
 }

@@ -209,7 +209,7 @@
             <button class="statusbar-btn statusbar-btn--save" :disabled="isSaving" @click="handleSave">
               {{ isSaving ? '保存中...' : '保存草稿' }}
             </button>
-            <button class="statusbar-btn statusbar-btn--publish" :disabled="isSaving" @click="showPublishSettings = true">
+            <button class="statusbar-btn statusbar-btn--publish" :disabled="isSaving" @click="scrollToSettings">
               发布设置
             </button>
           </div>
@@ -259,10 +259,6 @@
       </div>
     </Transition>
 
-    <PublishSettingsModal
-      v-model:visible="showPublishSettings"
-      @published="handleClose"
-    />
   </div>
 </template>
 
@@ -599,14 +595,16 @@ function onInsertMarkdown(before: string, after: string, placeholder: string) {
 }
 
 // ── Actions ─────────────────────────────────────────────────
-const showPublishSettings = ref(false)
-
 async function handleSave() {
   await editor.save()
 }
 
 function handleClose() {
   emit('close')
+}
+
+function scrollToSettings() {
+  window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })
 }
 
 onMounted(async () => {
@@ -1166,11 +1164,6 @@ onMounted(async () => {
 
 .link-dialog-leave-to .link-dialog {
   transform: scale(0.96);
-}
-
-@keyframes toast-in {
-  from { opacity: 0; transform: translateX(-50%) translateY(8px); }
-  to { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
 
 /* ── Container Queries（卡片宽度响应，面板挤压时也会触发）── */

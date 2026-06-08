@@ -10,13 +10,9 @@ import java.util.List;
 @Data
 public class ArticleSaveDTO {
 
-    /** 文章ID */
-    @NotNull(message = "文章ID不能为空")
-    private Long id;
-
-    /** 文章标题(最长200) */
+    /** 文章标题(最长100) */
     @NotBlank(message = "标题不能为空")
-    @Size(max = 200, message = "标题最多 200 字")
+    @Size(max = 100, message = "标题最多 100 字")
     private String title;
 
     /** Markdown正文 */

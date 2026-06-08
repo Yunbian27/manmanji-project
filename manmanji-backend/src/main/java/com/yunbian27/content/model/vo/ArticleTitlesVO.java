@@ -1,10 +1,12 @@
 package com.yunbian27.content.model.vo;
 
+import lombok.Builder;
 import lombok.Data;
 
 import java.time.LocalDateTime;
 
 @Data
+@Builder
 public class ArticleTitlesVO {
     /** 主键ID */
     private Long id;

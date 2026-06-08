@@ -44,18 +44,33 @@
             <!-- ② 分组 -->
             <div class="form-field">
               <span class="field-label">分组</span>
-              <div class="group-input-area">
-                <input
-                  v-model="groupInput"
-                  class="form-input"
-                  placeholder="输入分组名后按回车"
-                  @keydown.enter.prevent="addGroup"
-                />
-                <div v-if="local.groupNames.length > 0" class="tag-list">
-                  <span v-for="(name, i) in local.groupNames" :key="i" class="group-chip">
-                    {{ name }}
-                    <button class="tag-remove" @click="removeGroup(i)"><IconX :size="10" /></button>
-                  </span>
+              <div class="group-picker-wrap">
+                <button type="button" class="tag-picker-trigger" @click="showGroupPicker = !showGroupPicker">
+                  <span v-if="local.groupNames.length === 0" class="picker-placeholder">选择或输入分组</span>
+                  <div v-else class="tag-list">
+                    <span v-for="(name, i) in local.groupNames" :key="i" class="group-chip">
+                      {{ name }}
+                      <button class="tag-remove" @click.stop="removeGroup(i)"><IconX :size="10" /></button>
+                    </span>
+                  </div>
+                  <svg class="picker-chevron" :class="{ open: showGroupPicker }" width="10" height="6" viewBox="0 0 10 6" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 1L5 5L9 1"/></svg>
+                </button>
+                <div v-if="showGroupPicker" class="group-picker-popover">
+                  <button
+                    v-for="g in filteredGroups"
+                    :key="g.id"
+                    type="button"
+                    :class="['tag-picker-chip', { selected: local.groupNames.includes(g.name) }]"
+                    @click="toggleGroup(g.name)"
+                  >{{ g.name }}</button>
+                  <div v-if="filteredGroups.length === 0" class="picker-empty">暂无已有分组，输入新名称后按回车添加</div>
+                  <div class="group-picker-divider" />
+                  <input
+                    v-model="groupInput"
+                    class="group-picker-input"
+                    placeholder="输入新分组名，按回车添加"
+                    @keydown.enter.prevent="addGroup"
+                  />
                 </div>
               </div>
             </div>
@@ -156,6 +171,7 @@
 
 <script setup lang="ts">
 import type { PublishSettings } from '~/composables/useArticleEditor'
+import type { GroupVO } from '~/types'
 
 const props = defineProps<{ visible: boolean }>()
 const emit = defineEmits<{ 'update:visible': [value: boolean]; published: [] }>()
@@ -164,8 +180,10 @@ const editor = injectEditor()
 const { publishSettings, isSaving, publishError } = editor
 
 const showTagPicker = ref(false)
+const showGroupPicker = ref(false)
 const groupInput = ref('')
 const fileInputRef = ref<HTMLInputElement | null>(null)
+const availableGroups = ref<GroupVO[]>([])
 
 const availableTags = [
   { id: 1, name: 'Java' }, { id: 2, name: '并发' }, { id: 3, name: 'PostgreSQL' },
@@ -180,6 +198,10 @@ const availableTags = [
   { id: 28, name: '工程实践' }, { id: 29, name: '搜索' },
 ]
 
+const filteredGroups = computed(() =>
+  availableGroups.value.filter(g => !local.groupNames.includes(g.name)),
+)
+
 const local = reactive<PublishSettings>({
   tagIds: [],
   groupNames: [],
@@ -191,7 +213,7 @@ const local = reactive<PublishSettings>({
   creationStatement: 'NONE',
 })
 
-watch(() => props.visible, (v) => {
+watch(() => props.visible, async (v) => {
   if (v) {
     local.tagIds = [...publishSettings.tagIds]
     local.groupNames = [...publishSettings.groupNames]
@@ -202,7 +224,13 @@ watch(() => props.visible, (v) => {
     local.visibility = publishSettings.visibility
     local.creationStatement = publishSettings.creationStatement
     showTagPicker.value = false
+    showGroupPicker.value = false
     groupInput.value = ''
+    try {
+      availableGroups.value = await useArticle().listGroups()
+    } catch {
+      availableGroups.value = []
+    }
   }
 })
 
@@ -223,13 +251,15 @@ function syncToEditor() {
 
 async function handlePublish() {
   syncToEditor()
-  try {
-    await editor.publish()
-    emit('update:visible', false)
-    emit('published')
-  } catch {
-    // error shown via publishError
+  if (editor.titleError.value) {
+    alert(editor.titleError.value)
+    return
   }
+  const ok = await editor.publish()
+  if (!ok) return
+  emit('update:visible', false)
+  alert('发布成功')
+  emit('published')
 }
 
 function toggleTag(tagId: number) {
@@ -255,6 +285,15 @@ function addGroup() {
   if (!name || local.groupNames.includes(name)) return
   local.groupNames.push(name)
   groupInput.value = ''
+}
+
+function toggleGroup(name: string) {
+  const idx = local.groupNames.indexOf(name)
+  if (idx >= 0) {
+    local.groupNames.splice(idx, 1)
+  } else {
+    local.groupNames.push(name)
+  }
 }
 
 function removeGroup(index: number) {
@@ -284,11 +323,12 @@ function onKeydown(e: KeyboardEvent) {
 }
 
 function onClickOutside(e: MouseEvent) {
-  if (showTagPicker.value) {
-    const target = e.target as HTMLElement
-    if (!target.closest('.tag-picker-wrap')) {
-      showTagPicker.value = false
-    }
+  const target = e.target as HTMLElement
+  if (showTagPicker.value && !target.closest('.tag-picker-wrap')) {
+    showTagPicker.value = false
+  }
+  if (showGroupPicker.value && !target.closest('.group-picker-wrap')) {
+    showGroupPicker.value = false
   }
 }
 
@@ -499,19 +539,59 @@ onUnmounted(() => document.removeEventListener('click', onClickOutside))
 }
 .tag-remove:hover { color: var(--semantic-error); }
 
-/* ② Group chips */
-.group-input-area { display: flex; flex-direction: column; gap: 4px; }
+/* ② Group picker */
+.group-picker-wrap { position: relative; }
+
+.group-picker-popover {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 4px);
+  background: var(--canvas);
+  border: 1px solid var(--hairline);
+  border-radius: var(--rounded-lg);
+  box-shadow: rgba(15, 15, 15, 0.08) 0px 4px 12px 0px;
+  z-index: 10;
+  max-height: 220px;
+  overflow-y: auto;
+  padding: var(--spacing-sm);
+}
+
+.group-picker-divider {
+  height: 1px;
+  background: var(--hairline-soft);
+  margin: var(--spacing-xs) 0;
+}
+
+.group-picker-input {
+  width: 100%;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid var(--hairline);
+  border-radius: var(--rounded-sm);
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: var(--body-sm);
+  font-weight: var(--weight-regular);
+  outline: none;
+  transition: border-color 0.15s var(--ease);
+}
+.group-picker-input::placeholder { color: var(--muted); }
+.group-picker-input:focus { border-color: var(--primary); }
 
 .group-chip {
   display: inline-flex;
   align-items: center;
-  padding: 2px 10px;
+  padding: var(--spacing-xs) var(--spacing-md);
   border: 1px solid var(--hairline);
   border-radius: var(--rounded-full);
   background: var(--surface);
-  color: var(--slate);
+  color: var(--ink);
   font-family: var(--font-sans);
-  font-size: var(--body-sm);
+  font-size: var(--body-sm-medium);
   font-weight: var(--weight-medium);
 }
 

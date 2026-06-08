@@ -11,7 +11,7 @@ export interface PublishSettings {
   creationStatement: 'NONE' | 'AI_ASSISTED' | 'NETWORK_SOURCED' | 'PERSONAL_OPINION'
 }
 
-const EDITOR_KEY = Symbol('editor')
+export const EDITOR_KEY = Symbol('editor')
 
 export function createEditorState(articleId: number) {
   const title = ref('')
@@ -106,8 +106,8 @@ export function createEditorState(articleId: number) {
     }
   }
 
-  async function publish() {
-    if (!validate()) return
+  async function publish(): Promise<boolean> {
+    if (!validate()) return false
     isSaving.value = true
     publishError.value = null
     try {
@@ -129,8 +129,10 @@ export function createEditorState(articleId: number) {
         currentArticleId.value = id
       }
       lastSavedAt.value = new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
+      return true
     } catch (e: any) {
       publishError.value = e?.message || '发布失败，请稍后重试'
+      return false
     } finally {
       isSaving.value = false
     }

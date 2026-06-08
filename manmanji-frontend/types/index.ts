@@ -56,7 +56,6 @@ export interface ArticleVO {
   summary: string | null
   coverUrl: string | null
   authorId: number
-  folderId: number | null
   categoryId: number | null
   status: 'UNPUBLISHED' | 'PUBLISHED'
   visibility?: 'PUBLIC' | 'PRIVATE'
@@ -98,28 +97,6 @@ export interface ArticlePublishDTO {
   creationStatement?: string
 }
 
-// ---------- 文件夹树 (user) ----------
-
-export interface ArticleItem {
-  id: number
-  title: string
-  status: 'UNPUBLISHED' | 'PUBLISHED'
-}
-
-// 文件夹树节点，children 是自身类型的数组 → 递归结构
-export interface FolderTree {
-  id: number
-  name: string
-  children: FolderTree[]       // 递归：子文件夹
-  articles: ArticleItem[]      // 该文件夹下的文章
-}
-
-// 文件夹树 API 响应
-export interface FolderTreeVO {
-  folders: FolderTree[]
-  rootArticles: ArticleItem[]  // folder_id 为空的文章
-}
-
 // ---------- 目录导航 ----------
 export interface TocItem {
   id: string
@@ -134,10 +111,17 @@ export interface StudyArticle {
   title: string
   status: 'UNPUBLISHED' | 'PUBLISHED' | 'BOOKMARKED'
   visibility?: 'PUBLIC' | 'PRIVATE'
-  tags: string[]                  // 标签名称列表
+  tags?: string[]                 // 标签名称列表
+  groupNames?: string[]           // 分组名称列表
   updatedAt: string               // 最后修改时间
   // 仅收藏文章
   sourceAuthor?: string           // 原作者昵称
   bookmarkedAt?: string           // 收藏时间
+}
+
+// ---------- 分组 ----------
+export interface GroupVO {
+  id: number
+  name: string
 }
 
