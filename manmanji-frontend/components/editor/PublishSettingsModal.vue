@@ -61,7 +61,7 @@
                     :key="g.id"
                     type="button"
                     :class="['tag-picker-chip', { selected: local.groupNames.includes(g.name) }]"
-                    @click="toggleGroup(g.name)"
+                    @click="toggleGroup(g)"
                   >{{ g.name }}</button>
                   <div v-if="filteredGroups.length === 0" class="picker-empty">暂无已有分组，输入新名称后按回车添加</div>
                   <div class="group-picker-divider" />
@@ -287,12 +287,12 @@ function addGroup() {
   groupInput.value = ''
 }
 
-function toggleGroup(name: string) {
-  const idx = local.groupNames.indexOf(name)
+function toggleGroup(g: GroupVO) {
+  const idx = local.groupNames.indexOf(g.name)
   if (idx >= 0) {
     local.groupNames.splice(idx, 1)
   } else {
-    local.groupNames.push(name)
+    local.groupNames.push(g.name)
   }
 }
 

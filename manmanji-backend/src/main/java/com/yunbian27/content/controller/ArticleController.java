@@ -4,6 +4,7 @@ import com.yunbian27.content.model.dto.ArticlePublishDTO;
 import com.yunbian27.content.model.dto.ArticleSaveDTO;
 import com.yunbian27.content.model.vo.ArticleTitlesVO;
 import com.yunbian27.content.model.vo.ArticleVO;
+import com.yunbian27.content.model.vo.GroupVO;
 import com.yunbian27.content.service.ArticleService;
 import com.yunbian27.common.result.Result;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -28,31 +29,29 @@ public class ArticleController {
      * @return
      */
     @PutMapping("/publish")
-    public Result<Void> publish(@Valid @RequestBody ArticlePublishDTO dto) {
-        articleService.publish(dto);
-        return Result.success();
+    public Result<Long> publish(@Valid @RequestBody ArticlePublishDTO dto) {
+        return Result.success(articleService.publish(dto));
     }
 
-    @PutMapping("/save")
+    /*@PutMapping("/save")
     public Result<Void> save(@Valid @RequestBody ArticleSaveDTO dto) {
         articleService.save(dto);
         return Result.success();
-    }
+    }*/
 
     @GetMapping("/groups")
-    public Result<List<String>> group() {
+    public Result<List<GroupVO>> group() {
         return Result.success(articleService.showGroup());
     }
 
     @PostMapping("/groups")
-    public Result<Void> createGroup(@RequestBody Map<String, String> body) {
-        articleService.createGroup(body.get("name"));
-        return Result.success();
+    public Result<Long> createGroup(@RequestBody Map<String, String> body) {
+        return Result.success(articleService.createGroup(body.get("name")));
     }
 
-    @DeleteMapping("/groups/{name}")
-    public Result<Void> deleteGroup(@PathVariable String name) {
-        articleService.deleteGroup(name);
+    @DeleteMapping("/groups/{id}")
+    public Result<Void> deleteGroup(@PathVariable Long id) {
+        articleService.deleteGroup(id);
         return Result.success();
     }
 

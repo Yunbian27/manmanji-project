@@ -45,14 +45,14 @@ export function useArticle() {
     return api.uploadFormData<string>('/api/storage/image', formData)
   }
 
-  /** 新建分组 */
-  function createGroup(name: string): Promise<void> {
-    return api.post('/api/articles/groups', { name })
+  /** 新建分组，返回新分组 ID */
+  function createGroup(name: string): Promise<number> {
+    return api.post<number>('/api/articles/groups', { name })
   }
 
   /** 删除分组 */
-  function deleteGroup(name: string): Promise<void> {
-    return api.delete(`/api/articles/groups/${encodeURIComponent(name)}`)
+  function deleteGroup(id: number): Promise<void> {
+    return api.delete(`/api/articles/groups/${id}`)
   }
 
   return { getArticle, createArticle, saveArticle, publishArticle, improve, uploadImage, listStudyArticles, listGroups, createGroup, deleteGroup }

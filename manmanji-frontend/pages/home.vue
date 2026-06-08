@@ -13,10 +13,43 @@
       </div>
 
       <div class="sidebar-fixed">
-        <button class="sidebar-action-btn" @click="groupModalVisible = true">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-          分组管理
-        </button>
+        <div class="group-manage-wrap">
+          <button class="sidebar-action-btn" @click="groupModalVisible = !groupModalVisible">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+            分组管理
+          </button>
+          <div v-if="groupModalVisible" ref="groupPopoverRef" class="group-modal-popover" @click.stop>
+            <div class="group-modal-card">
+              <div class="group-modal-header">
+                <h3 class="group-modal-title">分组管理</h3>
+                <button class="group-modal-close" @click="groupModalVisible = false" aria-label="关闭">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+              </div>
+              <input
+                v-model="groupSearch"
+                class="group-modal-search-input"
+                placeholder="请输入文字搜索，Enter键可添加自定义分组"
+                @keydown.enter.prevent="handleGroupSearchEnter"
+              />
+              <div class="group-modal-grid">
+                <button
+                  v-for="g in filteredModalGroups"
+                  :key="g.id"
+                  class="group-modal-chip"
+                  :class="{ active: activeGroupNames.includes(g.name) }"
+                  @click="toggleGroup(g)"
+                >
+                  {{ g.name }}
+                  <span class="group-modal-chip-remove" @click.stop="handleDeleteGroup(g.id)">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                  </span>
+                </button>
+                <div v-if="filteredModalGroups.length === 0" class="group-modal-empty">暂无匹配分组，按 Enter 创建</div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div class="sidebar-scroll" ref="sidebarScrollRef">
@@ -150,51 +183,6 @@
       </div>
     </main>
 
-    <!-- ===== 分组管理模态弹窗 ===== -->
-    <Transition name="group-modal">
-      <div v-if="groupModalVisible" class="group-modal-overlay" @click.self="groupModalVisible = false">
-        <div class="group-modal-card">
-          <div class="group-modal-header">
-            <h3 class="group-modal-title">分组管理</h3>
-            <button class="group-modal-close" @click="groupModalVisible = false" aria-label="关闭">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            </button>
-          </div>
-          <div class="group-modal-search">
-            <svg class="group-modal-search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-            <input v-model="groupSearchQuery" class="group-modal-search-input" type="text" placeholder="搜索分组..." />
-          </div>
-          <div class="group-modal-grid">
-            <button
-              v-for="g in filteredModalGroups"
-              :key="typeof g === 'string' ? g : g.id"
-              class="group-modal-chip"
-              :class="{ active: activeGroupNames.includes(typeof g === 'string' ? g : g.name) }"
-              @click="toggleGroup(typeof g === 'string' ? g : g.name)"
-            >
-              {{ typeof g === 'string' ? g : g.name }}
-              <span class="group-modal-chip-remove" @click.stop="handleDeleteGroup(typeof g === 'string' ? g : g.name)">
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-              </span>
-            </button>
-            <div v-if="filteredModalGroups.length === 0" class="group-modal-empty">暂无匹配分组</div>
-          </div>
-          <div v-if="groupCreateMode" class="group-modal-create">
-            <input
-              ref="newGroupInputRef"
-              v-model="newGroupName"
-              class="group-modal-create-input"
-              placeholder="输入分组名，按回车确认"
-              @keydown.enter.prevent="confirmCreateGroup"
-              @keydown.escape="groupCreateMode = false"
-            />
-          </div>
-          <div class="group-modal-actions">
-            <button class="group-modal-new-btn" @click="startCreateGroup">新建分组</button>
-          </div>
-        </div>
-      </div>
-    </Transition>
   </div>
 </template>
 
@@ -216,9 +204,10 @@ const activeGroupNames = ref<string[]>([])
 const groups = ref<GroupVO[]>([])
 const searchQuery = ref('')
 const groupModalVisible = ref(false)
-const groupSearchQuery = ref('')
-const groupCreateMode = ref(false)
-const newGroupName = ref('')
+const groupSearch = ref('')
+const groupPopoverRef = ref<HTMLElement | null>(null)
+
+onClickOutside(groupPopoverRef, () => { groupModalVisible.value = false })
 const showDropdown = ref(false)
 const publishedExpanded = ref(false)
 const publishedSubFilter = ref<'PUBLIC' | 'PRIVATE' | null>(null)
@@ -283,50 +272,36 @@ const filteredNotes = computed(() => {
 })
 
 const filteredModalGroups = computed(() => {
-  const q = groupSearchQuery.value.trim().toLowerCase()
+  const q = groupSearch.value.trim().toLowerCase()
   if (!q) return groups.value
-  return groups.value.filter(g => {
-    const name = typeof g === 'string' ? g : g.name
-    return name.toLowerCase().includes(q)
-  })
+  return groups.value.filter(g => g.name.toLowerCase().includes(q))
 })
 
 const articleContent = ref<string | null>(null)
 const contentLoading = ref(false)
 
 // --- Methods ---
-function startCreateGroup() {
-  groupCreateMode.value = true
-  newGroupName.value = ''
-  nextTick(() => {
-    const el = document.querySelector('.group-modal-create-input') as HTMLInputElement
-    el?.focus()
-  })
-}
-
-async function confirmCreateGroup() {
-  const name = newGroupName.value.trim()
-  if (!name) return
-  const alreadyExists = groups.value.some(g =>
-    (typeof g === 'string' ? g : g.name) === name)
-  if (alreadyExists) return
-  try {
-    await useArticle().createGroup(name)
-    groups.value.push(name as unknown as GroupVO)
-    newGroupName.value = ''
-    groupCreateMode.value = false
-  } catch {
-    // 后端报错则忽略
+async function handleGroupSearchEnter() {
+  const q = groupSearch.value.trim()
+  if (!q) return
+  if (!groups.value.some(g => g.name === q)) {
+    try {
+      const newId = await useArticle().createGroup(q)
+      groups.value.push({ id: newId, name: q })
+    } catch { /* 后端报错则忽略 */ }
   }
+  groupSearch.value = ''
 }
 
-async function handleDeleteGroup(name: string) {
+async function handleDeleteGroup(id: number) {
   try {
-    await useArticle().deleteGroup(name)
-    groups.value = groups.value.filter(g =>
-      (typeof g === 'string' ? g : g.name) !== name)
-    const idx = activeGroupNames.value.indexOf(name)
-    if (idx >= 0) activeGroupNames.value.splice(idx, 1)
+    await useArticle().deleteGroup(id)
+    const removed = groups.value.find(g => g.id === id)
+    groups.value = groups.value.filter(g => g.id !== id)
+    if (removed) {
+      const idx = activeGroupNames.value.indexOf(removed.name)
+      if (idx >= 0) activeGroupNames.value.splice(idx, 1)
+    }
   } catch {
     // 后端报错则忽略
   }
@@ -340,12 +315,12 @@ function toggleTag(tag: string) {
   }
 }
 
-function toggleGroup(name: string) {
-  const idx = activeGroupNames.value.indexOf(name)
+function toggleGroup(g: GroupVO) {
+  const idx = activeGroupNames.value.indexOf(g.name)
   if (idx >= 0) {
     activeGroupNames.value.splice(idx, 1)
   } else {
-    activeGroupNames.value.push(name)
+    activeGroupNames.value.push(g.name)
   }
 }
 
@@ -396,9 +371,7 @@ async function handleLogout() {
 // --- Modal close cleanup ---
 watch(groupModalVisible, (v) => {
   if (!v) {
-    groupCreateMode.value = false
-    newGroupName.value = ''
-    groupSearchQuery.value = ''
+    groupSearch.value = ''
   }
 })
 
@@ -938,28 +911,23 @@ onClickOutside(avatarContainer, () => {
 }
 .article-body p { margin-bottom: var(--spacing-md); }
 
-/* ===== Group modal ===== */
-.group-modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.6);
-  z-index: var(--z-modal);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--spacing-md);
+/* ===== Group popover ===== */
+.group-manage-wrap { position: relative; }
+
+.group-modal-popover {
+  position: absolute; left: 100%; top: 0; z-index: var(--z-modal);
+  margin-left: var(--spacing-sm);
 }
 
 .group-modal-card {
-  width: 100%;
-  max-width: 420px;
-  max-height: 80vh;
+  width: 320px;
+  max-height: 400px;
   display: flex;
   flex-direction: column;
   background: var(--canvas);
   border: 1px solid var(--hairline);
-  border-radius: var(--rounded-xl);
-  padding: var(--spacing-xl);
+  border-radius: var(--rounded-lg);
+  padding: var(--spacing-lg);
   box-shadow: rgba(15, 15, 15, 0.16) 0px 16px 48px -8px;
 }
 
@@ -967,61 +935,46 @@ onClickOutside(avatarContainer, () => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: var(--spacing-lg);
+  margin-bottom: var(--spacing-md);
   flex-shrink: 0;
 }
 
 .group-modal-title {
   font-family: var(--font-sans);
-  font-size: var(--heading-3);
+  font-size: var(--heading-5);
   font-weight: var(--weight-semibold);
-  line-height: var(--leading-heading);
   color: var(--ink);
   margin: 0;
 }
 
 .group-modal-close {
-  width: 36px; height: 36px;
+  width: 28px; height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: var(--rounded-full);
+  border-radius: var(--rounded-sm);
   border: none;
   background: transparent;
   color: var(--steel);
   cursor: pointer;
-  transition: background-color 0.15s var(--ease), color 0.15s var(--ease);
+  transition: background-color 0.2s var(--ease), color 0.2s var(--ease);
 }
 .group-modal-close:hover { background: var(--hairline-soft); color: var(--ink); }
 
-.group-modal-search {
-  position: relative;
-  display: flex;
-  align-items: center;
-  margin-bottom: var(--spacing-md);
-  flex-shrink: 0;
-}
-
-.group-modal-search-icon {
-  position: absolute;
-  left: 12px;
-  pointer-events: none;
-  color: var(--muted);
-}
-
 .group-modal-search-input {
   width: 100%;
-  height: 44px;
-  padding: 0 var(--spacing-md) 0 36px;
-  border: 1px solid var(--hairline);
+  height: 36px;
+  padding: 0 var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+  border: 1px solid var(--hairline-strong);
   border-radius: var(--rounded-md);
-  background: var(--surface);
+  background: var(--canvas);
   color: var(--ink);
   font-family: var(--font-sans);
-  font-size: var(--body-md);
-  font-weight: var(--weight-regular);
+  font-size: var(--body-sm);
   outline: none;
-  transition: border-color 0.15s var(--ease);
+  flex-shrink: 0;
+  transition: border-color 0.2s var(--ease);
 }
 .group-modal-search-input::placeholder { color: var(--muted); }
 .group-modal-search-input:focus { border-color: var(--primary); }
@@ -1033,21 +986,22 @@ onClickOutside(avatarContainer, () => {
   flex-wrap: wrap;
   gap: var(--spacing-xs);
   align-content: flex-start;
-  padding-bottom: var(--spacing-xs);
+  min-height: 0;
 }
 
 .group-modal-chip {
+  display: inline-flex; align-items: center;
   padding: var(--spacing-xs) var(--spacing-md);
   border: 1px solid var(--hairline);
-  border-radius: var(--rounded-md);
-  background: var(--surface);
+  border-radius: var(--rounded-full);
+  background: transparent;
   color: var(--steel);
   font-family: var(--font-sans);
-  font-size: var(--body-sm-medium);
+  font-size: var(--body-sm);
   font-weight: var(--weight-medium);
   cursor: pointer;
   white-space: nowrap;
-  transition: background-color 0.15s var(--ease), border-color 0.15s var(--ease), color 0.15s var(--ease);
+  transition: background-color 0.2s var(--ease), border-color 0.2s var(--ease), color 0.2s var(--ease);
 }
 .group-modal-chip:hover {
   background: var(--hairline-soft);
@@ -1069,7 +1023,7 @@ onClickOutside(avatarContainer, () => {
   background: transparent;
   color: var(--muted);
   cursor: pointer;
-  transition: color 0.15s var(--ease);
+  transition: color 0.2s var(--ease);
 }
 .group-modal-chip-remove:hover { color: var(--semantic-error); }
 .group-modal-chip.active .group-modal-chip-remove { color: var(--on-dark-muted); }
@@ -1080,66 +1034,7 @@ onClickOutside(avatarContainer, () => {
   text-align: center;
   font-size: var(--body-sm);
   color: var(--muted);
-  padding: var(--spacing-xl) 0;
-}
-
-.group-modal-create {
-  padding-bottom: var(--spacing-sm);
-  flex-shrink: 0;
-}
-
-.group-modal-create-input {
-  width: 100%;
-  height: 40px;
-  padding: 0 var(--spacing-md);
-  border: 1px solid var(--hairline-strong);
-  border-radius: var(--rounded-md);
-  background: var(--surface);
-  color: var(--ink);
-  font-family: var(--font-sans);
-  font-size: var(--body-sm);
-  font-weight: var(--weight-regular);
-  outline: none;
-  transition: border-color 0.15s var(--ease);
-}
-.group-modal-create-input::placeholder { color: var(--muted); }
-.group-modal-create-input:focus { border-color: var(--primary); }
-
-.group-modal-actions {
-  flex-shrink: 0;
-  padding-top: var(--spacing-xs);
-}
-
-.group-modal-new-btn {
-  display: inline-flex;
-  align-items: center;
-  padding: var(--spacing-xs) var(--spacing-sm);
-  border: none;
-  border-radius: var(--rounded-sm);
-  background: transparent;
-  color: var(--steel);
-  font-family: var(--font-sans);
-  font-size: var(--body-sm-medium);
-  font-weight: var(--weight-medium);
-  cursor: pointer;
-  transition: background-color 0.15s var(--ease), color 0.15s var(--ease);
-}
-.group-modal-new-btn:hover { background: var(--hairline-soft); color: var(--ink); }
-
-.group-modal-enter-active,
-.group-modal-leave-active {
-  transition: opacity 0.15s var(--ease);
-}
-.group-modal-enter-active .group-modal-card,
-.group-modal-leave-active .group-modal-card {
-  transition: transform 0.15s var(--ease);
-}
-.group-modal-enter-from,
-.group-modal-leave-to {
-  opacity: 0;
-}
-.group-modal-enter-from .group-modal-card {
-  transform: scale(0.97);
+  padding: var(--spacing-md) 0;
 }
 
 /* ===== Scrollbar auto-hide ===== */

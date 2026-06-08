@@ -10,6 +10,9 @@ import java.util.List;
 @Data
 public class ArticlePublishDTO {
 
+    /** 文章ID（新建为0或不传，编辑时传已有ID） */
+    private Long id;
+
     /** 文章标题(最长200) */
     @NotBlank(message = "标题不能为空")
     @Size(max = 200, message = "标题最多 100 字")

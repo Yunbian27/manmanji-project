@@ -16,6 +16,7 @@ import com.yunbian27.content.model.entity.ArticleGroup;
 import com.yunbian27.content.model.entity.Group;
 import com.yunbian27.content.model.vo.ArticleTitlesVO;
 import com.yunbian27.content.model.vo.ArticleVO;
+import com.yunbian27.content.model.vo.GroupVO;
 import com.yunbian27.ai.mapper.LlmGlobalSettingMapper;
 import com.yunbian27.ai.model.LlmGlobalSettingEntity;
 import com.yunbian27.ai.registry.LlmProviderRegistry;
@@ -31,6 +32,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -57,31 +59,40 @@ public class ArticleService {
      * @param dto
      */
     @Transactional
-    public void publish(ArticlePublishDTO dto) {
+    public Long publish(ArticlePublishDTO dto) {
         Long userId = SecurityUtils.getCurrentUserId();
-        Article article = new Article();
-        BeanUtils.copyProperties(dto, article);
+        Long articleId = dto.getId() != null && dto.getId() > 0 ? dto.getId() : null;
+        Article article;
 
-        if (article.getTitle() == null)
-            article.setTitle(SystemConstants.DEFAULT_ARTICLE_TITLE);
-        if (article.getStatus() == null)
-            article.setStatus(CommonConstants.Article.DRAFT);
+        if (articleId != null) {
+            article = articleMapper.selectById(articleId);
+            if (article == null || !userId.equals(article.getUserId()))
+                throw new BusinessException(ErrorCode.NOT_FOUND);
+            BeanUtils.copyProperties(dto, article);
+            article.setId(articleId);
+            articleMapper.updateById(article);
+        } else {
+            article = new Article();
+            BeanUtils.copyProperties(dto, article);
+            if (article.getTitle() == null || article.getTitle().isBlank())
+                article.setTitle(SystemConstants.DEFAULT_ARTICLE_TITLE);
+            article.setUserId(userId);
+            article.setSlug(generateSlug(article.getTitle()));
+            articleMapper.insert(article);
+            articleId = article.getId();
+        }
 
-        article.setUserId(userId);
-        article.setSlug(generateSlug(SystemConstants.DEFAULT_ARTICLE_TITLE));
-        articleMapper.insert(article);
+        article.setStatus(CommonConstants.Article.PUBLISHED);
+        article.setPublishedAt(LocalDateTime.now());
 
-        // 插入分组表,已有分组和新增分组都放在同一个集合中
         List<String> groupNames = dto.getGroupNames();
-        if (groupNames == null || groupNames.isEmpty())
-            throw new BusinessException(ErrorCode.BAD_REQUEST);
+        if (groupNames != null && !groupNames.isEmpty()) {
+            List<Long> groupIds = resolveGroupIds(userId, groupNames);
+            replaceArticleGroups(articleId, groupIds);
+        }
 
-        List<Long> groupIds = resolveGroupIds(userId, groupNames);
-
-        // 插入关系表
-        replaceArticleGroups(article.getId(), groupIds);
-
-        log.info("文章发布成功: id={}, title={}, status={}", article.getId(), article.getTitle(), article.getStatus());
+        log.info("文章发布成功: id={}, title={}", articleId, article.getTitle());
+        return articleId;
     }
 
     private List<Long> resolveGroupIds(Long userId, List<String> names) {
@@ -161,7 +172,7 @@ public class ArticleService {
      * 保持草稿
      * @param dto
      */
-    public void save(ArticleSaveDTO dto) {
+    /*public void save(ArticleSaveDTO dto) {
        if (dto.getTitle() == null)
            throw new BusinessException(ErrorCode.BAD_REQUEST);
        if (dto.getContent() == null)
@@ -175,7 +186,7 @@ public class ArticleService {
 
         articleMapper.insert(article);
         log.info("文章保存成功: id={}, title={}", dto.getId(), dto.getTitle());
-    }
+    }*/
 
 
 
@@ -309,12 +320,17 @@ public class ArticleService {
      * 显示分组
      * @return
      */
-    public List<String> showGroup() {
-        // 获取用户id
+    public List<GroupVO> showGroup() {
         Long userId = SecurityUtils.getCurrentUserId();
-
-        // 查表
-        return groupMapper.selectGroupNamesByUserId(userId);
+        List<Group> groups = groupMapper.selectList(
+            new LambdaQueryWrapper<Group>()
+                .eq(Group::getUserId, userId)
+                .select(Group::getId, Group::getName));
+        return groups.stream().map(g -> {
+            GroupVO vo = new GroupVO();
+            BeanUtils.copyProperties(g, vo);
+            return vo;
+        }).toList();
     }
 
     /**
@@ -322,7 +338,7 @@ public class ArticleService {
      * @param name 分组名
      */
     @Transactional
-    public void createGroup(String name) {
+    public Long createGroup(String name) {
         Long userId = SecurityUtils.getCurrentUserId();
         List<String> existing = groupMapper.selectGroupNamesByUserId(userId);
         if (existing.contains(name)) {
@@ -332,23 +348,24 @@ public class ArticleService {
         g.setUserId(userId);
         g.setName(name);
         groupMapper.insert(g);
+        return g.getId();
     }
 
     /**
      * 删除分组（同时清理关联的文章分组关系）
-     * @param name 分组名
+     * @param
      */
     @Transactional
-    public void deleteGroup(String name) {
+    public void deleteGroup(Long groupId) {
         Long userId = SecurityUtils.getCurrentUserId();
         Group group = groupMapper.selectOne(
             new LambdaQueryWrapper<Group>()
                 .eq(Group::getUserId, userId)
-                .eq(Group::getName, name));
+                .eq(Group::getId, groupId));
         if (group == null) return;
         articleGroupMapper.delete(
             new LambdaQueryWrapper<ArticleGroup>()
-                .eq(ArticleGroup::getGroupId, group.getId()));
-        groupMapper.deleteById(group.getId());
+                .eq(ArticleGroup::getGroupId, groupId));
+        groupMapper.deleteById(groupId);
     }
 }

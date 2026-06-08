@@ -8,7 +8,6 @@
     <EditorView :article-id="articleId" @close="handleClose" />
 
     <!-- 发布设置（EditorView 同级，常驻双栏下方，浏览器滚动可见） -->
-    <div class="settings-divider" />
     <div class="publish-settings-area">
       <div class="ps-container">
         <h3 class="ps-title">发布设置</h3>
@@ -28,19 +27,39 @@
               </div>
             </div>
           </div>
-          <div class="ps-field">
+          <div class="ps-field ps-field-group" @click.stop>
             <span class="ps-label">分组</span>
-            <div class="group-picker-wrap">
-              <button type="button" class="tag-picker-trigger" @click="showGroupPicker = !showGroupPicker">
-                <span v-if="local.groupNames.length === 0" class="picker-placeholder">选择或输入分组</span>
-                <div v-else class="tag-list"><span v-for="(name, i) in local.groupNames" :key="i" class="group-chip">{{ name }}<button class="tag-remove" @click.stop="removeGroup(i)"><IconX :size="10" /></button></span></div>
-                <svg class="picker-chevron" :class="{ open: showGroupPicker }" width="10" height="6" viewBox="0 0 10 6" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 1L5 5L9 1"/></svg>
-              </button>
-              <div v-if="showGroupPicker" class="group-picker-popover">
-                <button v-for="g in filteredGroups" :key="g.id" type="button" :class="['tag-picker-chip', { selected: local.groupNames.includes(g.name) }]" @click="toggleGroup(g.name)">{{ g.name }}</button>
-                <div v-if="filteredGroups.length === 0" class="picker-empty">暂无已有分组</div>
-                <div class="group-picker-divider" />
-                <input v-model="groupInput" class="group-picker-input" placeholder="输入新分组名，按回车添加" @keydown.enter.prevent="addGroup" />
+            <div class="group-tags-area">
+              <span v-for="(name, i) in local.groupNames" :key="i" class="group-tag-pill">
+                {{ name }}
+                <button class="group-tag-remove" @click="removeGroup(i)"><IconX :size="12" /></button>
+              </span>
+              <button type="button" class="group-add-btn" @click="openGroupPicker">添加分组</button>
+            </div>
+            <div v-if="showGroupPicker" class="group-modal-overlay">
+              <div class="group-modal-dialog">
+                <div class="group-modal-header">
+                  <span class="group-modal-title">分组</span>
+                  <button type="button" class="group-modal-close" @click="showGroupPicker = false; groupSearch = ''">
+                    <IconX :size="16" />
+                  </button>
+                </div>
+                <input
+                  v-model="groupSearch"
+                  class="group-modal-search"
+                  placeholder="请输入文字搜索，Enter键可添加自定义分组"
+                  @keydown.enter.prevent="handleGroupSearchEnter"
+                />
+                <div class="group-modal-tags">
+                  <button
+                    v-for="g in filteredGroups"
+                    :key="g.id"
+                    type="button"
+                    :class="['group-modal-tag', { selected: local.groupNames.includes(g.name) }]"
+                    @click="toggleGroup(g)"
+                  >{{ g.name }}</button>
+                  <div v-if="filteredGroups.length === 0" class="group-modal-empty">暂无匹配分组，按 Enter 创建</div>
+                </div>
               </div>
             </div>
           </div>
@@ -56,9 +75,17 @@
           </div>
           <div class="ps-field">
             <span class="ps-label">文章类型</span>
-            <div class="radio-group">
-              <button type="button" :class="['radio-btn', { active: local.articleType === 'ORIGINAL' }]" @click="local.articleType = 'ORIGINAL'">原创</button>
-              <button type="button" :class="['radio-btn', { active: local.articleType === 'REPOST' }]" @click="local.articleType = 'REPOST'">转载</button>
+            <div class="visibility-radio-group">
+              <label v-for="opt in articleTypeOptions" :key="opt.value"
+                class="visibility-radio"
+                :class="{ active: local.articleType === opt.value }"
+                @click="local.articleType = opt.value"
+              >
+                <span class="visibility-radio-dot">
+                  <span v-if="local.articleType === opt.value" class="visibility-radio-dot-fill" />
+                </span>
+                <span class="visibility-radio-label">{{ opt.label }}</span>
+              </label>
             </div>
             <div v-if="local.articleType === 'REPOST'" class="repost-url-area"><input v-model="local.sourceUrl" class="form-input" placeholder="请输入转载文章URL" /><p class="repost-hint">转载请务必获得原作者授权</p></div>
           </div>
@@ -68,10 +95,18 @@
           </div>
           <div class="ps-field">
             <span class="ps-label">可见范围</span>
-            <select v-model="local.visibility" class="form-select">
-              <option value="PRIVATE">仅自己可见</option>
-              <option value="PUBLIC">公开可见</option>
-            </select>
+            <div class="visibility-radio-group">
+              <label v-for="opt in visibilityOptions" :key="opt.value"
+                class="visibility-radio"
+                :class="{ active: local.visibility === opt.value }"
+                @click="local.visibility = opt.value"
+              >
+                <span class="visibility-radio-dot">
+                  <span v-if="local.visibility === opt.value" class="visibility-radio-dot-fill" />
+                </span>
+                <span class="visibility-radio-label">{{ opt.label }}</span>
+              </label>
+            </div>
           </div>
           <p v-if="publishError" class="ps-error">{{ publishError }}</p>
           <div class="ps-actions">
@@ -104,9 +139,20 @@ const isSaving = computed(() => editor?.isSaving.value ?? false)
 
 const showTagPicker = ref(false)
 const showGroupPicker = ref(false)
-const groupInput = ref('')
+const groupSearch = ref('')
 const coverInputRef = ref<HTMLInputElement | null>(null)
 const availableGroups = ref<GroupVO[]>([])
+
+const articleTypeOptions = [
+  { value: 'ORIGINAL' as const, label: '原创' },
+  { value: 'REPOST' as const, label: '转载' },
+]
+
+const visibilityOptions = [
+  { value: 'PUBLIC' as const, label: '公开可见' },
+  { value: 'PRIVATE' as const, label: '仅我可见' },
+  { value: 'FOLLOWER' as const, label: '粉丝可见' },
+]
 
 const availableTags = [
   { id: 1, name: 'Java' }, { id: 2, name: '并发' }, { id: 3, name: 'PostgreSQL' },
@@ -126,7 +172,11 @@ const local = reactive<PublishSettings>({
   summary: '', sourceUrl: '', visibility: 'PUBLIC', creationStatement: 'NONE',
 })
 
-const filteredGroups = computed(() => availableGroups.value.filter(g => !local.groupNames.includes(g.name)))
+const filteredGroups = computed(() => {
+  const q = groupSearch.value.trim().toLowerCase()
+  if (!q) return availableGroups.value
+  return availableGroups.value.filter(g => g.name.toLowerCase().includes(q))
+})
 
 onMounted(async () => {
   await nextTick() // 等子组件 EditorView provide
@@ -146,9 +196,27 @@ onMounted(async () => {
 function getTagName(tagId: number) { return availableTags.find(t => t.id === tagId)?.name ?? `标签 ${tagId}` }
 function toggleTag(tagId: number) { const i = local.tagIds.indexOf(tagId); i >= 0 ? local.tagIds.splice(i, 1) : local.tagIds.push(tagId) }
 function removeTag(tagId: number) { local.tagIds = local.tagIds.filter(id => id !== tagId) }
-function toggleGroup(name: string) { const i = local.groupNames.indexOf(name); i >= 0 ? local.groupNames.splice(i, 1) : local.groupNames.push(name) }
+function toggleGroup(g: GroupVO) { const i = local.groupNames.indexOf(g.name); i >= 0 ? local.groupNames.splice(i, 1) : local.groupNames.push(g.name) }
 function removeGroup(i: number) { local.groupNames.splice(i, 1) }
-function addGroup() { const n = groupInput.value.trim(); if (n && !local.groupNames.includes(n)) { local.groupNames.push(n); groupInput.value = '' } }
+function openGroupPicker() {
+  groupSearch.value = ''
+  showGroupPicker.value = true
+}
+async function handleGroupSearchEnter() {
+  const q = groupSearch.value.trim()
+  if (!q) return
+  const match = availableGroups.value.find(g => g.name === q)
+  if (match) {
+    toggleGroup(match)
+  } else if (!local.groupNames.includes(q)) {
+    try {
+      const newId = await useArticle().createGroup(q)
+      availableGroups.value.push({ id: newId, name: q })
+      local.groupNames.push(q)
+    } catch { /* 后端报错则忽略 */ }
+  }
+  groupSearch.value = ''
+}
 function handleCoverFile(e: Event) { const f = (e.target as HTMLInputElement).files?.[0]; if (f) { local.coverUrl = URL.createObjectURL(f); (e.target as HTMLInputElement).value = '' } }
 function removeCover() { local.coverUrl = '' }
 
@@ -163,20 +231,18 @@ async function handlePublishSettings() {
 function onDocClick(e: MouseEvent) {
   const t = e.target as HTMLElement
   if (showTagPicker.value && !t.closest('.tag-picker-wrap')) showTagPicker.value = false
-  if (showGroupPicker.value && !t.closest('.group-picker-wrap')) showGroupPicker.value = false
+  if (showGroupPicker.value && !t.closest('.group-modal-dialog') && !t.closest('.ps-field-group')) showGroupPicker.value = false
 }
 onMounted(() => document.addEventListener('click', onDocClick))
 onUnmounted(() => document.removeEventListener('click', onDocClick))
 </script>
 
 <style scoped>
-.write-page { min-height: 100vh; }
-
-.settings-divider { height: 1px; background: var(--hairline); }
+.write-page { min-height: 100vh; padding-bottom: 10px; }
 
 .publish-settings-area {
   background: var(--canvas);
-  padding: var(--spacing-xxl) var(--spacing-lg);
+  padding: var(--spacing-xl);
 }
 
 .ps-container { max-width: 720px; margin: 0 auto; }
@@ -226,7 +292,7 @@ onUnmounted(() => document.removeEventListener('click', onDocClick))
 .ps-btn-publish:hover:not(:disabled) { background: var(--primary-pressed); }
 .ps-btn-publish:disabled { opacity: 0.5; cursor: not-allowed; }
 
-.tag-picker-wrap, .group-picker-wrap { position: relative; }
+.tag-picker-wrap { position: relative; }
 
 .tag-picker-trigger {
   display: flex; align-items: center; gap: 4px; width: 100%;
@@ -249,14 +315,13 @@ onUnmounted(() => document.removeEventListener('click', onDocClick))
 }
 .tag-remove:hover { color: var(--semantic-error); }
 
-.tag-picker-popover, .group-picker-popover {
+.tag-picker-popover {
   position: absolute; left: 0; right: 0; top: calc(100% + 4px);
   background: var(--canvas); border: 1px solid var(--hairline); border-radius: var(--rounded-lg);
   box-shadow: rgba(15, 15, 15, 0.08) 0px 4px 12px 0px; z-index: 10;
   max-height: 180px; overflow-y: auto;
+  display: flex; flex-wrap: wrap; gap: 6px; padding: var(--spacing-sm);
 }
-.tag-picker-popover { display: flex; flex-wrap: wrap; gap: 6px; padding: var(--spacing-sm); }
-.group-picker-popover { display: flex; flex-direction: column; gap: 0; padding: var(--spacing-sm); }
 
 .tag-picker-chip {
   padding: 4px 10px; border: 1px solid var(--hairline); border-radius: var(--rounded-full);
@@ -267,23 +332,114 @@ onUnmounted(() => document.removeEventListener('click', onDocClick))
 .tag-picker-chip.selected { background: var(--ink-deep); border-color: var(--ink-deep); color: var(--on-dark); }
 
 .picker-empty { width: 100%; text-align: center; font-size: var(--body-sm); color: var(--muted); padding: var(--spacing-sm); }
+/* ── 分组字段定位锚点 ── */
+.ps-field-group { position: relative; }
 
-.group-picker-divider { height: 1px; background: var(--hairline-soft); margin: var(--spacing-xs) 0; }
-
-.group-picker-input {
-  width: 100%; padding: var(--spacing-xs) var(--spacing-sm);
-  border: 1px solid var(--hairline); border-radius: var(--rounded-sm);
-  background: var(--surface); color: var(--ink); font-size: var(--body-sm); outline: none;
-  transition: border-color 0.15s var(--ease);
+/* ── 分组弹窗（上方弹出）── */
+.group-modal-overlay {
+  position: absolute; bottom: calc(100% + 8px); left: 0; z-index: 100;
 }
-.group-picker-input::placeholder { color: var(--muted); }
-.group-picker-input:focus { border-color: var(--primary); }
 
-.group-chip {
-  display: inline-flex; align-items: center; padding: var(--spacing-xs) var(--spacing-md);
+.group-modal-dialog {
+  background: var(--canvas);
+  border-radius: var(--rounded-lg);
+  border: 1px solid var(--hairline);
+  box-shadow: rgba(15, 15, 15, 0.16) 0px 16px 48px -8px;
+  width: 400px; max-width: calc(100vw - 40px); max-height: 50vh;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+
+.group-modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: var(--spacing-lg) var(--spacing-lg) 0;
+  flex-shrink: 0;
+}
+
+.group-modal-title {
+  font-size: var(--heading-4);
+  font-weight: var(--weight-semibold);
+  color: var(--ink);
+}
+
+.group-modal-close {
+  display: flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; padding: 0;
+  border: none; border-radius: var(--rounded-sm);
+  background: transparent; color: var(--steel); cursor: pointer;
+  transition: background 0.2s var(--ease), color 0.2s var(--ease);
+}
+.group-modal-close:hover { background: var(--hairline-soft); color: var(--ink); }
+
+.group-modal-search {
+  margin: var(--spacing-lg);
+  height: 36px; padding: 0 var(--spacing-md);
+  border: 1px solid var(--hairline-strong); border-radius: var(--rounded-md);
+  background: var(--canvas); color: var(--ink);
+  font-family: var(--font-sans); font-size: var(--body-sm); outline: none;
+  transition: border-color 0.2s var(--ease);
+  flex-shrink: 0;
+}
+.group-modal-search::placeholder { color: var(--muted); }
+.group-modal-search:focus { border-color: var(--primary); }
+
+.group-modal-tags {
+  display: flex; flex-wrap: wrap; gap: var(--spacing-xs);
+  padding: 0 var(--spacing-lg) var(--spacing-lg);
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.group-modal-tag {
+  display: inline-flex; align-items: center;
+  padding: var(--spacing-xs) var(--spacing-md);
   border: 1px solid var(--hairline); border-radius: var(--rounded-full);
-  background: var(--surface); color: var(--ink); font-size: var(--body-sm-medium); font-weight: var(--weight-medium);
+  background: transparent; color: var(--steel);
+  font-family: var(--font-sans); font-size: var(--body-sm); font-weight: var(--weight-medium);
+  cursor: pointer;
+  transition: background 0.2s var(--ease), color 0.2s var(--ease), border-color 0.2s var(--ease);
 }
+.group-modal-tag:hover { border-color: var(--hairline-strong); color: var(--ink); }
+.group-modal-tag.selected {
+  background: var(--ink-deep); border-color: var(--ink-deep); color: var(--on-dark);
+}
+
+.group-modal-empty {
+  width: 100%; text-align: center; font-size: var(--body-sm); color: var(--muted);
+  padding: var(--spacing-lg) 0;
+}
+
+/* ── 分组标签 ── */
+.group-tags-area {
+  display: flex; flex-wrap: wrap; align-items: center; gap: var(--spacing-xs);
+}
+
+.group-tag-pill {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: var(--spacing-xs) var(--spacing-md);
+  background: var(--surface); color: var(--ink);
+  border-radius: var(--rounded-md);
+  font-family: var(--font-sans); font-size: var(--body-sm-medium); font-weight: var(--weight-medium);
+}
+
+.group-tag-remove {
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 0; border: none; background: transparent;
+  color: var(--stone); cursor: pointer;
+  transition: color 0.2s var(--ease);
+}
+.group-tag-remove:hover { color: var(--ink); }
+
+.group-add-btn {
+  display: inline-flex; align-items: center;
+  padding: var(--spacing-xs) var(--spacing-md);
+  border: 1px solid var(--hairline); border-radius: var(--rounded-md);
+  background: transparent; color: var(--ink);
+  font-family: var(--font-sans); font-size: var(--body-sm-medium); font-weight: var(--weight-medium);
+  cursor: pointer;
+  transition: background 0.2s var(--ease), border-color 0.2s var(--ease);
+}
+.group-add-btn:hover { background: var(--hairline-soft); border-color: var(--hairline-strong); }
 
 .cover-upload-area { display: flex; flex-wrap: wrap; align-items: flex-start; gap: var(--spacing-sm); }
 .cover-file-input { display: none; }
@@ -307,6 +463,38 @@ onUnmounted(() => document.removeEventListener('click', onDocClick))
 }
 .cover-remove-btn:hover { background: rgba(0, 0, 0, 0.75); }
 
+/* Visibility radio */
+.visibility-radio-group { display: flex; gap: var(--spacing-lg); }
+
+.visibility-radio {
+  display: flex; align-items: center; gap: var(--spacing-xs); cursor: pointer;
+}
+
+.visibility-radio-dot {
+  width: 18px; height: 18px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: var(--rounded-full);
+  border: 1.5px solid var(--hairline-strong);
+  flex-shrink: 0;
+  transition: border-color 0.15s var(--ease);
+}
+.visibility-radio.active .visibility-radio-dot { border-color: var(--primary); }
+
+.visibility-radio-dot-fill {
+  width: 8px; height: 8px;
+  border-radius: var(--rounded-full);
+  background: var(--primary);
+}
+
+.visibility-radio-label {
+  font-size: var(--body-sm-medium);
+  font-weight: var(--weight-medium);
+  color: var(--steel);
+  transition: color 0.15s var(--ease);
+}
+.visibility-radio.active .visibility-radio-label { color: var(--ink); }
+.visibility-radio:hover { opacity: 0.8; }
+
 .form-input, .form-select, .form-textarea {
   font-family: var(--font-sans); font-size: var(--body-md); color: var(--ink);
   background: var(--surface); border: 1px solid var(--hairline-strong); border-radius: var(--rounded-md);
@@ -321,16 +509,6 @@ onUnmounted(() => document.removeEventListener('click', onDocClick))
   background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px;
 }
 .form-textarea { resize: vertical; line-height: 1.4; }
-
-.radio-group { display: flex; border: 1px solid var(--hairline-strong); border-radius: var(--rounded-md); overflow: hidden; width: fit-content; }
-.radio-btn {
-  height: 36px; padding: 0 var(--spacing-md); border: none; background: var(--canvas);
-  color: var(--steel); font-size: var(--body-sm); font-weight: var(--weight-medium); cursor: pointer;
-  transition: background 0.15s var(--ease), color 0.15s var(--ease);
-}
-.radio-btn:not(:last-child) { border-right: 1px solid var(--hairline-strong); }
-.radio-btn:hover { background: var(--hairline-soft); }
-.radio-btn.active { background: var(--primary); color: var(--on-primary); }
 
 .repost-url-area { display: flex; flex-direction: column; gap: 4px; margin-top: var(--spacing-xs); }
 .repost-hint { font-size: var(--caption); color: var(--muted); margin: 0; }

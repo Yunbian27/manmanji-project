@@ -7,7 +7,7 @@ export interface PublishSettings {
   articleType: 'ORIGINAL' | 'REPOST'
   summary: string
   sourceUrl: string
-  visibility: 'PUBLIC' | 'PRIVATE'
+  visibility: 'PUBLIC' | 'PRIVATE' | 'FOLLOWER'
   creationStatement: 'NONE' | 'AI_ASSISTED' | 'NETWORK_SOURCED' | 'PERSONAL_OPINION'
 }
 

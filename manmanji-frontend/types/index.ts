@@ -58,7 +58,7 @@ export interface ArticleVO {
   authorId: number
   categoryId: number | null
   status: 'UNPUBLISHED' | 'PUBLISHED'
-  visibility?: 'PUBLIC' | 'PRIVATE'
+  visibility?: 'PUBLIC' | 'PRIVATE' | 'FOLLOWER'
   sourceType: 'MANUAL' | 'AI_GENERATED'
   sourcePrompt: string | null
   viewCount: number
@@ -93,7 +93,7 @@ export interface ArticlePublishDTO {
   groupNames?: string[]
   articleType?: 'ORIGINAL' | 'REPOST'
   sourceUrl?: string
-  visibility?: 'PUBLIC' | 'PRIVATE'
+  visibility?: 'PUBLIC' | 'PRIVATE' | 'FOLLOWER'
   creationStatement?: string
 }
 
@@ -110,7 +110,7 @@ export interface StudyArticle {
   id: number
   title: string
   status: 'UNPUBLISHED' | 'PUBLISHED' | 'BOOKMARKED'
-  visibility?: 'PUBLIC' | 'PRIVATE'
+  visibility?: 'PUBLIC' | 'PRIVATE' | 'FOLLOWER'
   tags?: string[]                 // 标签名称列表
   groupNames?: string[]           // 分组名称列表
   updatedAt: string               // 最后修改时间
