@@ -57,7 +57,7 @@ export interface ArticleVO {
   coverUrl: string | null
   authorId: number
   categoryId: number | null
-  status: 'UNPUBLISHED' | 'PUBLISHED'
+  status: 'DRAFT' | 'PUBLISHED' | 'PRIVATE' | 'REVIEWING' | 'REJECTED' | 'BOOKMARKED'
   visibility?: 'PUBLIC' | 'PRIVATE' | 'FOLLOWER'
   sourceType: 'MANUAL' | 'AI_GENERATED'
   sourcePrompt: string | null
@@ -84,7 +84,6 @@ export interface ArticleSaveDTO {
 
 // 发布文章提交的数据
 export interface ArticlePublishDTO {
-  id: number
   title: string
   content: string
   summary?: string
@@ -109,7 +108,7 @@ export interface TocItem {
 export interface StudyArticle {
   id: number
   title: string
-  status: 'UNPUBLISHED' | 'PUBLISHED' | 'BOOKMARKED'
+  status: 'DRAFT' | 'PUBLISHED' | 'PRIVATE' | 'REVIEWING' | 'REJECTED' | 'BOOKMARKED'
   visibility?: 'PUBLIC' | 'PRIVATE' | 'FOLLOWER'
   tags?: string[]                 // 标签名称列表
   groupNames?: string[]           // 分组名称列表

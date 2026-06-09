@@ -38,6 +38,8 @@ public final class CommonConstants {
     public static final class Article {
         public static final String DRAFT = "DRAFT";
         public static final String PUBLISHED = "PUBLISHED";
+        public static final String REVIEWING = "REVIEWING";
+        public static final String REJECTED = "REJECTED";
 
         public static final String PRIVATE = "PRIVATE";
 

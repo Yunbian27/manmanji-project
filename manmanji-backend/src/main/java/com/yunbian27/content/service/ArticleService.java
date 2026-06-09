@@ -55,44 +55,56 @@ public class ArticleService {
     private final StringRedisTemplate stringRedisTemplate;
 
     /**
-     * 发布文章
+     * 新建并发布文章
      * @param dto
      */
     @Transactional
     public Long publish(ArticlePublishDTO dto) {
         Long userId = SecurityUtils.getCurrentUserId();
-        Long articleId = dto.getId() != null && dto.getId() > 0 ? dto.getId() : null;
-        Article article;
-
-        if (articleId != null) {
-            article = articleMapper.selectById(articleId);
-            if (article == null || !userId.equals(article.getUserId()))
-                throw new BusinessException(ErrorCode.NOT_FOUND);
-            BeanUtils.copyProperties(dto, article);
-            article.setId(articleId);
-            articleMapper.updateById(article);
-        } else {
-            article = new Article();
-            BeanUtils.copyProperties(dto, article);
-            if (article.getTitle() == null || article.getTitle().isBlank())
-                article.setTitle(SystemConstants.DEFAULT_ARTICLE_TITLE);
-            article.setUserId(userId);
-            article.setSlug(generateSlug(article.getTitle()));
-            articleMapper.insert(article);
-            articleId = article.getId();
-        }
-
+        Article article = new Article();
+        BeanUtils.copyProperties(dto, article);
+        if (article.getTitle() == null || article.getTitle().isBlank())
+            article.setTitle(SystemConstants.DEFAULT_ARTICLE_TITLE);
+        article.setUserId(userId);
+        article.setSlug(generateSlug(article.getTitle()));
         article.setStatus(CommonConstants.Article.PUBLISHED);
         article.setPublishedAt(LocalDateTime.now());
+        articleMapper.insert(article);
 
-        List<String> groupNames = dto.getGroupNames();
+        Long articleId = article.getId();
+        handleGroups(userId, articleId, dto.getGroupNames());
+
+        log.info("文章发布成功: id={}, title={}", articleId, article.getTitle());
+        return articleId;
+    }
+
+    /**
+     * 更新已有文章并发布
+     * @param id
+     * @param dto
+     */
+    @Transactional
+    public void update(Long id, ArticlePublishDTO dto) {
+        Long userId = SecurityUtils.getCurrentUserId();
+        Article article = articleMapper.selectById(id);
+        if (article == null || !userId.equals(article.getUserId()))
+            throw new BusinessException(ErrorCode.NOT_FOUND);
+        BeanUtils.copyProperties(dto, article);
+        article.setId(id);
+        article.setStatus(CommonConstants.Article.PUBLISHED);
+        article.setPublishedAt(LocalDateTime.now());
+        articleMapper.updateById(article);
+
+        handleGroups(userId, id, dto.getGroupNames());
+
+        log.info("文章更新发布成功: id={}, title={}", id, article.getTitle());
+    }
+
+    private void handleGroups(Long userId, Long articleId, List<String> groupNames) {
         if (groupNames != null && !groupNames.isEmpty()) {
             List<Long> groupIds = resolveGroupIds(userId, groupNames);
             replaceArticleGroups(articleId, groupIds);
         }
-
-        log.info("文章发布成功: id={}, title={}", articleId, article.getTitle());
-        return articleId;
     }
 
     private List<Long> resolveGroupIds(Long userId, List<String> names) {

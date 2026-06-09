@@ -111,9 +111,8 @@ export function createEditorState(articleId: number) {
     isSaving.value = true
     publishError.value = null
     try {
-      const { publishArticle } = useArticle()
-      const id = await publishArticle({
-        id: currentArticleId.value,
+      const { publishArticle, updateArticle } = useArticle()
+      const dto: ArticlePublishDTO = {
         title: title.value.trim(),
         content: content.value,
         summary: publishSettings.summary || undefined,
@@ -124,9 +123,12 @@ export function createEditorState(articleId: number) {
         sourceUrl: publishSettings.sourceUrl || undefined,
         visibility: publishSettings.visibility,
         creationStatement: publishSettings.creationStatement !== 'NONE' ? publishSettings.creationStatement : undefined,
-      })
+      }
       if (currentArticleId.value === 0) {
+        const id = await publishArticle(dto)
         currentArticleId.value = id
+      } else {
+        await updateArticle(currentArticleId.value, dto)
       }
       lastSavedAt.value = new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
       return true

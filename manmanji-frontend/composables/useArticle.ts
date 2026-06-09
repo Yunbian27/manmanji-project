@@ -28,9 +28,14 @@ export function useArticle() {
     return api.put<number>('/api/articles/save', dto)
   }
 
-  /** 发布文章（新建返回文章ID，更新返回原ID） */
+  /** 新建并发布文章，返回新文章 ID */
   function publishArticle(dto: ArticlePublishDTO): Promise<number> {
-    return api.put<number>('/api/articles/publish', dto)
+    return api.post<number>('/api/articles/publish', dto)
+  }
+
+  /** 更新已有文章并发布 */
+  function updateArticle(id: number, dto: ArticlePublishDTO): Promise<void> {
+    return api.put(`/api/articles/${id}`, dto)
   }
 
   /** AI 润色文章内容（需要登录） */
@@ -55,5 +60,5 @@ export function useArticle() {
     return api.delete(`/api/articles/groups/${id}`)
   }
 
-  return { getArticle, createArticle, saveArticle, publishArticle, improve, uploadImage, listStudyArticles, listGroups, createGroup, deleteGroup }
+  return { getArticle, createArticle, saveArticle, publishArticle, updateArticle, improve, uploadImage, listStudyArticles, listGroups, createGroup, deleteGroup }
 }

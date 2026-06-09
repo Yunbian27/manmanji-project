@@ -24,13 +24,25 @@ public class ArticleController {
     private final ArticleService articleService;
 
     /**
-     * 发布文章
+     * 新建并发布文章
      * @param dto
      * @return
      */
-    @PutMapping("/publish")
+    @PostMapping("/publish")
     public Result<Long> publish(@Valid @RequestBody ArticlePublishDTO dto) {
         return Result.success(articleService.publish(dto));
+    }
+
+    /**
+     * 更新已有文章并发布
+     * @param id
+     * @param dto
+     * @return
+     */
+    @PutMapping("/{id}")
+    public Result<Void> update(@PathVariable Long id, @Valid @RequestBody ArticlePublishDTO dto) {
+        articleService.update(id, dto);
+        return Result.success();
     }
 
     /*@PutMapping("/save")

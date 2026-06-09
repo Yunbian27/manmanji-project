@@ -1,20 +1,5 @@
 <template>
   <div class="editor-view">
-    <!-- 顶部热区（顶栏隐藏时悬停显示） -->
-    <div
-      v-if="topnavHidden"
-      class="topnav-hotzone"
-      @mouseenter="onHotzoneEnter"
-      @mouseleave="onHotzoneLeave"
-    />
-    <Transition name="topnav-slide">
-      <EditorTopNav
-        v-if="!topnavHidden || topnavPeek"
-        @mouseenter="onTopnavEnter"
-        @mouseleave="onTopnavLeave"
-      />
-    </Transition>
-
     <div class="editor-body" :style="{ '--panel-ratio': panelRatio }">
       <!-- 单卡片容器 -->
       <div class="editor-card">
@@ -219,7 +204,7 @@
       <!-- 卡片与面板分隔线 -->
       <DraggableDivider v-model:split-ratio="panelRatio" class="card-divider" />
 
-      <!-- 右侧悬浮按钮（卡片外部） -->
+      <!-- 右侧悬浮按钮 -->
       <RightFloatingPanel :toc-items="outlineItems" @navigate-to-heading="handleNavigateToHeading" />
     </div>
 
@@ -266,45 +251,16 @@
 import { onClickOutside } from '@vueuse/core'
 import type { TocItem } from '~/types'
 
-const props = defineProps<{ articleId: number }>()
 const emit = defineEmits<{ close: [] }>()
 
-const editor = createEditorState(props.articleId)
-provideEditor(editor)
+const editor = injectEditor()
 
-const { content, title, viewMode, publishError, isSaving, lastSavedAt, loadFromServer } = editor
+const { content, title, viewMode, publishError, isSaving, lastSavedAt } = editor
 const panelRatio = ref(0.5)
 
-// ── Topnav hide/show ──────────────────────────────────────
-const topnavHidden = ref(false)
-const topnavPeek = ref(false)
-let hideTimer: ReturnType<typeof setTimeout> | null = null
-
-function toggleTopnav() {
-  topnavHidden.value = !topnavHidden.value
-  topnavPeek.value = false
-}
-
-function onHotzoneEnter() {
-  if (!topnavHidden.value) return
-  topnavPeek.value = true
-  if (hideTimer) { clearTimeout(hideTimer); hideTimer = null }
-}
-
-function onHotzoneLeave() {
-  if (!topnavHidden.value) return
-  hideTimer = setTimeout(() => { topnavPeek.value = false }, 300)
-}
-
-function onTopnavEnter() {
-  if (!topnavHidden.value) return
-  if (hideTimer) { clearTimeout(hideTimer); hideTimer = null }
-}
-
-function onTopnavLeave() {
-  if (!topnavHidden.value) return
-  hideTimer = setTimeout(() => { topnavPeek.value = false }, 300)
-}
+// Topnav visibility — injected from write.vue
+const topnavHidden = inject<Ref<boolean>>('topnavHidden', ref(false))
+const toggleTopnav = inject<() => void>('toggleTopnav', () => {})
 
 onBeforeRouteLeave((_to, _from, next) => {
   if (content.value || title.value) {
@@ -604,45 +560,21 @@ function handleClose() {
 }
 
 function scrollToSettings() {
-  window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })
+  const el = document.querySelector('.write-body')
+  if (el) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
 }
 
-onMounted(async () => {
-  if (props.articleId > 0) {
-    await loadFromServer()
-  }
-})
+onMounted(() => {})
 </script>
 
 <style scoped>
 .editor-view {
-  height: 100vh;
+  height: 100%;
   background: var(--surface-soft);
   display: flex;
   flex-direction: column;
   overflow: hidden;
   position: relative;
-}
-
-/* ── Topnav hotzone ────────────────────────────────────── */
-.topnav-hotzone {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 6px;
-  z-index: 101;
-}
-
-/* ── Topnav slide transition ───────────────────────────── */
-.topnav-slide-enter-active,
-.topnav-slide-leave-active {
-  transition: transform 0.25s var(--ease);
-}
-
-.topnav-slide-enter-from,
-.topnav-slide-leave-to {
-  transform: translateY(-100%);
 }
 
 /* ── Body ─────────────────────────────────────────────── */

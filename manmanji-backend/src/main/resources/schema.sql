@@ -42,8 +42,8 @@ CREATE TABLE IF NOT EXISTS articles (
 
     user_id             BIGINT NOT NULL,                                         -- 用户 ID
 
-    status              VARCHAR(15) NOT NULL DEFAULT 'UNPUBLISHED',              -- PUBLISHED / DRAFT
-    visibility          VARCHAR(10) NOT NULL DEFAULT 'PUBLIC',                   -- PUBLIC / PRIVATE
+    status              VARCHAR(15) NOT NULL DEFAULT 'DRAFT',                     -- DRAFT / PUBLISHED / PRIVATE / REVIEWING / REJECTED
+    visibility          VARCHAR(10) NOT NULL DEFAULT 'PRIVATE',                   -- PUBLIC / PRIVATE / FOLLOWER
     article_type        VARCHAR(10) NOT NULL DEFAULT 'ORIGINAL',                 -- ORIGINAL / REPOST
     creation_statement  VARCHAR(30) NOT NULL DEFAULT 'NONE',                     -- NONE / AI_ASSISTED / NETWORK_SOURCED / PERSONAL_OPINION
     source_type         VARCHAR(15) NOT NULL DEFAULT 'MANUAL',                   -- MANUAL / AI_GENERATED

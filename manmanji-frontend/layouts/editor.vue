@@ -10,7 +10,7 @@
 
 <style scoped>
 .editor-layout {
-  min-height: 100vh;
+  height: 100vh; overflow: hidden;
   background: var(--surface-soft);
 }
 </style>

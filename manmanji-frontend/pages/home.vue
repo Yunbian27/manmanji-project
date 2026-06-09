@@ -86,6 +86,14 @@
                   私密笔记
                   <span class="sidebar-action-count">{{ item.privateCount }}</span>
                 </button>
+                <button
+                  class="sidebar-sub-btn"
+                  :class="{ active: publishedSubFilter === 'REVIEWING' }"
+                  @click="selectPublishedSub('REVIEWING')"
+                >
+                  审核中
+                  <span class="sidebar-action-count">{{ item.reviewingCount }}</span>
+                </button>
               </div>
             </template>
             <!-- 其他菜单: 原样不动 -->
@@ -210,7 +218,7 @@ const groupPopoverRef = ref<HTMLElement | null>(null)
 onClickOutside(groupPopoverRef, () => { groupModalVisible.value = false })
 const showDropdown = ref(false)
 const publishedExpanded = ref(false)
-const publishedSubFilter = ref<'PUBLIC' | 'PRIVATE' | null>(null)
+const publishedSubFilter = ref<'PUBLIC' | 'PRIVATE' | 'REVIEWING' | null>(null)
 
 // --- Refs for scrollbar ---
 const sidebarScrollRef = ref<HTMLElement | null>(null)
@@ -231,15 +239,16 @@ const statusItems = computed(() => [
     key: 'PUBLISHED',
     label: '已发布',
     icon: '<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>',
-    count: articles.value.filter(a => a.status === 'PUBLISHED').length,
-    publicCount: articles.value.filter(a => a.status === 'PUBLISHED' && a.visibility === 'PUBLIC').length,
-    privateCount: articles.value.filter(a => a.status === 'PUBLISHED' && a.visibility === 'PRIVATE').length,
+    count: articles.value.filter(a => a.status === 'PUBLISHED' || a.status === 'PRIVATE' || a.status === 'REVIEWING').length,
+    publicCount: articles.value.filter(a => a.status === 'PUBLISHED').length,
+    privateCount: articles.value.filter(a => a.status === 'PRIVATE').length,
+    reviewingCount: articles.value.filter(a => a.status === 'REVIEWING').length,
   },
   {
-    key: 'UNPUBLISHED',
+    key: 'DRAFT',
     label: '草稿',
     icon: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>',
-    count: articles.value.filter(a => a.status === 'UNPUBLISHED').length,
+    count: articles.value.filter(a => a.status === 'DRAFT' || a.status === 'REJECTED').length,
   },
   {
     key: 'BOOKMARKED',
@@ -253,7 +262,15 @@ const filteredNotes = computed(() => {
   let list = articles.value
   if (activeStatus.value !== 'ALL') {
     if (activeStatus.value === 'PUBLISHED' && publishedSubFilter.value) {
-      list = list.filter(a => a.status === 'PUBLISHED' && a.visibility === publishedSubFilter.value)
+      if (publishedSubFilter.value === 'PUBLIC') {
+        list = list.filter(a => a.status === 'PUBLISHED')
+      } else if (publishedSubFilter.value === 'PRIVATE') {
+        list = list.filter(a => a.status === 'PRIVATE')
+      } else if (publishedSubFilter.value === 'REVIEWING') {
+        list = list.filter(a => a.status === 'REVIEWING')
+      }
+    } else if (activeStatus.value === 'DRAFT') {
+      list = list.filter(a => a.status === 'DRAFT' || a.status === 'REJECTED')
     } else {
       list = list.filter(a => a.status === activeStatus.value)
     }
@@ -347,9 +364,9 @@ function togglePublished() {
   }
 }
 
-function selectPublishedSub(visibility: 'PUBLIC' | 'PRIVATE') {
+function selectPublishedSub(sub: 'PUBLIC' | 'PRIVATE' | 'REVIEWING') {
   activeStatus.value = 'PUBLISHED'
-  publishedSubFilter.value = visibility
+  publishedSubFilter.value = sub
 }
 
 function viewDetail() {

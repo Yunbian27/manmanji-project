@@ -5,10 +5,27 @@
 -->
 <template>
   <div class="write-page">
-    <EditorView :article-id="articleId" @close="handleClose" />
+    <!-- 顶部热区（顶栏隐藏时悬停显示） -->
+    <div
+      v-if="topnavHidden"
+      class="topnav-hotzone"
+      @mouseenter="onHotzoneEnter"
+      @mouseleave="onHotzoneLeave"
+    />
+    <Transition name="topnav-slide">
+      <EditorTopNav
+        v-if="!topnavHidden || topnavPeek"
+        @mouseenter="onTopnavEnter"
+        @mouseleave="onTopnavLeave"
+      />
+    </Transition>
 
-    <!-- 发布设置（EditorView 同级，常驻双栏下方，浏览器滚动可见） -->
-    <div class="publish-settings-area">
+    <!-- 滚动容器：编辑器 + 发布设置 -->
+    <div class="write-body">
+      <EditorView @close="handleClose" />
+
+      <!-- 发布设置 -->
+      <div class="publish-settings-area">
       <div class="ps-container">
         <h3 class="ps-title">发布设置</h3>
         <div class="ps-form">
@@ -115,11 +132,12 @@
         </div>
       </div>
     </div>
+    </div><!-- .write-body -->
   </div>
 </template>
 
 <script setup lang="ts">
-import { EDITOR_KEY, type PublishSettings, type EditorState } from '~/composables/useArticleEditor'
+import { createEditorState, provideEditor, type PublishSettings, type EditorState } from '~/composables/useArticleEditor'
 import type { GroupVO } from '~/types'
 
 definePageMeta({ layout: 'editor' })
@@ -132,10 +150,51 @@ watch(() => route.query.articleId, (val) => { articleId.value = Number(val) || 0
 
 function handleClose() { router.push('/home') }
 
-// ── 发布设置状态（惰性注入，等子组件 provide 后再取）──
-const editor = inject<EditorState | null>(EDITOR_KEY, null)
-const publishError = computed(() => editor?.publishError.value ?? null)
-const isSaving = computed(() => editor?.isSaving.value ?? false)
+// ── Topnav hide/show（相对于 EditorView 提升至此） ──
+const topnavHidden = ref(false)
+const topnavPeek = ref(false)
+let hideTimer: ReturnType<typeof setTimeout> | null = null
+
+provide('topnavHidden', topnavHidden)
+
+function toggleTopnav() {
+  topnavHidden.value = !topnavHidden.value
+  topnavPeek.value = false
+}
+provide('toggleTopnav', toggleTopnav)
+
+function onHotzoneEnter() {
+  if (!topnavHidden.value) return
+  topnavPeek.value = true
+  if (hideTimer) { clearTimeout(hideTimer); hideTimer = null }
+}
+
+function onHotzoneLeave() {
+  if (!topnavHidden.value) return
+  hideTimer = setTimeout(() => { topnavPeek.value = false }, 300)
+}
+
+function onTopnavEnter() {
+  if (!topnavHidden.value) return
+  if (hideTimer) { clearTimeout(hideTimer); hideTimer = null }
+}
+
+function onTopnavLeave() {
+  if (!topnavHidden.value) return
+  hideTimer = setTimeout(() => { topnavPeek.value = false }, 300)
+}
+
+// ── 在父组件创建 editor 状态并 provide，子组件通过 inject 获取 ──
+const editor = createEditorState(articleId.value)
+provideEditor(editor)
+
+watch(articleId, (id) => {
+  editor.currentArticleId.value = id
+  if (id > 0) editor.loadFromServer()
+})
+
+const publishError = computed(() => editor.publishError.value ?? null)
+const isSaving = computed(() => editor.isSaving.value ?? false)
 
 const showTagPicker = ref(false)
 const showGroupPicker = ref(false)
@@ -179,17 +238,15 @@ const filteredGroups = computed(() => {
 })
 
 onMounted(async () => {
-  await nextTick() // 等子组件 EditorView provide
-  if (editor) {
-    local.tagIds = [...editor.publishSettings.tagIds]
-    local.groupNames = [...editor.publishSettings.groupNames]
-    local.coverUrl = editor.publishSettings.coverUrl
-    local.articleType = editor.publishSettings.articleType
-    local.summary = editor.publishSettings.summary
-    local.sourceUrl = editor.publishSettings.sourceUrl
-    local.visibility = editor.publishSettings.visibility
-    local.creationStatement = editor.publishSettings.creationStatement
-  }
+  await nextTick()
+  local.tagIds = [...editor.publishSettings.tagIds]
+  local.groupNames = [...editor.publishSettings.groupNames]
+  local.coverUrl = editor.publishSettings.coverUrl
+  local.articleType = editor.publishSettings.articleType
+  local.summary = editor.publishSettings.summary
+  local.sourceUrl = editor.publishSettings.sourceUrl
+  local.visibility = editor.publishSettings.visibility
+  local.creationStatement = editor.publishSettings.creationStatement
   try { availableGroups.value = await useArticle().listGroups() } catch { availableGroups.value = [] }
 })
 
@@ -221,7 +278,6 @@ function handleCoverFile(e: Event) { const f = (e.target as HTMLInputElement).fi
 function removeCover() { local.coverUrl = '' }
 
 async function handlePublishSettings() {
-  if (!editor) return
   Object.assign(editor.publishSettings, local)
   if (editor.titleError.value) { alert(editor.titleError.value); return }
   const ok = await editor.publish()
@@ -238,7 +294,40 @@ onUnmounted(() => document.removeEventListener('click', onDocClick))
 </script>
 
 <style scoped>
-.write-page { min-height: 100vh; padding-bottom: 10px; }
+.write-page {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── Topnav hotzone ────────────────────────────────────── */
+.topnav-hotzone {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 6px;
+  z-index: 101;
+}
+
+/* ── Topnav slide transition ───────────────────────────── */
+.topnav-slide-enter-active,
+.topnav-slide-leave-active {
+  transition: transform 0.25s var(--ease);
+}
+
+.topnav-slide-enter-from,
+.topnav-slide-leave-to {
+  transform: translateY(-100%);
+}
+
+/* ── Scroll body ───────────────────────────────────────── */
+.write-body {
+  flex: 1;
+  overflow-y: auto;
+  position: relative;
+}
 
 .publish-settings-area {
   background: var(--canvas);
