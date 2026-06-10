@@ -1,15 +1,17 @@
 package com.yunbian27.content.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.yunbian27.common.constant.CommonConstants;
-import com.yunbian27.common.constant.SystemConstants;
-import com.yunbian27.common.utils.JsonUtils;
-import com.yunbian27.common.constant.RedisKeys;
 import com.yunbian27.common.constant.RedisTTL;
 import com.yunbian27.common.exception.BusinessException;
 import com.yunbian27.common.exception.ErrorCode;
+import com.yunbian27.common.utils.JsonUtils;
+import com.yunbian27.common.utils.SecurityUtils;
+import com.yunbian27.content.constant.ArticleEnums;
+import com.yunbian27.content.constant.ContentConstants;
+import com.yunbian27.content.constant.ContentRedisKeys;
 import com.yunbian27.content.mapper.ArticleGroupMapper;
 import com.yunbian27.content.mapper.GroupMapper;
+import com.yunbian27.content.model.dto.ArticlePublishDTO;
 import com.yunbian27.content.model.dto.ArticleSaveDTO;
 import com.yunbian27.content.model.entity.Article;
 import com.yunbian27.content.model.entity.ArticleGroup;
@@ -20,10 +22,8 @@ import com.yunbian27.content.model.vo.GroupVO;
 import com.yunbian27.ai.mapper.LlmGlobalSettingMapper;
 import com.yunbian27.ai.model.LlmGlobalSettingEntity;
 import com.yunbian27.ai.registry.LlmProviderRegistry;
-import com.yunbian27.content.model.dto.ArticlePublishDTO;
 import com.yunbian27.content.mapper.ArticleMapper;
 import com.yunbian27.content.mapper.ArticleTagMapper;
-import com.yunbian27.common.utils.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
@@ -64,10 +64,10 @@ public class ArticleService {
         Article article = new Article();
         BeanUtils.copyProperties(dto, article);
         if (article.getTitle() == null || article.getTitle().isBlank())
-            article.setTitle(SystemConstants.DEFAULT_ARTICLE_TITLE);
+            article.setTitle(ContentConstants.DEFAULT_ARTICLE_TITLE);
         article.setUserId(userId);
         article.setSlug(generateSlug(article.getTitle()));
-        article.setStatus(CommonConstants.Article.PUBLISHED);
+        article.setStatus(ArticleEnums.Status.PUBLISHED.getValue());
         article.setPublishedAt(LocalDateTime.now());
         articleMapper.insert(article);
 
@@ -91,7 +91,7 @@ public class ArticleService {
             throw new BusinessException(ErrorCode.NOT_FOUND);
         BeanUtils.copyProperties(dto, article);
         article.setId(id);
-        article.setStatus(CommonConstants.Article.PUBLISHED);
+        article.setStatus(ArticleEnums.Status.PUBLISHED.getValue());
         article.setPublishedAt(LocalDateTime.now());
         articleMapper.updateById(article);
 
@@ -171,7 +171,7 @@ public class ArticleService {
                         .set(Article::getSourceUrl, dto.getSourceUrl())
                         .set(Article::getVisibility, dto.getVisibility())
                         .set(Article::getCreationStatement, dto.getCreationStatement())
-                        .set(Article::getStatus, CommonConstants.ArticleStatus.PUBLISHED)
+                        .set(Article::getStatus, ArticleEnums.Status.PUBLISHED.getValue())
                         .set(Article::getPublishedAt, LocalDateTime.now())
                         .set(Article::getUpdatedAt, LocalDateTime.now())
                         .eq(Article::getId, dto.getId())
@@ -193,7 +193,7 @@ public class ArticleService {
         Article article = new Article();
         BeanUtils.copyProperties(dto, article);
 
-        article.setStatus(CommonConstants.Article.DRAFT);
+        article.setStatus(ArticleEnums.Status.UNPUBLISHED.getValue());
         article.setVisibility();
 
         articleMapper.insert(article);
@@ -255,7 +255,7 @@ public class ArticleService {
      */
     public ArticleVO showArticle(Long articleId) {
         // 1、查缓存
-        String key = RedisKeys.ARTICLE_CACHE_PREFIX + articleId;
+        String key = ContentRedisKeys.ARTICLE_CACHE_PREFIX + articleId;
         String json = stringRedisTemplate.opsForValue().get(key);
         if (json != null) {
             return JsonUtils.toBean(json, ArticleVO.class);
@@ -266,7 +266,7 @@ public class ArticleService {
             throw new BusinessException("文章不存在");
         }
         // 私密文章仅作者本人可读
-        if (CommonConstants.Article.DRAFT.equals(article.getVisibility())) {
+        if (ArticleEnums.Visibility.PRIVATE.getValue().equals(article.getVisibility())) {
             Long userId = SecurityUtils.getCurrentUserId();
             if (!userId.equals(article.getUserId())) {
                 throw new BusinessException(ErrorCode.NOT_FOUND);
@@ -296,7 +296,7 @@ public class ArticleService {
                 .set(Article::getTitle, title.trim())
                 .set(Article::getSlug, newSlug)
                 .eq(Article::getId, id));
-        stringRedisTemplate.delete(RedisKeys.ARTICLE_CACHE_PREFIX + id);
+        stringRedisTemplate.delete(ContentRedisKeys.ARTICLE_CACHE_PREFIX + id);
         return folderService.show();
     }*/
 
@@ -313,7 +313,7 @@ public class ArticleService {
         articleTagMapper.delete(new LambdaQueryWrapper<ArticleTag>()
                 .eq(ArticleTag::getArticleId, id));
         articleMapper.deleteById(id);
-        stringRedisTemplate.delete(RedisKeys.ARTICLE_CACHE_PREFIX + id);
+        stringRedisTemplate.delete(ContentRedisKeys.ARTICLE_CACHE_PREFIX + id);
         return folderService.show();
     }*/
 

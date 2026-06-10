@@ -168,6 +168,9 @@
                   <p class="dropdown-nickname">{{ authStore.user?.nickname }}</p>
                   <p class="dropdown-username">{{ authStore.user?.username }}</p>
                 </div>
+                <button class="dropdown-item" @click="router.push('/manage')">
+                  内容管理
+                </button>
                 <div class="dropdown-divider" />
                 <button class="dropdown-item dropdown-item-danger" @click="handleLogout">
                   退出登录

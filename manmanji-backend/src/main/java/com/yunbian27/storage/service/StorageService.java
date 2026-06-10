@@ -1,11 +1,11 @@
 package com.yunbian27.storage.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.yunbian27.common.constant.SystemConstants;
 import com.yunbian27.common.exception.BusinessException;
 import com.yunbian27.common.exception.ErrorCode;
 import com.yunbian27.common.service.ApiKeyEncryption;
 import com.yunbian27.common.utils.SecurityUtils;
+import com.yunbian27.storage.constant.StorageConstants;
 import com.yunbian27.storage.mapper.StorageConfigMapper;
 import com.yunbian27.storage.model.StorageConfigDTO;
 import com.yunbian27.storage.model.StorageConfigEntity;
@@ -62,7 +62,7 @@ public class StorageService {
 
         // TODO 校验图片大小
 
-        String imageUrl = aliOssStorageProvider.upload(file, SystemConstants.DEFAULT_IMAGES_URL);
+        String imageUrl = aliOssStorageProvider.upload(file, StorageConstants.DEFAULT_IMAGES_URL);
 
         return imageUrl;
     }

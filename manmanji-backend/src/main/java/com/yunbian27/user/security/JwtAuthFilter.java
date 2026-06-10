@@ -1,6 +1,6 @@
 package com.yunbian27.user.security;
 
-import com.yunbian27.common.constant.RedisKeys;
+import com.yunbian27.user.constant.UserRedisKeys;
 import com.yunbian27.user.service.JwtService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -58,7 +58,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             // === 黑名单检查插在这里 ===
             String jti = claims.getId();
             String blacklisted = stringRedisTemplate.opsForValue()
-                    .get(RedisKeys.ACCESS_TOKEN_BLACKLIST_PREFIX + jti);
+                    .get(UserRedisKeys.ACCESS_TOKEN_BLACKLIST_PREFIX + jti);
             if (blacklisted != null) {
                 filterChain.doFilter(request, response);  // 拒绝，当没认证
                 return;

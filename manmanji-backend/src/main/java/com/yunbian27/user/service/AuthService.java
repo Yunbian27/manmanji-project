@@ -1,10 +1,10 @@
 package com.yunbian27.user.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.yunbian27.common.constant.RedisKeys;
 import com.yunbian27.common.constant.RedisTTL;
-import com.yunbian27.common.constant.SystemConstants;
 import com.yunbian27.user.config.JwtProperties;
+import com.yunbian27.user.constant.UserConstants;
+import com.yunbian27.user.constant.UserRedisKeys;
 import com.yunbian27.user.model.dto.LoginDTO;
 import com.yunbian27.user.model.vo.LoginVO;
 import com.yunbian27.user.model.dto.RegisterDTO;
@@ -44,7 +44,7 @@ public class AuthService {
 
     public void sendCode(String email) {
         // 限流：同一邮箱 60 秒内不能重复发送
-        String rateKey = RedisKeys.REGISTER_CODE_RATE_PREFIX + email;
+        String rateKey = UserRedisKeys.REGISTER_CODE_RATE_PREFIX + email;
         if (Boolean.TRUE.equals(stringRedisTemplate.hasKey(rateKey))) {
             throw new BusinessException(ErrorCode.CODE_SEND_TOO_FREQUENT);
         }
@@ -54,7 +54,7 @@ public class AuthService {
 
         // 存入 Redis（5 分钟过期）
         stringRedisTemplate.opsForValue().set(
-                RedisKeys.REGISTER_CODE_PREFIX + email, code, CODE_TTL);
+                UserRedisKeys.REGISTER_CODE_PREFIX + email, code, CODE_TTL);
         // 限流标记（60 秒）
         stringRedisTemplate.opsForValue().set(rateKey, "1", CODE_RATE_TTL);
 
@@ -76,7 +76,7 @@ public class AuthService {
         }
 
         // 校验邮箱验证码
-        String codeKey = RedisKeys.REGISTER_CODE_PREFIX + req.getEmail();
+        String codeKey = UserRedisKeys.REGISTER_CODE_PREFIX + req.getEmail();
         String storedCode = stringRedisTemplate.opsForValue().get(codeKey);
         if (storedCode == null) {
             throw new BusinessException(ErrorCode.CODE_EXPIRED);
@@ -91,7 +91,7 @@ public class AuthService {
         user.setEmail(req.getEmail());
         user.setPasswordHash(passwordEncoder.encode(req.getPassword()));
         user.setNickname(req.getNickname() != null ? req.getNickname() : req.getUsername());
-        user.setAvatarUrl(SystemConstants.DEFAULT_AVATAR);
+        user.setAvatarUrl(UserConstants.DEFAULT_AVATAR);
         user.setRole("USER");
         user.setStatus("ACTIVE");
         userMapper.insert(user);
@@ -143,7 +143,7 @@ public class AuthService {
         String incomingJti = jwtService.parseToken(refreshTokenStr).getId();
 
         // 查询reids中的刷新token的id是否匹配
-        String key = RedisKeys.REFRESH_TOKEN_PREFIX + userId;
+        String key = UserRedisKeys.REFRESH_TOKEN_PREFIX + userId;
         String storedJti = stringRedisTemplate.opsForValue().get(key);
 
         if (storedJti == null) {
@@ -183,12 +183,12 @@ public class AuthService {
 
     public void logout(Long userId, String accessTokenJti, Date accessTokenExp) {
         // 删除 Refresh Token 存根
-        stringRedisTemplate.delete(RedisKeys.REFRESH_TOKEN_PREFIX + userId);
+        stringRedisTemplate.delete(UserRedisKeys.REFRESH_TOKEN_PREFIX + userId);
         // Access Token 加入黑名单，TTL = 剩余有效时间
         long ttl = (accessTokenExp.getTime() - System.currentTimeMillis()) / 1000;
         if (ttl > 0) {
             stringRedisTemplate.opsForValue().set(
-                    RedisKeys.ACCESS_TOKEN_BLACKLIST_PREFIX + accessTokenJti,
+                    UserRedisKeys.ACCESS_TOKEN_BLACKLIST_PREFIX + accessTokenJti,
                     "1", Duration.ofSeconds(ttl));
         }
     }
