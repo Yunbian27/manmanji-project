@@ -35,9 +35,9 @@
               <button type="button" class="tag-picker-trigger" @click="showTagPicker = !showTagPicker">
                 <span v-if="local.tagIds.length === 0" class="picker-placeholder">选择标签</span>
                 <div v-else class="tag-list">
-                  <AppTag v-for="tagId in local.tagIds" :key="tagId" variant="default">{{ getTagName(tagId) }}<button class="tag-remove" @click.stop="removeTag(tagId)"><IconX :size="10" /></button></AppTag>
+                  <AppTag v-for="tagId in local.tagIds" :key="tagId" variant="default">{{ getTagName(tagId) }}<button class="tag-remove" @click.stop="removeTag(tagId)"><IconLucideX class="icon-xxs" /></button></AppTag>
                 </div>
-                <svg class="picker-chevron" :class="{ open: showTagPicker }" width="10" height="6" viewBox="0 0 10 6" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 1L5 5L9 1"/></svg>
+                <IconLucideChevronDown class="picker-chevron" :class="{ open: showTagPicker }" />
               </button>
               <div v-if="showTagPicker" class="tag-picker-popover">
                 <button v-for="tag in availableTags" :key="tag.id" type="button" :class="['tag-picker-chip', { selected: local.tagIds.includes(tag.id) }]" @click="toggleTag(tag.id)">{{ tag.name }}</button>
@@ -49,7 +49,7 @@
             <div class="group-tags-area">
               <span v-for="(name, i) in local.groupNames" :key="i" class="group-tag-pill">
                 {{ name }}
-                <button class="group-tag-remove" @click="removeGroup(i)"><IconX :size="12" /></button>
+                <button class="group-tag-remove" @click="removeGroup(i)"><IconLucideX class="icon-xs" /></button>
               </span>
               <button type="button" class="group-add-btn" @click="openGroupPicker">添加分组</button>
             </div>
@@ -58,7 +58,7 @@
                 <div class="group-modal-header">
                   <span class="group-modal-title">分组</span>
                   <button type="button" class="group-modal-close" @click="showGroupPicker = false; groupSearch = ''">
-                    <IconX :size="16" />
+                    <IconLucideX class="icon-md" />
                   </button>
                 </div>
                 <input
@@ -85,9 +85,9 @@
             <div class="cover-upload-area">
               <input ref="coverInputRef" type="file" accept="image/*" class="cover-file-input" @change="handleCoverFile" />
               <button type="button" class="cover-upload-btn" @click="coverInputRef?.click()">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>选择图片
+                <IconLucideUpload class="icon-md" />选择图片
               </button>
-              <div v-if="local.coverUrl" class="cover-preview-wrap"><img :src="local.coverUrl" class="cover-preview-img" /><button type="button" class="cover-remove-btn" @click="removeCover"><IconX :size="14" /></button></div>
+              <div v-if="local.coverUrl" class="cover-preview-wrap"><img :src="local.coverUrl" class="cover-preview-img" /><button type="button" class="cover-remove-btn" @click="removeCover"><IconLucideX class="icon-sm" /></button></div>
             </div>
           </div>
           <div class="ps-field">
@@ -137,6 +137,9 @@
 
 <script setup lang="ts">
 import { createEditorState, provideEditor, type PublishSettings, type EditorState } from '~/composables/useArticleEditor'
+import IconLucideChevronDown from '~icons/lucide/chevron-down'
+import IconLucideUpload from '~icons/lucide/upload'
+import IconLucideX from '~icons/lucide/x'
 import type { GroupVO } from '~/types'
 
 definePageMeta({ layout: 'editor' })

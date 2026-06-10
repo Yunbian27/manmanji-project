@@ -7,15 +7,12 @@
   <div class="body">
     <!-- ===== Left Sidebar ===== -->
     <aside class="sidebar">
-      <div class="sidebar-logo">
-        <img src="/favicon.svg" alt="慢慢记" class="sidebar-logo-mark" />
-      慢慢记
-      </div>
+      <SidebarHeader />
 
       <div class="sidebar-fixed">
         <div class="group-manage-wrap">
           <button class="sidebar-action-btn" @click="groupModalVisible = !groupModalVisible">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+            <IconLucideFolder class="icon-sm" />
             分组管理
           </button>
           <div v-if="groupModalVisible" ref="groupPopoverRef" class="group-modal-popover" @click.stop>
@@ -23,7 +20,7 @@
               <div class="group-modal-header">
                 <h3 class="group-modal-title">分组管理</h3>
                 <button class="group-modal-close" @click="groupModalVisible = false" aria-label="关闭">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                  <IconLucideX class="icon-md" />
                 </button>
               </div>
               <input
@@ -42,7 +39,7 @@
                 >
                   {{ g.name }}
                   <span class="group-modal-chip-remove" @click.stop="handleDeleteGroup(g.id)">
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    <IconLucideX class="icon-xs" />
                   </span>
                 </button>
                 <div v-if="filteredModalGroups.length === 0" class="group-modal-empty">暂无匹配分组，按 Enter 创建</div>
@@ -65,7 +62,7 @@
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" v-html="item.icon" />
                 {{ item.label }}
                 <span class="sidebar-action-chevron" :class="{ expanded: publishedExpanded }">
-                  <svg width="10" height="6" viewBox="0 0 10 6" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 1L5 5L9 1"/></svg>
+                  <IconLucideChevronDown class="icon-sm" />
                 </span>
                 <span class="sidebar-action-count">{{ item.count }}</span>
               </button>
@@ -127,7 +124,7 @@
 
       <div class="sidebar-footer">
         <button class="sidebar-community-btn" @click="router.push('/community')">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          <IconLucideGlobe class="icon-sm" />
           探索社区
         </button>
       </div>
@@ -138,7 +135,7 @@
       <div class="content-topbar">
         <div class="content-topbar-left">
           <div class="content-topbar-search-wrap">
-            <svg class="content-topbar-search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <IconLucideSearch class="content-topbar-search-icon" />
             <input
               class="content-topbar-search"
               v-model="searchQuery"
@@ -151,33 +148,13 @@
           <div class="center-title-row">
             <span class="center-title-text">{{ selectedArticle?.title || '' }}</span>
             <button class="center-detail-btn" @click="viewDetail">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+              <IconLucideExternalLink class="icon-md" />
             </button>
           </div>
           <span class="center-meta-text" v-if="selectedArticle">{{ selectedArticle.updatedAt }}</span>
         </div>
         <div class="content-topbar-right">
           <button class="btn-primary" @click="onPublish">发布文章</button>
-          <div ref="avatarContainer" class="avatar-wrapper">
-            <div class="topbar-avatar" @click="showDropdown = !showDropdown">
-              {{ avatarChar }}
-            </div>
-            <Transition name="dropdown">
-              <div v-if="showDropdown" class="avatar-dropdown">
-                <div class="dropdown-user">
-                  <p class="dropdown-nickname">{{ authStore.user?.nickname }}</p>
-                  <p class="dropdown-username">{{ authStore.user?.username }}</p>
-                </div>
-                <button class="dropdown-item" @click="router.push('/manage')">
-                  内容管理
-                </button>
-                <div class="dropdown-divider" />
-                <button class="dropdown-item dropdown-item-danger" @click="handleLogout">
-                  退出登录
-                </button>
-              </div>
-            </Transition>
-          </div>
         </div>
       </div>
 
@@ -204,6 +181,13 @@ import { onClickOutside } from '@vueuse/core'
 
 definePageMeta({ layout: 'blank' })
 
+import IconLucideFolder from '~icons/lucide/folder'
+import IconLucideX from '~icons/lucide/x'
+import IconLucideChevronDown from '~icons/lucide/chevron-down'
+import IconLucideGlobe from '~icons/lucide/globe'
+import IconLucideSearch from '~icons/lucide/search'
+import IconLucideExternalLink from '~icons/lucide/external-link'
+
 const authStore = useAuthStore()
 const router = useRouter()
 
@@ -220,18 +204,14 @@ const groupSearch = ref('')
 const groupPopoverRef = ref<HTMLElement | null>(null)
 
 onClickOutside(groupPopoverRef, () => { groupModalVisible.value = false })
-const showDropdown = ref(false)
 const publishedExpanded = ref(false)
 const publishedSubFilter = ref<'PUBLIC' | 'PRIVATE' | 'REVIEWING' | null>(null)
 
 // --- Refs for scrollbar ---
 const sidebarScrollRef = ref<HTMLElement | null>(null)
 const contentBodyRef = ref<HTMLElement | null>(null)
-const avatarContainer = ref<HTMLElement | null>(null)
 
 // --- Compute ---
-const avatarChar = computed(() => authStore.user?.nickname?.charAt(0) || '慢')
-
 const statusItems = computed(() => [
   {
     key: 'ALL',
@@ -383,13 +363,6 @@ function onPublish() {
   window.open('/write', '_blank')
 }
 
-async function handleLogout() {
-  const { logout } = useAuth()
-  await logout()
-  showDropdown.value = false
-  navigateTo('/login')
-}
-
 // --- Modal close cleanup ---
 watch(groupModalVisible, (v) => {
   if (!v) {
@@ -426,12 +399,6 @@ onMounted(() => {
   if (contentBodyRef.value) initScrollbar(contentBodyRef.value)
 })
 
-// --- Close popover & dropdown on outside click ---
-onClickOutside(avatarContainer, () => {
-  showDropdown.value = false
-})
-
-
 </script>
 
 <style scoped>
@@ -453,32 +420,6 @@ onClickOutside(avatarContainer, () => {
   border-right: 1px solid var(--hairline);
 }
 
-.sidebar-logo {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-lg) var(--spacing-md) var(--spacing-sm);
-  font-family: var(--font-sans);
-  font-size: var(--heading-4);
-  font-weight: var(--weight-semibold);
-  color: var(--ink);
-  flex-shrink: 0;
-}
-.sidebar-logo-mark {
-  width: 32px;
-  height: 32px;
-  border-radius: var(--rounded-md);
-  background: var(--ink);
-  color: var(--canvas);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 20px;
-  font-weight: var(--weight-semibold);
-  font-family: 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
-  flex-shrink: 0;
-}
-
 /* Fixed top zone */
 .sidebar-fixed {
   flex-shrink: 0;
@@ -494,7 +435,7 @@ onClickOutside(avatarContainer, () => {
   border: none;
   border-radius: var(--rounded-sm);
   background: transparent;
-  color: var(--steel);
+  color: var(--charcoal);
   font-family: var(--font-sans);
   font-size: var(--body-sm);
   font-weight: var(--weight-regular);
@@ -510,7 +451,7 @@ onClickOutside(avatarContainer, () => {
   font-weight: var(--weight-medium);
   box-shadow: rgba(15, 15, 15, 0.06) 0px 1px 3px 0px;
 }
-.sidebar-action-btn svg { opacity: 0.5; flex-shrink: 0; }
+.sidebar-action-btn svg { flex-shrink: 0; }
 .sidebar-action-btn.active svg { opacity: 1; }
 
 .sidebar-action-count {
@@ -544,7 +485,7 @@ onClickOutside(avatarContainer, () => {
   border: none;
   border-radius: var(--rounded-sm);
   background: transparent;
-  color: var(--steel);
+  color: var(--charcoal);
   font-family: var(--font-sans);
   font-size: var(--body-sm);
   font-weight: var(--weight-regular);
@@ -637,7 +578,7 @@ onClickOutside(avatarContainer, () => {
   border: none;
   border-radius: var(--rounded-sm);
   background: transparent;
-  color: var(--steel);
+  color: var(--charcoal);
   font-family: var(--font-sans);
   font-size: var(--body-sm);
   font-weight: var(--weight-regular);
@@ -648,7 +589,7 @@ onClickOutside(avatarContainer, () => {
   background: var(--hairline-soft);
   color: var(--ink);
 }
-.sidebar-community-btn svg { flex-shrink: 0; opacity: 0.5; }
+.sidebar-community-btn svg { flex-shrink: 0; }
 
 /* ===== Content Area ===== */
 .content-area {
@@ -797,87 +738,6 @@ onClickOutside(avatarContainer, () => {
   .content-topbar-search { width: 140px; }
   .btn-primary { padding: 8px 14px; font-size: var(--caption); }
 }
-.topbar-avatar {
-  width: 28px; height: 28px;
-  border-radius: var(--rounded-full);
-  background: var(--primary);
-  color: var(--on-primary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: var(--body-sm-medium);
-  font-weight: var(--weight-medium);
-  flex-shrink: 0;
-  cursor: pointer;
-  transition: opacity 0.15s var(--ease);
-}
-.topbar-avatar:hover { opacity: 0.85; }
-
-.avatar-wrapper { position: relative; flex-shrink: 0; }
-
-.avatar-dropdown {
-  position: absolute;
-  top: calc(100% + 8px);
-  right: 0;
-  min-width: 160px;
-  padding: var(--spacing-xs);
-  background: var(--canvas);
-  border: 1px solid var(--hairline);
-  border-radius: var(--rounded-xl);
-  box-shadow: rgba(15, 15, 15, 0.08) 0px 4px 12px 0px;
-  z-index: var(--z-modal);
-}
-
-.dropdown-user { padding: 8px 12px; }
-.dropdown-nickname {
-  font-size: var(--body-sm);
-  font-weight: var(--weight-medium);
-  color: var(--ink);
-  margin: 0;
-  line-height: 1.4;
-}
-.dropdown-username {
-  font-size: var(--caption);
-  color: var(--muted);
-  margin: 2px 0 0;
-  line-height: 1.4;
-}
-
-.dropdown-divider {
-  height: 1px;
-  background: var(--hairline);
-  margin: 4px 0;
-}
-
-.dropdown-item {
-  display: block;
-  width: 100%;
-  padding: 8px 12px;
-  border: none;
-  border-radius: var(--rounded-sm);
-  background: transparent;
-  color: var(--ink);
-  font-family: var(--font-sans);
-  font-size: var(--body-sm);
-  font-weight: var(--weight-regular);
-  line-height: 1.4;
-  text-align: left;
-  cursor: pointer;
-  transition: background 0.15s var(--ease);
-}
-.dropdown-item:hover { background: var(--hairline-soft); }
-.dropdown-item-danger:hover { color: var(--semantic-error); }
-
-.dropdown-enter-active,
-.dropdown-leave-active {
-  transition: opacity 0.15s var(--ease), transform 0.15s var(--ease);
-}
-.dropdown-enter-from,
-.dropdown-leave-to {
-  opacity: 0;
-  transform: translateY(-4px);
-}
-
 /* Button primary */
 .btn-primary {
   padding: 10px 18px;

@@ -9,7 +9,7 @@
           <div class="modal-header">
             <h3 class="modal-title">发布设置</h3>
             <button class="modal-close" @click="close" aria-label="关闭">
-              <IconX :size="18" />
+              <IconLucideX class="icon-lg" />
             </button>
           </div>
 
@@ -23,10 +23,10 @@
                   <div v-else class="tag-list">
                     <AppTag v-for="tagId in local.tagIds" :key="tagId" variant="default">
                       {{ getTagName(tagId) }}
-                      <button class="tag-remove" @click.stop="removeTag(tagId)"><IconX :size="10" /></button>
+                      <button class="tag-remove" @click.stop="removeTag(tagId)"><IconLucideX class="icon-xxs" /></button>
                     </AppTag>
                   </div>
-                  <svg class="picker-chevron" :class="{ open: showTagPicker }" width="10" height="6" viewBox="0 0 10 6" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 1L5 5L9 1"/></svg>
+                  <IconLucideChevronDown class="picker-chevron" :class="{ open: showTagPicker }" />
                 </button>
                 <div v-if="showTagPicker" class="tag-picker-popover">
                   <button
@@ -50,10 +50,10 @@
                   <div v-else class="tag-list">
                     <span v-for="(name, i) in local.groupNames" :key="i" class="group-chip">
                       {{ name }}
-                      <button class="tag-remove" @click.stop="removeGroup(i)"><IconX :size="10" /></button>
+                      <button class="tag-remove" @click.stop="removeGroup(i)"><IconLucideX class="icon-xxs" /></button>
                     </span>
                   </div>
-                  <svg class="picker-chevron" :class="{ open: showGroupPicker }" width="10" height="6" viewBox="0 0 10 6" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 1L5 5L9 1"/></svg>
+                  <IconLucideChevronDown class="picker-chevron" :class="{ open: showGroupPicker }" />
                 </button>
                 <div v-if="showGroupPicker" class="group-picker-popover">
                   <button
@@ -87,13 +87,13 @@
                   @change="handleCoverFile"
                 />
                 <button type="button" class="cover-upload-btn" @click="fileInputRef?.click()">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                  <IconLucideUpload class="icon-md" />
                   选择图片
                 </button>
                 <div v-if="local.coverUrl" class="cover-preview-wrap">
                   <img :src="local.coverUrl" class="cover-preview-img" />
                   <button type="button" class="cover-remove-btn" @click="removeCover">
-                    <IconX :size="14" />
+                    <IconLucideX class="icon-sm" />
                   </button>
                 </div>
               </div>
@@ -170,6 +170,9 @@
 <script setup lang="ts">
 import type { PublishSettings } from '~/composables/useArticleEditor'
 import type { GroupVO } from '~/types'
+import IconLucideChevronDown from '~icons/lucide/chevron-down'
+import IconLucideUpload from '~icons/lucide/upload'
+import IconLucideX from '~icons/lucide/x'
 
 const props = defineProps<{ visible: boolean }>()
 const emit = defineEmits<{ 'update:visible': [value: boolean]; published: [] }>()

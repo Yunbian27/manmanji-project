@@ -7,8 +7,8 @@
         class="toast-item"
         :class="'toast--' + item.type"
       >
-        <svg v-if="item.type === 'success'" class="toast-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-        <svg v-else class="toast-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+        <IconLucideCheckCircle v-if="item.type === 'success'" class="toast-icon" />
+        <IconLucideXCircle v-else class="toast-icon" />
         <span class="toast-message">{{ item.message }}</span>
       </div>
     </TransitionGroup>
@@ -16,6 +16,8 @@
 </template>
 
 <script setup lang="ts">
+import IconLucideCheckCircle from '~icons/lucide/check-circle'
+import IconLucideXCircle from '~icons/lucide/x-circle'
 const { toasts } = injectToast()
 </script>
 
@@ -56,6 +58,8 @@ const { toasts } = injectToast()
 
 .toast-icon {
   flex-shrink: 0;
+  width: 16px;
+  height: 16px;
 }
 
 .toast--success .toast-icon { color: var(--semantic-success); }

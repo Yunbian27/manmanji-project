@@ -14,6 +14,7 @@ export default defineNuxtConfig({
   // --------------------------------------------------
   modules: [
     '@vueuse/nuxt',
+    ['unplugin-icons/nuxt', { compiler: 'vue3', autoInstall: false }],
   ],
 
   // --------------------------------------------------

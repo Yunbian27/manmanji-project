@@ -6,13 +6,7 @@
   <div class="body">
     <!-- ===== Left Sidebar ===== -->
     <aside class="sidebar">
-      <div class="sidebar-header">
-        <span class="sidebar-logo">
-          <span class="sidebar-logo-mark">慢</span>
-          慢慢记
-        </span>
-        <span class="sidebar-avatar" :title="auth.user?.nickname">{{ avatarChar }}</span>
-      </div>
+      <SidebarHeader />
 
       <nav class="sidebar-menu">
         <button
@@ -20,7 +14,7 @@
           :class="{ active: activeTab === 'articles' }"
           @click="activeTab = 'articles'"
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          <IconLucideFileText />
           内容管理
         </button>
         <button
@@ -28,13 +22,13 @@
           :class="{ active: activeTab === 'profile' }"
           @click="activeTab = 'profile'"
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <IconLucideUser />
           个人设置
         </button>
       </nav>
 
       <button class="sidebar-back" @click="router.push('/home')">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        <IconLucideArrowLeft />
         返回知识库
       </button>
     </aside>
@@ -102,17 +96,19 @@
 
 <script setup lang="ts">
 import type { StudyArticle } from '~/types'
+import IconLucideFileText from '~icons/lucide/file-text'
+import IconLucideUser from '~icons/lucide/user'
+import IconLucideArrowLeft from '~icons/lucide/arrow-left'
 
 definePageMeta({ layout: 'blank' })
 
 const router = useRouter()
 const auth = useAuthStore()
 
+const avatarChar = computed(() => auth.user?.nickname?.charAt(0) || '慢')
+
 // ── Tab ──
 const activeTab = ref<'articles' | 'profile'>('articles')
-
-// ── Avatar ──
-const avatarChar = computed(() => auth.user?.nickname?.charAt(0) || '慢')
 
 // ── Articles ──
 const articles = ref<StudyArticle[]>([])
@@ -198,46 +194,19 @@ onMounted(async () => {
 
 /* ===== Sidebar ===== */
 .sidebar {
-  width: 220px; flex-shrink: 0;
-  background: var(--surface);
+  width: var(--sidebar-width); flex-shrink: 0;
   display: flex; flex-direction: column;
-  padding: var(--spacing-lg); gap: var(--spacing-xl);
+  background: var(--surface);
   border-right: 1px solid var(--hairline);
 }
 
-.sidebar-header {
-  display: flex; align-items: center; justify-content: space-between;
-  padding-bottom: var(--spacing-md);
-  border-bottom: 1px solid var(--hairline);
-}
-
-.sidebar-logo {
-  display: flex; align-items: center; gap: var(--spacing-xs);
-  font-size: 16px; font-weight: 600; color: var(--ink);
-}
-
-.sidebar-logo-mark {
-  width: 24px; height: 24px; border-radius: var(--rounded-sm);
-  background: var(--ink); color: var(--canvas);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 13px; font-weight: 700;
-}
-
-.sidebar-avatar {
-  width: 28px; height: 28px; border-radius: var(--rounded-full);
-  background: var(--primary); color: var(--on-primary);
-  font-size: 12px; font-weight: 600;
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer; border: none;
-}
-
-.sidebar-menu { display: flex; flex-direction: column; gap: 2px; }
+.sidebar-menu { display: flex; flex-direction: column; gap: 2px; padding: var(--spacing-sm) var(--spacing-md); }
 
 .sidebar-menu-item {
   display: flex; align-items: center; gap: var(--spacing-xs);
   padding: var(--spacing-xs) var(--spacing-sm);
   border-radius: var(--rounded-md);
-  font-size: 14px; font-weight: 400; color: var(--charcoal);
+  font-size: var(--body-sm); font-weight: var(--weight-regular); color: var(--charcoal);
   cursor: pointer; border: none; background: transparent; font-family: var(--font-sans);
   text-align: left; transition: background 0.15s var(--ease); line-height: 1.5;
 }
@@ -245,14 +214,15 @@ onMounted(async () => {
 .sidebar-menu-item:hover { background: var(--hairline-soft); }
 
 .sidebar-menu-item.active {
-  background: var(--canvas); font-weight: 500; color: var(--ink);
+  background: var(--canvas); font-weight: var(--weight-medium); color: var(--ink);
 }
 
 .sidebar-back {
   margin-top: auto; display: flex; align-items: center; gap: var(--spacing-xs);
   padding: var(--spacing-xs) var(--spacing-sm); border-radius: var(--rounded-md);
-  font-size: 14px; color: var(--steel); cursor: pointer; border: none; font-family: var(--font-sans);
+  font-size: var(--body-sm); color: var(--steel); cursor: pointer; border: none; font-family: var(--font-sans);
   background: transparent; transition: color 0.15s var(--ease);
+  margin: var(--spacing-xl) var(--spacing-md);
 }
 
 .sidebar-back:hover { color: var(--ink); }

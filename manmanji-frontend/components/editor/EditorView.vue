@@ -89,11 +89,7 @@
           <div class="toolbar-center">
             <!-- 图片 -->
             <button class="toolbar-btn" title="图片" @click="handleImage">
-              <svg class="btn-icon-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                <circle cx="8.5" cy="8.5" r="1.5"/>
-                <polyline points="21 15 16 10 5 21"/>
-              </svg>
+              <IconLucideImage class="btn-icon-svg" />
             </button>
             <input
               ref="fileInput"
@@ -104,10 +100,7 @@
             />
             <!-- 链接 -->
             <button class="toolbar-btn" title="链接" @click="showLinkDialog = true">
-              <svg class="btn-icon-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
-                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
-              </svg>
+              <IconLucideLink class="btn-icon-svg" />
             </button>
           </div>
           </div>
@@ -122,10 +115,7 @@
 
           <div class="toolbar-right">
             <button class="toolbar-btn toolbar-btn--labeled" title="历史版本">
-              <svg class="btn-icon-svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="10"/>
-                <polyline points="12 6 12 12 16 14"/>
-              </svg>
+              <IconLucideClock class="btn-icon-svg" />
               <span class="btn-label">历史版本</span>
             </button>
             <div class="dropdown-wrap" ref="actionDropdownRef">
@@ -141,12 +131,8 @@
               </div>
             </div>
             <button class="toolbar-btn" :title="topnavHidden ? '展开顶栏' : '收起顶栏'" @click="toggleTopnav">
-              <svg v-if="topnavHidden" class="btn-icon-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="6 9 12 15 18 9"/>
-              </svg>
-              <svg v-else class="btn-icon-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="18 15 12 9 6 15"/>
-              </svg>
+              <IconLucideChevronDown v-if="topnavHidden" class="btn-icon-svg" />
+              <IconLucideChevronUp v-else class="btn-icon-svg" />
             </button>
           </div>
         </div>
@@ -244,6 +230,11 @@
 <script setup lang="ts">
 import { onClickOutside } from '@vueuse/core'
 import type { TocItem } from '~/types'
+import IconLucideImage from '~icons/lucide/image'
+import IconLucideLink from '~icons/lucide/link'
+import IconLucideClock from '~icons/lucide/clock'
+import IconLucideChevronDown from '~icons/lucide/chevron-down'
+import IconLucideChevronUp from '~icons/lucide/chevron-up'
 
 const emit = defineEmits<{ close: [] }>()
 

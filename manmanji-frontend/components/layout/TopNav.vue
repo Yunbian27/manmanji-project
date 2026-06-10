@@ -26,7 +26,7 @@
 
     <div class="nav-right">
       <div class="nav-search">
-        <IconSearch :size="16" class="search-icon" />
+        <IconLucideSearch class="search-icon icon-md" />
         <input type="text" class="search-input" placeholder="搜索文章..." />
       </div>
 
@@ -57,6 +57,7 @@
 
 <script setup lang="ts">
 import { onClickOutside } from '@vueuse/core'
+import IconLucideSearch from '~icons/lucide/search'
 
 const auth = useAuthStore()
 

@@ -10,7 +10,7 @@
         <span class="logo-text">慢慢记</span>
       </NuxtLink>
       <button class="back-btn" @click="handleBack">
-        <IconChevronRight :size="14" class="back-icon" />
+        <IconLucideChevronRight class="back-icon icon-sm" />
         <span>返回</span>
       </button>
       <input
@@ -30,7 +30,7 @@
       <div v-if="auth.isAuthenticated" ref="avatarContainer" class="avatar-wrapper">
         <div class="nav-avatar" :title="auth.user?.nickname" @click="showDropdown = !showDropdown">
           <img v-if="auth.user?.avatarUrl && !avatarError" :src="auth.user!.avatarUrl" class="avatar-img" @error="avatarError = true" />
-          <span v-else>{{ auth.user?.nickname?.charAt(0) || '用' }}</span>
+          <IconLucideUser v-else />
         </div>
         <Transition name="dropdown">
           <div v-if="showDropdown" class="avatar-dropdown">
@@ -52,6 +52,8 @@
 
 <script setup lang="ts">
 import { onClickOutside } from '@vueuse/core'
+import IconLucideChevronRight from '~icons/lucide/chevron-right'
+import IconLucideUser from '~icons/lucide/user'
 
 const router = useRouter()
 const auth = useAuthStore()

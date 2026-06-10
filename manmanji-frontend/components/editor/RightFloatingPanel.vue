@@ -17,7 +17,7 @@
         <div class="panel-header">
           <span class="panel-title">{{ activePanelData?.label }}</span>
           <button class="panel-close" @click="activePanel = null">
-            <IconX :size="16" />
+            <IconLucideX class="icon-md" />
           </button>
         </div>
         <div class="panel-body">
@@ -84,6 +84,7 @@ defineProps<{ tocItems?: TocItem[] }>()
 
 const activePanel = ref<string | null>(null)
 
+import IconLucideX from '~icons/lucide/x'
 const emit = defineEmits<{ navigateToHeading: [index: number] }>()
 
 const actions = [
