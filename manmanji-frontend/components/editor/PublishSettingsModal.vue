@@ -154,8 +154,6 @@
               </select>
             </label>
 
-            <p v-if="publishError" class="form-error">{{ publishError }}</p>
-
             <div class="form-actions">
               <button type="button" class="action-btn secondary" :disabled="isSaving" @click="close">取消</button>
               <button type="submit" class="action-btn primary" :disabled="isSaving">
@@ -177,7 +175,8 @@ const props = defineProps<{ visible: boolean }>()
 const emit = defineEmits<{ 'update:visible': [value: boolean]; published: [] }>()
 
 const editor = injectEditor()
-const { publishSettings, isSaving, publishError } = editor
+const { publishSettings, isSaving } = editor
+const toast = injectToast()
 
 const showTagPicker = ref(false)
 const showGroupPicker = ref(false)
@@ -251,14 +250,14 @@ function syncToEditor() {
 
 async function handlePublish() {
   syncToEditor()
-  if (editor.titleError.value) {
-    alert(editor.titleError.value)
+  const ok = await editor.publish()
+  if (!ok) {
+    if (editor.titleError.value) toast.show(editor.titleError.value, 'error')
+    else if (editor.publishError.value) toast.show(editor.publishError.value, 'error')
     return
   }
-  const ok = await editor.publish()
-  if (!ok) return
   emit('update:visible', false)
-  alert('发布成功')
+  toast.show('发布成功', 'success')
   emit('published')
 }
 
@@ -393,15 +392,6 @@ onUnmounted(() => document.removeEventListener('click', onClickOutside))
   display: flex;
   flex-direction: column;
   gap: var(--spacing-md);
-}
-
-.form-error {
-  font-size: var(--body-sm);
-  color: var(--semantic-error);
-  padding: var(--spacing-xs) var(--spacing-sm);
-  background: #fde8e8;
-  border-radius: var(--rounded-md);
-  margin: 0;
 }
 
 .form-field {

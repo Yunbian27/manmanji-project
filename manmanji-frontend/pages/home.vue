@@ -182,7 +182,7 @@
         <div v-if="selectedArticle" class="content-inner">
           <div v-if="contentLoading" class="content-loading">加载中...</div>
           <div v-else class="article-body">
-            <p>{{ articleContent }}</p>
+            <div class="article-content" v-html="renderedHtml" />
           </div>
         </div>
         <div v-else class="content-empty">
@@ -196,6 +196,7 @@
 
 <script setup lang="ts">
 import type { StudyArticle, GroupVO } from '~/types'
+import { useMarkdownRenderer } from '~/composables/useMarkdownRenderer'
 import { onClickOutside } from '@vueuse/core'
 
 definePageMeta({ layout: 'blank' })
@@ -294,7 +295,8 @@ const filteredModalGroups = computed(() => {
   return groups.value.filter(g => g.name.toLowerCase().includes(q))
 })
 
-const articleContent = ref<string | null>(null)
+const articleRawContent = ref('')
+const { renderedHtml } = useMarkdownRenderer(articleRawContent)
 const contentLoading = ref(false)
 
 // --- Methods ---
@@ -346,9 +348,9 @@ async function selectArticle(article: StudyArticle) {
   contentLoading.value = true
   try {
     const vo = await useArticle().getArticle(article.id)
-    articleContent.value = vo.content
+    articleRawContent.value = vo.content
   } catch {
-    articleContent.value = ''
+    articleRawContent.value = ''
   } finally {
     contentLoading.value = false
   }
@@ -926,7 +928,22 @@ onClickOutside(avatarContainer, () => {
   line-height: var(--leading-body);
   color: var(--charcoal);
 }
-.article-body p { margin-bottom: var(--spacing-md); }
+.article-body :deep(h1) { font-size: var(--heading-1); font-weight: var(--weight-bold); margin: var(--spacing-lg) 0 var(--spacing-md); line-height: var(--leading-heading); color: var(--ink); }
+.article-body :deep(h2) { font-size: var(--heading-2); font-weight: var(--weight-semibold); margin: var(--spacing-lg) 0 var(--spacing-sm); line-height: var(--leading-heading); color: var(--ink); }
+.article-body :deep(h3) { font-size: var(--heading-3); font-weight: var(--weight-semibold); margin: var(--spacing-md) 0 var(--spacing-xs); line-height: var(--leading-heading); color: var(--ink); }
+.article-body :deep(h4) { font-size: var(--heading-4); font-weight: var(--weight-medium); margin: var(--spacing-md) 0 var(--spacing-xs); color: var(--ink); }
+.article-body :deep(p) { margin-bottom: var(--spacing-md); }
+.article-body :deep(ul), .article-body :deep(ol) { padding-left: 1.5em; margin-bottom: var(--spacing-md); }
+.article-body :deep(li) { margin-bottom: var(--spacing-xs); }
+.article-body :deep(blockquote) { border-left: 3px solid var(--hairline-strong); padding-left: var(--spacing-md); margin: var(--spacing-md) 0; color: var(--steel); }
+.article-body :deep(table) { width: 100%; border-collapse: collapse; margin: var(--spacing-md) 0; }
+.article-body :deep(th), .article-body :deep(td) { border: 1px solid var(--hairline); padding: var(--spacing-xs) var(--spacing-sm); text-align: left; }
+.article-body :deep(th) { background: var(--surface); font-weight: var(--weight-medium); }
+.article-body :deep(hr) { border: none; border-top: 1px solid var(--hairline); margin: var(--spacing-lg) 0; }
+.article-body :deep(img) { max-width: 100%; border-radius: var(--rounded-md); margin: var(--spacing-md) 0; }
+.article-body :deep(code) { font-family: var(--font-mono); font-size: 0.9em; background: var(--hairline-soft); padding: 2px 6px; border-radius: 3px; }
+.article-body :deep(pre) { background: #282c34; border-radius: var(--rounded-md); padding: var(--spacing-md); overflow-x: auto; margin: var(--spacing-md) 0; }
+.article-body :deep(pre code) { background: none; padding: 0; font-size: 13px; line-height: 1.6; color: #abb2bf; }
 
 /* ===== Group popover ===== */
 .group-manage-wrap { position: relative; }

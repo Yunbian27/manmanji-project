@@ -125,7 +125,6 @@
               </label>
             </div>
           </div>
-          <p v-if="publishError" class="ps-error">{{ publishError }}</p>
           <div class="ps-actions">
             <button class="ps-btn-publish" :disabled="isSaving" @click="handlePublishSettings">{{ isSaving ? '发布中...' : '发布文章' }}</button>
           </div>
@@ -193,7 +192,7 @@ watch(articleId, (id) => {
   if (id > 0) editor.loadFromServer()
 })
 
-const publishError = computed(() => editor.publishError.value ?? null)
+const toast = injectToast()
 const isSaving = computed(() => editor.isSaving.value ?? false)
 
 const showTagPicker = ref(false)
@@ -259,18 +258,14 @@ function openGroupPicker() {
   groupSearch.value = ''
   showGroupPicker.value = true
 }
-async function handleGroupSearchEnter() {
+function handleGroupSearchEnter() {
   const q = groupSearch.value.trim()
   if (!q) return
   const match = availableGroups.value.find(g => g.name === q)
   if (match) {
     toggleGroup(match)
   } else if (!local.groupNames.includes(q)) {
-    try {
-      const newId = await useArticle().createGroup(q)
-      availableGroups.value.push({ id: newId, name: q })
-      local.groupNames.push(q)
-    } catch { /* 后端报错则忽略 */ }
+    local.groupNames.push(q)
   }
   groupSearch.value = ''
 }
@@ -279,9 +274,15 @@ function removeCover() { local.coverUrl = '' }
 
 async function handlePublishSettings() {
   Object.assign(editor.publishSettings, local)
-  if (editor.titleError.value) { alert(editor.titleError.value); return }
   const ok = await editor.publish()
-  if (ok) { alert('发布成功'); router.push('/home') }
+  if (ok) {
+    toast.show('发布成功', 'success')
+    router.push('/home')
+  } else if (editor.titleError.value) {
+    toast.show(editor.titleError.value, 'error')
+  } else if (editor.publishError.value) {
+    toast.show(editor.publishError.value, 'error')
+  }
 }
 
 function onDocClick(e: MouseEvent) {
@@ -352,15 +353,6 @@ onUnmounted(() => document.removeEventListener('click', onDocClick))
   font-size: var(--body-sm);
   font-weight: var(--weight-medium);
   color: var(--steel);
-}
-
-.ps-error {
-  font-size: var(--body-sm);
-  color: var(--semantic-error);
-  padding: var(--spacing-xs) var(--spacing-sm);
-  background: #fde8e8;
-  border-radius: var(--rounded-md);
-  margin: 0;
 }
 
 .ps-actions { display: flex; justify-content: flex-end; padding-top: var(--spacing-xs); }

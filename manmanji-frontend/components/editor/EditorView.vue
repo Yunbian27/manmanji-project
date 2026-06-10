@@ -208,12 +208,6 @@
       <RightFloatingPanel :toc-items="outlineItems" @navigate-to-heading="handleNavigateToHeading" />
     </div>
 
-    <div v-if="publishError" class="editor-toast error">
-      {{ publishError }}
-      <button @click="publishError = null">
-        <IconX :size="14" />
-      </button>
-    </div>
 
     <!-- 链接插入弹窗 -->
     <Transition name="link-dialog">
@@ -254,8 +248,9 @@ import type { TocItem } from '~/types'
 const emit = defineEmits<{ close: [] }>()
 
 const editor = injectEditor()
+const toast = injectToast()
 
-const { content, title, viewMode, publishError, isSaving, lastSavedAt } = editor
+const { content, title, viewMode, isSaving, lastSavedAt } = editor
 const panelRatio = ref(0.5)
 
 // Topnav visibility — injected from write.vue
@@ -271,6 +266,16 @@ onBeforeRouteLeave((_to, _from, next) => {
   }
   next()
 })
+
+function handleBeforeUnload(e: BeforeUnloadEvent) {
+  if (content.value || title.value) {
+    e.preventDefault()
+    e.returnValue = ''
+  }
+}
+
+onMounted(() => window.addEventListener('beforeunload', handleBeforeUnload))
+onUnmounted(() => window.removeEventListener('beforeunload', handleBeforeUnload))
 
 // ── Toolbar buttons ──────────────────────────────────────────
 const formatButtons = [
@@ -412,7 +417,7 @@ async function onFileSelected(e: Event) {
     const url = await uploadImage(file)
     onInsertMarkdown('![', `](${url})`, '图片描述')
   } catch (err) {
-    alert(err instanceof Error ? err.message : '上传失败')
+    toast.show(err instanceof Error ? err.message : '上传失败', 'error')
   } finally {
     input.value = ''
   }
@@ -948,37 +953,6 @@ onMounted(() => {})
   flex-shrink: 0;
   background: var(--hairline);
 }
-
-/* ── Toast ────────────────────────────────────────────── */
-.editor-toast {
-  position: fixed;
-  bottom: 24px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-xs);
-  padding: var(--spacing-xs) var(--spacing-md);
-  border-radius: var(--rounded-md);
-  font-size: var(--body-sm);
-  font-weight: var(--weight-medium);
-  z-index: 200;
-  animation: toast-in 0.2s var(--ease);
-}
-
-.editor-toast.error { background: var(--semantic-error); color: var(--on-primary); }
-
-.editor-toast button {
-  display: flex;
-  align-items: center;
-  background: transparent;
-  border: none;
-  color: inherit;
-  cursor: pointer;
-  opacity: 0.8;
-}
-
-.editor-toast button:hover { opacity: 1; }
 
 /* ── Link Dialog ──────────────────────────────────────── */
 .link-dialog-backdrop {

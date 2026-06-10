@@ -65,6 +65,7 @@ onClickOutside(avatarContainer, () => {
 
 function onTitleInput(e: Event) {
   title.value = (e.target as HTMLInputElement).value
+  titleError.value = null
 }
 
 function handleBack() {

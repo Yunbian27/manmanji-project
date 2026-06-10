@@ -5,8 +5,13 @@
 <template>
   <div class="editor-layout">
     <slot />
+    <Toast />
   </div>
 </template>
+
+<script setup lang="ts">
+provideToast()
+</script>
 
 <style scoped>
 .editor-layout {

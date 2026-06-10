@@ -56,6 +56,8 @@ const emit = defineEmits<{
   openPublishSettings: []
 }>()
 
+const toast = injectToast()
+
 const formatButtons = [
   { icon: 'B', label: '粗体', before: '**', after: '**', placeholder: '粗体文字' },
   { icon: 'I', label: '斜体', before: '*', after: '*', placeholder: '斜体文字' },
@@ -89,7 +91,7 @@ async function onFileSelected(e: Event) {
     const url = await uploadImage(file)
     emit('format', '![', `](${url})`, '图片描述')
   } catch (err) {
-    alert(err instanceof Error ? err.message : '上传失败')
+    toast.show(err instanceof Error ? err.message : '上传失败', 'error')
   } finally {
     input.value = ''
   }
