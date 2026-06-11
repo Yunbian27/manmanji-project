@@ -543,6 +543,19 @@ function onPreviewScroll(ratio: number) {
   requestAnimationFrame(() => { isPreviewDriven = false })
 }
 
+// content 变化后等预览 DOM 更新再同步滚动，确保视觉对齐
+watch(() => content.value, () => {
+  nextTick(() => {
+    requestAnimationFrame(() => {
+      const el = textareaRef.value?.textareaEl
+      if (!el) return
+      const maxScroll = el.scrollHeight - el.clientHeight
+      if (maxScroll <= 0) return
+      previewRef.value?.syncScroll(el.scrollTop / maxScroll)
+    })
+  })
+})
+
 function onInsertMarkdown(before: string, after: string, placeholder: string) {
   textareaRef.value?.insertAtCursor(before, after, placeholder)
 }

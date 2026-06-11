@@ -63,17 +63,31 @@ export function useMarkdownRenderer(content: ComputedRef<string> | Ref<string>) 
       .replace(/"/g, '&quot;')
   }
 
-  const renderedHtml = computed(() => {
-    let html = md.render(unref(content) || '')
+  const tocIndex = [0, 0, 0, 0, 0, 0]
+
+  const renderedHtml = ref('')
+
+  function doRender(text: string) {
+    for (let i = 0; i < tocIndex.length; i++) tocIndex[i] = 0
+    let html = md.render(text || '')
     html = html.replace(/<(h[123456])>/g, (_, tag) => {
       const level = parseInt(tag[1]!) as 1 | 2 | 3 | 4 | 5 | 6
       const id = `heading-${tocIndex[level - 1]!++}`
       return `<${tag} id="${id}">`
     })
-    return html
+    renderedHtml.value = html
+  }
+
+  doRender(unref(content) || '')
+
+  watch(() => unref(content), (text) => {
+    doRender(text || '')
   })
 
-  const tocIndex = [0, 0, 0, 0, 0, 0]
+  // 异步插件加载完成后重新渲染，确保首次渲染就包含插件效果
+  initMdPlugins(md).then(() => {
+    doRender(unref(content) || '')
+  })
 
   const tocItems = computed<TocItem[]>(() => {
     const items: TocItem[] = []

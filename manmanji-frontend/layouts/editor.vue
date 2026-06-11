@@ -15,7 +15,7 @@ provideToast()
 
 <style scoped>
 .editor-layout {
-  height: 100vh; overflow: hidden;
+  height: 100%; overflow: hidden;
   background: var(--surface-soft);
 }
 </style>

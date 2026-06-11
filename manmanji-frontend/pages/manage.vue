@@ -190,7 +190,7 @@ onMounted(async () => {
 <style scoped>
 /* ===== Layout ===== */
 .body {
-  display: flex; height: 100vh; overflow: hidden;
+  display: flex; height: 100%; overflow: hidden;
   background: var(--surface-soft);
 }
 

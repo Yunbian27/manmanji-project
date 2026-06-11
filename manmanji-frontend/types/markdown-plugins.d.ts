@@ -18,3 +18,8 @@ declare module 'markdown-it-footnote' {
   const plugin: (md: any) => void
   export default plugin
 }
+
+declare module 'markdown-it-mark' {
+  const plugin: (md: any) => void
+  export default plugin
+}

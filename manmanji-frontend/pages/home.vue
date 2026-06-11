@@ -405,8 +405,7 @@ onMounted(() => {
 /* ===== Root ===== */
 .body {
   display: flex;
-  height: 100vh;
-  overflow: hidden;
+  min-height: 100vh;
   background: var(--surface-soft);
 }
 
@@ -416,6 +415,10 @@ onMounted(() => {
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  z-index: 1;
   background: var(--surface);
   border-right: 1px solid var(--hairline);
 }
@@ -595,14 +598,14 @@ onMounted(() => {
 .content-area {
   flex: 1;
   min-width: 0;
-  display: flex;
-  flex-direction: column;
   background: var(--canvas);
 }
 
 /* Content topbar */
 .content-topbar {
-  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 1;
   height: var(--topbar-height);
   display: flex;
   align-items: center;
@@ -758,8 +761,6 @@ onMounted(() => {
 
 /* Content body */
 .content-body {
-  flex: 1;
-  overflow-y: auto;
   display: flex;
   justify-content: center;
   padding: var(--spacing-xxxl) var(--spacing-xxl);
@@ -909,17 +910,12 @@ onMounted(() => {
   padding: var(--spacing-md) 0;
 }
 
-/* ===== Scrollbar auto-hide ===== */
-.sidebar-scroll::-webkit-scrollbar,
-.content-body::-webkit-scrollbar { width: 5px; }
-.sidebar-scroll::-webkit-scrollbar-track,
-.content-body::-webkit-scrollbar-track { background: transparent; }
-.sidebar-scroll::-webkit-scrollbar-thumb,
-.content-body::-webkit-scrollbar-thumb { background: transparent; border-radius: 3px; }
-.sidebar-scroll.scrolling::-webkit-scrollbar-thumb,
-.content-body.scrolling::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); }
-.sidebar-scroll::-webkit-scrollbar-thumb:hover,
-.content-body::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.25); }
+/* ===== Scrollbar auto-hide（仅侧边栏）===== */
+.sidebar-scroll::-webkit-scrollbar { width: 5px; }
+.sidebar-scroll::-webkit-scrollbar-track { background: transparent; }
+.sidebar-scroll::-webkit-scrollbar-thumb { background: transparent; border-radius: 3px; }
+.sidebar-scroll.scrolling::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); }
+.sidebar-scroll::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.25); }
 
 /* ===== Responsive ===== */
 @media (max-width: 767px) {
