@@ -11,19 +11,19 @@
       <nav class="sidebar-menu">
         <button
           class="sidebar-menu-item"
+          :class="{ active: activeTab === 'profile' }"
+          @click="activeTab = 'profile'"
+        >
+          <IconLucideUser />
+          个人资料
+        </button>
+        <button
+          class="sidebar-menu-item"
           :class="{ active: activeTab === 'articles' }"
           @click="activeTab = 'articles'"
         >
           <IconLucideFileText />
           内容管理
-        </button>
-        <button
-          class="sidebar-menu-item"
-          :class="{ active: activeTab === 'profile' }"
-          @click="activeTab = 'profile'"
-        >
-          <IconLucideUser />
-          个人设置
         </button>
       </nav>
 
@@ -72,7 +72,7 @@
             </div>
           </template>
 
-          <!-- ── 个人设置 ── -->
+          <!-- ── 个人资料 ── -->
           <div v-if="activeTab === 'profile'" class="profile-form">
             <div class="form-group">
               <label class="form-label">头像</label>
@@ -108,7 +108,9 @@ const auth = useAuthStore()
 const avatarChar = computed(() => auth.user?.nickname?.charAt(0) || '慢')
 
 // ── Tab ──
-const activeTab = ref<'articles' | 'profile'>('articles')
+const route = useRoute()
+const activeTab = ref<'articles' | 'profile'>((route.query.tab as string) === 'profile' ? 'profile' : 'articles')
+watch(() => route.query.tab, (v) => { activeTab.value = v === 'profile' ? 'profile' : 'articles' })
 
 // ── Articles ──
 const articles = ref<StudyArticle[]>([])

@@ -61,6 +61,14 @@ pre, code, kbd, samp { font-family: var(--font-mono); }
   border-radius: var(--rounded-md);
   overflow: hidden;
   margin: var(--spacing-sm) 0;
+  outline: none !important;
+  border: none !important;
+}
+
+.code-block pre,
+.code-block pre code {
+  outline: none !important;
+  border: none !important;
 }
 
 .code-block-header {

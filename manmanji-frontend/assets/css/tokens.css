@@ -26,6 +26,16 @@
   --on-dark:            #ffffff;
   --on-dark-muted:      #a4a097;
 
+  /* === 卡片色调（DESIGN.md card-tint-*） === */
+  --tint-peach:     #ffe8d4;
+  --tint-rose:      #fde0ec;
+  --tint-mint:      #d9f3e1;
+  --tint-lavender:  #e6e0f5;
+  --tint-sky:       #dcecfa;
+  --tint-yellow:    #fef7d6;
+  --tint-cream:     #f8f5e8;
+  --tint-gray:      #f0eeec;
+
   /* === 语义色 === */
   --semantic-error:     #e03131;
 
@@ -34,6 +44,8 @@
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
 
   /* === 字号 === */
+  --heading-1: 40px;
+  --heading-2: 32px;
   --heading-3: 28px;
   --heading-4: 22px;
   --heading-5: 18px;

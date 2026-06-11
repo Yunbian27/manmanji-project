@@ -1,0 +1,67 @@
+/* ============================================================
+ * markdown-content.css — Markdown 渲染内容统一样式
+ * 供文章阅读页和编辑器预览区共用
+ * ============================================================ */
+
+.markdown-body {
+  font-size: var(--body-md);
+  line-height: 1.75;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  color: var(--ink);
+}
+
+/* ── 标题 ── */
+.markdown-body h1 { font-size: var(--heading-2); font-weight: var(--weight-semibold); margin: var(--spacing-lg) 0 var(--spacing-sm); line-height: var(--leading-heading); color: var(--ink); }
+.markdown-body h2 { font-size: var(--heading-3); font-weight: var(--weight-semibold); margin: var(--spacing-lg) 0 var(--spacing-sm); line-height: var(--leading-heading); color: var(--ink); }
+.markdown-body h3 { font-size: var(--heading-4); font-weight: var(--weight-semibold); margin: var(--spacing-md) 0 var(--spacing-xs); line-height: var(--leading-heading); color: var(--ink); }
+.markdown-body h4 { font-size: var(--heading-5); font-weight: var(--weight-medium); margin: var(--spacing-md) 0 var(--spacing-xs); color: var(--ink); }
+.markdown-body h5,
+.markdown-body h6 { font-size: var(--body-md); font-weight: var(--weight-semibold); margin: var(--spacing-md) 0 var(--spacing-xs); color: var(--ink); }
+
+/* ── 段落 ── */
+.markdown-body p { margin-bottom: var(--spacing-md); }
+
+/* ── 引用块 ── */
+.markdown-body blockquote {
+  border-left: 3px solid var(--primary);
+  padding: var(--spacing-sm) var(--spacing-md);
+  margin: var(--spacing-md) 0;
+  background: var(--tint-lavender);
+  border-radius: 0 var(--rounded-sm) var(--rounded-sm) 0;
+}
+
+/* ── 列表 ── */
+.markdown-body ul,
+.markdown-body ol { padding-left: 1.5em; margin-bottom: var(--spacing-md); }
+.markdown-body li { margin-bottom: var(--spacing-xs); }
+
+/* ── 表格 ── */
+.markdown-body table { width: 100%; border-collapse: collapse; margin: var(--spacing-md) 0; }
+.markdown-body th,
+.markdown-body td { border: 1px solid var(--hairline); padding: var(--spacing-xs) var(--spacing-sm); text-align: left; }
+.markdown-body th { background: var(--surface); font-weight: var(--weight-medium); }
+
+/* ── 分割线 ── */
+.markdown-body hr { border: none; border-top: 1px solid var(--hairline); margin: var(--spacing-lg) 0; }
+
+/* ── 图片 ── */
+.markdown-body img { max-width: 100%; border-radius: var(--rounded-md); margin: var(--spacing-md) 0; }
+
+/* ── 链接 ── */
+.markdown-body a { color: var(--link-blue); }
+
+/* ── 行内代码 ── */
+.markdown-body code {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  background: var(--tint-rose);
+  color: #c7254e;
+  padding: 3px 6px;
+  border-radius: var(--rounded-xs);
+  border: 1px solid rgba(199, 37, 78, 0.12);
+}
+
+/* ── 代码块 ── */
+.markdown-body pre { background: #282c34; border: none !important; outline: none !important; border-radius: var(--rounded-md); padding: var(--spacing-md); overflow-x: auto; margin: var(--spacing-md) 0; }
+.markdown-body pre code { background: none; padding: 0; font-size: 13px; line-height: 1.6; color: #abb2bf; }

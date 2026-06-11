@@ -21,7 +21,11 @@
               <p class="dropdown-username">{{ auth.user?.username }}</p>
             </div>
           </div>
-          <button class="dropdown-item" @click="router.push('/manage')">
+          <button class="dropdown-item" @click="router.push('/manage?tab=profile')">
+            <IconLucideUser />
+            个人资料
+          </button>
+          <button class="dropdown-item" @click="router.push('/manage?tab=articles')">
             <IconLucideFileText />
             内容管理
           </button>

@@ -1,11 +1,14 @@
 import MarkdownIt from 'markdown-it'
 import hljs from 'highlight.js'
+import mermaid from 'mermaid'
+import { emojiPlugin, initMdPlugins } from './md-plugin-loader'
 import type { TocItem } from '~/types'
 import type { ComputedRef } from 'vue'
 
+mermaid.initialize({ startOnLoad: false, theme: 'default' })
+
 /**
- * Markdown 渲染器 — 从 ArticleBody.vue 提取的独立 composable
- * 供文章阅读页和编辑器预览区复用
+ * Markdown 渲染器
  */
 export function useMarkdownRenderer(content: ComputedRef<string> | Ref<string>) {
   const md = new MarkdownIt({
@@ -15,10 +18,29 @@ export function useMarkdownRenderer(content: ComputedRef<string> | Ref<string>) 
     breaks: true,
   })
 
+  md.use(emojiPlugin)
+
+  // 链接新窗口打开
+  const defaultLinkRender = md.renderer.rules.link_open || ((tokens, idx, options, _env, self) => self.renderToken(tokens, idx, options))
+  md.renderer.rules.link_open = (tokens, idx, options, env, self) => {
+    const token = tokens[idx]!
+    token.attrSet('target', '_blank')
+    token.attrSet('rel', 'noopener noreferrer')
+    return defaultLinkRender(tokens, idx, options, env, self)
+  }
+
+  // CJS plugins loaded async — available on next tick
+  initMdPlugins(md)
+
   md.renderer.rules.fence = (tokens, idx) => {
     const token = tokens[idx]!
     const lang = token.info.trim() || 'text'
     const code = token.content
+
+    if (lang === 'mermaid') {
+      return `<div class="mermaid">${escapeHtml(code)}</div>`
+    }
+
     const highlighted = highlightCode(code, lang)
     return `<div class="code-block"><div class="code-block-header"><span class="code-lang">${lang}</span><button class="code-copy" onclick="navigator.clipboard.writeText(this.closest('.code-block').querySelector('code').textContent);var b=this;b.textContent='已复制';setTimeout(function(){b.textContent='复制代码'},2000)">复制代码</button></div><pre><code class="hljs">${highlighted}</code></pre></div>`
   }
@@ -43,28 +65,37 @@ export function useMarkdownRenderer(content: ComputedRef<string> | Ref<string>) 
 
   const renderedHtml = computed(() => {
     let html = md.render(unref(content) || '')
-    html = html.replace(/<(h[23456])>/g, (_, tag) => {
-      const level = parseInt(tag[1]!) as 2 | 3 | 4 | 5 | 6
-      const id = `heading-${tocIndex[level - 2]!++}`
+    html = html.replace(/<(h[123456])>/g, (_, tag) => {
+      const level = parseInt(tag[1]!) as 1 | 2 | 3 | 4 | 5 | 6
+      const id = `heading-${tocIndex[level - 1]!++}`
       return `<${tag} id="${id}">`
     })
     return html
   })
 
-  const tocIndex = [0, 0, 0, 0, 0]
+  const tocIndex = [0, 0, 0, 0, 0, 0]
 
   const tocItems = computed<TocItem[]>(() => {
     const items: TocItem[] = []
-    const regex = /<(h[23456])[^>]*id="([^"]*)"[^>]*>(.*?)<\/h[23456]>/gi
+    const regex = /<(h[123456])[^>]*id="([^"]*)"[^>]*>(.*?)<\/h[123456]>/gi
     let match: RegExpExecArray | null
     const html = renderedHtml.value
     while ((match = regex.exec(html)) !== null) {
-      const level = parseInt(match[1]![1]!) as 2 | 3 | 4 | 5 | 6
+      const level = parseInt(match[1]![1]!) as 1 | 2 | 3 | 4 | 5 | 6
       const id = match[2]!
       const text = match[3]!.replace(/<[^>]*>/g, '')
       items.push({ id, text, level })
     }
     return items
+  })
+
+  watch(renderedHtml, async () => {
+    await nextTick()
+    try {
+      await mermaid.run({ querySelector: '.mermaid' })
+    } catch {
+      // mermaid 渲染失败时忽略
+    }
   })
 
   return { renderedHtml, tocItems }

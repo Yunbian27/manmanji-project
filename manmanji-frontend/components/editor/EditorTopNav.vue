@@ -35,14 +35,28 @@
         <Transition name="dropdown">
           <div v-if="showDropdown" class="avatar-dropdown">
             <div class="dropdown-user">
-              <p class="dropdown-nickname">{{ auth.user?.nickname }}</p>
-              <p class="dropdown-username">{{ auth.user?.username }}</p>
+              <img v-if="auth.user?.avatarUrl && !avatarError" :src="auth.user!.avatarUrl" class="dropdown-avatar" @error="avatarError = true" />
+              <span v-else class="dropdown-avatar dropdown-avatar--fallback">
+                <IconLucideUser />
+              </span>
+              <div>
+                <p class="dropdown-nickname">{{ auth.user?.nickname }}</p>
+                <p class="dropdown-username">{{ auth.user?.username }}</p>
+              </div>
             </div>
-            <button class="dropdown-item" @click="router.push('/manage')">
+            <button class="dropdown-item" @click="router.push('/manage?tab=profile')">
+              <IconLucideUser />
+              个人资料
+            </button>
+            <button class="dropdown-item" @click="router.push('/manage?tab=articles')">
+              <IconLucideFileText />
               内容管理
             </button>
             <div class="dropdown-divider" />
-            <button class="dropdown-item dropdown-item-danger" @click="handleLogout">退出登录</button>
+            <button class="dropdown-item dropdown-item-danger" @click="handleLogout">
+              <IconLucideLogOut />
+              退出登录
+            </button>
           </div>
         </Transition>
       </div>
@@ -53,6 +67,8 @@
 <script setup lang="ts">
 import { onClickOutside } from '@vueuse/core'
 import IconLucideChevronRight from '~icons/lucide/chevron-right'
+import IconLucideFileText from '~icons/lucide/file-text'
+import IconLucideLogOut from '~icons/lucide/log-out'
 import IconLucideUser from '~icons/lucide/user'
 
 const router = useRouter()
@@ -205,18 +221,34 @@ async function handleLogout() {
 
 .avatar-dropdown {
   position: absolute;
-  top: calc(100% + 8px);
+  top: calc(100% + 16px);
   right: 0;
-  min-width: 160px;
-  padding: var(--spacing-xs);
+  min-width: 280px;
+  padding: var(--spacing-md);
   background: var(--canvas);
   border: 1px solid var(--hairline);
-  border-radius: var(--rounded-xl);
-  box-shadow: rgba(15, 15, 15, 0.08) 0px 4px 12px 0px;
+  border-radius: var(--rounded-lg);
+  box-shadow: rgba(15, 15, 15, 0.16) 0px 16px 48px -8px;
   z-index: var(--z-nav);
 }
 
-.dropdown-user { padding: 8px 12px; }
+.dropdown-user {
+  display: flex; align-items: center; gap: var(--spacing-sm);
+  padding: 16px 20px;
+}
+
+.dropdown-avatar {
+  width: 36px; height: 36px;
+  border-radius: var(--rounded-full);
+  flex-shrink: 0;
+  object-fit: cover;
+}
+
+.dropdown-avatar--fallback {
+  background: var(--surface);
+  color: var(--ink);
+  display: flex; align-items: center; justify-content: center;
+}
 
 .dropdown-nickname {
   font-size: var(--body-sm);
@@ -236,13 +268,13 @@ async function handleLogout() {
 .dropdown-divider {
   height: 1px;
   background: var(--hairline);
-  margin: 4px 0;
+  margin: 8px 0;
 }
 
 .dropdown-item {
-  display: block;
+  display: flex; align-items: center; gap: var(--spacing-xs);
   width: 100%;
-  padding: 8px 12px;
+  padding: 12px 20px;
   border: none;
   border-radius: var(--rounded-sm);
   background: transparent;

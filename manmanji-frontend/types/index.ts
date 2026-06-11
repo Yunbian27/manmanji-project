@@ -100,7 +100,7 @@ export interface ArticlePublishDTO {
 export interface TocItem {
   id: string
   text: string
-  level: 2 | 3 | 4 | 5 | 6
+  level: 1 | 2 | 3 | 4 | 5 | 6
 }
 
 // ---------- 书房（study） ----------

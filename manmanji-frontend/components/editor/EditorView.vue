@@ -378,6 +378,7 @@ const showMoreMenu = ref(false)
 const moreDropdownRef = ref<HTMLElement | null>(null)
 
 const moreItems = [
+  { icon: '<>', label: '行内代码', before: '`', after: '`', placeholder: '代码' },
   { icon: '⊞', label: '表格', before: '\n| 列1 | 列2 |\n| --- | --- |\n| ', after: ' | ', placeholder: '内容' },
   { icon: '—', label: '分割线', before: '\n---\n', after: '', placeholder: '' },
   { icon: '❝', label: '引用', before: '\n> ', after: '', placeholder: '引用内容' },

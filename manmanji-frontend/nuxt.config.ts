@@ -22,9 +22,11 @@ export default defineNuxtConfig({
   // 加载顺序：tokens(变量定义) → base(重置) → transitions(动画)
   // --------------------------------------------------
   css: [
-    '~/assets/css/tokens.css',       // CSS 变量定义（颜色、字号、间距等）
-    '~/assets/css/base.css',         // 全局基础样式和 reset
-    '~/assets/css/transitions.css',  // Vue 过渡动画
+    '~/assets/css/tokens.css',          // CSS 变量定义（颜色、字号、间距等）
+    '~/assets/css/base.css',            // 全局基础样式和 reset
+    '~/assets/css/markdown-content.css', // Markdown 渲染统一样式
+    'katex/dist/katex.min.css',         // KaTeX 数学公式样式
+    '~/assets/css/transitions.css',     // Vue 过渡动画
     'highlight.js/styles/atom-one-dark.css',
   ],
 
@@ -89,6 +91,7 @@ export default defineNuxtConfig({
       },
     },
   },
+
 
   // --------------------------------------------------
   // vite: 构建工具配置

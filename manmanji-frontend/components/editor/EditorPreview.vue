@@ -6,7 +6,7 @@
     }]"
     @scroll="onScroll"
   >
-    <div class="article-content" v-html="renderedHtml" />
+    <div class="markdown-body" v-html="renderedHtml" />
   </div>
 </template>
 
@@ -65,17 +65,12 @@ defineExpose({ syncScroll, scrollToHeading })
   background: transparent;
 }
 
-.article-content {
-  overflow-wrap: break-word;
-  word-break: break-word;
-}
-
 .editor-preview--centered {
   display: flex;
   justify-content: center;
 }
 
-.editor-preview--centered .article-content {
+.editor-preview--centered .markdown-body {
   width: 100%;
   max-width: 720px;
 }
