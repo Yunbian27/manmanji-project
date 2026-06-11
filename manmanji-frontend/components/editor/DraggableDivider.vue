@@ -37,7 +37,10 @@ function startDrag(e: MouseEvent) {
   // Max and min right-panel width: derived from the same viewport-responsive
   // formula used in EditorView CSS, so the right panel never squeezes the
   // editor card beyond its design-intended minimum.
-  const maxWidth = ratioToPx(1)
+  const maxWidth = Math.min(
+    ratioToPx(1),
+    container.clientWidth / 2 - 51.5
+  )
   const minWidth = MIN_RIGHT
   let rafId = 0
 
@@ -65,7 +68,7 @@ function startDrag(e: MouseEvent) {
     document.body.style.userSelect = ''
 
     const finalPx = parseFloat(container.style.getPropertyValue('--panel-px')) || startWidth
-    emit('update:splitRatio', Math.max(0, Math.min(1, finalPx / (maxWidth + MIN_LEFT))))
+    emit('update:splitRatio', Math.max(0, Math.min(1, finalPx / maxWidth)))
   }
 
   window.addEventListener('mousemove', onMove)

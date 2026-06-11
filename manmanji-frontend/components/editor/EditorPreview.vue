@@ -72,6 +72,6 @@ defineExpose({ syncScroll, scrollToHeading })
 
 .editor-preview--centered .markdown-body {
   width: 100%;
-  max-width: 720px;
+  max-width: max(calc(50% - 24.5px), calc(50vw - 92.5px));
 }
 </style>

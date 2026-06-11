@@ -143,7 +143,7 @@
             v-if="viewMode !== 'preview'"
             :class="['pane-edit', { 'pane-edit--centered': viewMode === 'edit' }]"
           >
-            <div class="pane-edit-inner">
+            <div ref="paneEditInnerRef" class="pane-edit-inner">
               <EditorTextarea
                 ref="textareaRef"
                 @scroll="onTextareaScroll"
@@ -475,11 +475,16 @@ function handleNavigateToHeading(index: number) {
   const pos = findNthHeading(content.value, index)
   if (pos < 0) return
 
-  // scroll textarea
-  const ta = textareaRef.value?.textareaEl
-  if (ta) {
-    const linesBefore = content.value.substring(0, pos).split('\n').length
-    ta.scrollTop = Math.max(0, (linesBefore - 2) * 22)
+  // scroll editor
+  if (viewMode.value === 'edit') {
+    textareaRef.value?.scrollToPos(pos)
+  } else {
+    const scrollEl = textareaRef.value?.scrollDOM
+    if (scrollEl) {
+      const linesBefore = content.value.substring(0, pos).split('\n').length
+      const lineHeight = 28 // 16px * 1.75
+      scrollEl.scrollTop = Math.max(0, (linesBefore - 2) * lineHeight)
+    }
   }
 
   // scroll preview
@@ -517,7 +522,8 @@ function closeLinkDialog() {
 interface TextareaExposed {
   syncScroll: (ratio: number) => void
   insertAtCursor: (before: string, after: string, placeholder: string) => void
-  textareaEl: HTMLTextAreaElement | null
+  scrollToPos: (pos: number) => void
+  scrollDOM: HTMLElement | null
   selectionState: { start: number; end: number; text: string; isCollapsed: boolean }
   getCursorLineCol: () => { row: number; col: number }
 }
@@ -547,7 +553,7 @@ function onPreviewScroll(ratio: number) {
 watch(() => content.value, () => {
   nextTick(() => {
     requestAnimationFrame(() => {
-      const el = textareaRef.value?.textareaEl
+      const el = textareaRef.value?.scrollDOM
       if (!el) return
       const maxScroll = el.scrollHeight - el.clientHeight
       if (maxScroll <= 0) return
@@ -940,7 +946,26 @@ onMounted(() => {})
 }
 
 .pane-edit--centered .pane-edit-inner {
-  max-width: 720px;
+  max-width: none;
+  overflow-y: auto;
+  display: flex;
+  justify-content: center;
+}
+
+.pane-edit--centered :deep(.editor-textarea-wrap) {
+  max-width: max(calc(50% - 0.5px), calc(50vw - 44.5px));
+  width: 100%;
+  height: auto;
+  min-height: 100%;
+  overflow: visible;
+}
+
+.pane-edit--centered :deep(.cm-editor) {
+  height: auto !important;
+}
+
+.pane-edit--centered :deep(.cm-scroller) {
+  overflow: visible !important;
 }
 
 .pane-preview {
@@ -1145,5 +1170,7 @@ onMounted(() => {})
   .editor-body:has(.slide-panel) { padding-right: calc(var(--panel-px, var(--panel-width)) + 56px); }
   .card-divider { right: calc(var(--panel-px, var(--panel-width)) + 56px); }
   .pane-edit--centered .pane-edit-inner { max-width: none; }
+  .pane-edit--centered :deep(.editor-textarea-wrap) { max-width: none; }
+  .editor-preview--centered .markdown-body { max-width: none; }
 }
 </style>
