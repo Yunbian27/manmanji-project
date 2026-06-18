@@ -56,7 +56,8 @@ CREATE TABLE IF NOT EXISTS articles (
 
     created_at          TIMESTAMP NOT NULL DEFAULT NOW(),                        -- 创建时间
     updated_at          TIMESTAMP NOT NULL DEFAULT NOW(),                        -- 更新时间
-    published_at        TIMESTAMP                                                -- 发布时间
+    published_at        TIMESTAMP,                                               -- 发布时间
+    review_reason       TEXT                                                      -- 审核意见/驳回理由
 );
 
 -- ============================================

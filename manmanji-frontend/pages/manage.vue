@@ -1,6 +1,6 @@
 <!--
   pages/manage.vue — 个人管理页面
-  左侧菜单 + 右侧内容，复刻 /home 配色
+  左侧菜单 + 右侧内容，视觉风格对齐 admin.vue
 -->
 <template>
   <div class="body">
@@ -8,29 +8,31 @@
     <aside class="sidebar">
       <SidebarHeader />
 
-      <nav class="sidebar-menu">
-        <button
-          class="sidebar-menu-item"
-          :class="{ active: activeTab === 'profile' }"
-          @click="activeTab = 'profile'"
-        >
-          <IconLucideUser />
-          个人资料
-        </button>
-        <button
-          class="sidebar-menu-item"
-          :class="{ active: activeTab === 'articles' }"
-          @click="activeTab = 'articles'"
-        >
-          <IconLucideFileText />
-          内容管理
-        </button>
-      </nav>
+      <div class="sidebar-scroll">
+        <nav class="sidebar-menu">
+          <button
+            class="sidebar-menu-item"
+            :class="{ active: activeTab === 'profile' }"
+            @click="activeTab = 'profile'"
+          >
+            <IconLucideUser />
+            个人资料
+          </button>
+          <button
+            class="sidebar-menu-item"
+            :class="{ active: activeTab === 'articles' }"
+            @click="activeTab = 'articles'"
+          >
+            <IconLucideFileText />
+            内容管理
+          </button>
+        </nav>
 
-      <button class="sidebar-back" @click="router.push('/home')">
-        <IconLucideArrowLeft />
-        返回知识库
-      </button>
+        <button class="sidebar-back" @click="router.push('/home')">
+          <IconLucideArrowLeft />
+          返回知识库
+        </button>
+      </div>
     </aside>
 
     <!-- ===== Content Area ===== -->
@@ -43,32 +45,83 @@
               <button
                 v-for="f in statusFilters"
                 :key="f.key"
-                class="pill-filter"
+                class="segmented-tab"
                 :class="{ active: articleFilter === f.key }"
                 @click="articleFilter = f.key"
               >
                 {{ f.label }}
-                <span class="pill-count" v-if="f.count != null">{{ f.count }}</span>
               </button>
             </div>
 
-            <div class="article-list">
-              <div v-for="a in filteredArticles" :key="a.id" class="article-row">
-                <span class="article-title">{{ a.title || '未命名' }}</span>
-                <div class="article-meta">
-                  <span class="badge" :class="statusBadgeClass(a.status)">{{ statusLabel(a.status) }}</span>
-                  <span class="badge" :class="visibilityBadgeClass(a.visibility)">{{ visibilityLabel(a.visibility) }}</span>
+            <div v-if="articles.length > 0" class="manage-list">
+              <div v-for="a in articles" :key="a.id" class="manage-row">
+                <!-- 缩略图 -->
+                <div class="manage-thumb">
+                  <img v-if="a.coverUrl" :src="a.coverUrl" alt="" @error="onThumbError" />
+                  <span class="manage-thumb-placeholder" :class="{ show: !a.coverUrl }">未设置封面</span>
                 </div>
-                <span class="article-updated">{{ a.updatedAt }}</span>
-                <div class="article-actions">
-                  <button class="btn-ghost-sm" @click="editArticle(a.id)">编辑</button>
-                  <button class="btn-ghost-sm danger" @click="handleDelete(a)">删除</button>
+
+                <div class="manage-body">
+                  <p class="manage-title">{{ a.title || '未命名' }}</p>
+                  <p class="manage-summary">{{ a.summary || '暂无摘要' }}</p>
+                  <p v-if="a.status === 'REJECTED' && a.reviewReason" class="manage-review-reason">驳回理由：{{ a.reviewReason }}</p>
+                  <p class="manage-meta">
+                    <span :class="statusBadgeClass(a.status)">{{ statusLabel(a.status) }}</span>
+                    <span class="meta-dot">·</span>
+                    <span>{{ visibilityLabel(a.visibility) }}</span>
+                    <span class="meta-dot">·</span>
+                    <span>阅 {{ a.viewCount }}</span>
+                    <span class="meta-dot">·</span>
+                    <span>赞 {{ a.likeCount }}</span>
+                    <span class="meta-dot">·</span>
+                    <span>评 {{ a.commentCount }}</span>
+                    <span class="meta-dot">·</span>
+                    <span>藏 {{ a.bookmarkCount }}</span>
+                    <span class="meta-dot">·</span>
+                    {{ formatTime(a.updatedAt) }}
+                  </p>
+                </div>
+
+                <div class="manage-actions">
+                  <button class="btn-detail" @click="editArticle(a.id)">编辑</button>
+                  <button class="btn-detail danger" @click="handleDelete(a)">删除</button>
                 </div>
               </div>
-              <div v-if="articles.length === 0" class="empty-state">
-                <p class="empty-state-text">暂无文章</p>
-                <button class="btn-ghost-sm" @click="router.push('/write')">去写一篇</button>
-              </div>
+            </div>
+
+            <div v-else class="empty-state">
+              <p class="empty-state-text">暂无文章</p>
+              <button class="btn-ghost" @click="router.push('/write')">去写一篇</button>
+            </div>
+
+            <!-- ── 分页 ── -->
+            <div class="pagination">
+              <span class="page-total">共 {{ totalCount }} 条</span>
+              <button
+                class="page-btn"
+                :disabled="currentPage <= 1"
+                @click="goToPage(currentPage - 1)"
+              >
+                上一页
+              </button>
+              <template v-for="(p, i) in visiblePages" :key="i">
+                <span v-if="p.value === null" class="page-ellipsis">…</span>
+                <button
+                  v-else
+                  class="page-btn"
+                  :class="{ active: p.value === currentPage }"
+                  @click="goToPage(p.value)"
+                >
+                  {{ p.label }}
+                </button>
+              </template>
+              <button
+                class="page-btn"
+                :disabled="currentPage >= totalPages"
+                @click="goToPage(currentPage + 1)"
+              >
+                下一页
+              </button>
             </div>
           </template>
 
@@ -78,7 +131,7 @@
               <label class="form-label">头像</label>
               <div class="avatar-upload-row">
                 <div class="avatar-preview">{{ avatarChar }}</div>
-                <span class="btn-ghost-sm">上传头像</span>
+                <span class="btn-ghost">上传头像</span>
               </div>
             </div>
             <div class="form-group">
@@ -95,12 +148,12 @@
 </template>
 
 <script setup lang="ts">
-import type { StudyArticle } from '~/types'
+import type { ArticleManage } from '~/types'
 import IconLucideFileText from '~icons/lucide/file-text'
 import IconLucideUser from '~icons/lucide/user'
 import IconLucideArrowLeft from '~icons/lucide/arrow-left'
 
-definePageMeta({ layout: 'blank' })
+definePageMeta({ layout: 'blank', middleware: 'role-guard' })
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -113,46 +166,74 @@ const activeTab = ref<'articles' | 'profile'>((route.query.tab as string) === 'p
 watch(() => route.query.tab, (v) => { activeTab.value = v === 'profile' ? 'profile' : 'articles' })
 
 // ── Articles ──
-const articles = ref<StudyArticle[]>([])
+const articles = ref<ArticleManage[]>([])
 const articleFilter = ref('ALL')
+const currentPage = ref(1)
+const totalCount = ref(0)
+const pageSize = 10
 
-const statusFilters = computed(() => {
-  const list = articles.value
-  return [
-    { key: 'ALL', label: '全部', count: list.length },
-    { key: 'DRAFT', label: '草稿', count: list.filter(a => a.status === 'DRAFT').length },
-    { key: 'PUBLISHED', label: '已发布', count: list.filter(a => a.status === 'PUBLISHED').length },
-    { key: 'REVIEWING', label: '审核中', count: list.filter(a => a.status === 'REVIEWING').length },
-  ]
+const totalPages = computed(() => Math.max(1, Math.ceil(totalCount.value / pageSize)))
+
+interface PageItem {
+  label: string
+  value: number | null
+}
+
+const visiblePages = computed<PageItem[]>(() => {
+  const total = totalPages.value
+  const cur = currentPage.value
+  if (total <= 7) return Array.from({ length: total }, (_, i) => ({ label: String(i + 1), value: i + 1 }))
+  const pages: PageItem[] = [{ label: '1', value: 1 }]
+  if (cur > 3) pages.push({ label: '…', value: null })
+  const start = Math.max(2, cur - 1)
+  const end = Math.min(total - 1, cur + 1)
+  for (let i = start; i <= end; i++) pages.push({ label: String(i), value: i })
+  if (cur < total - 2) pages.push({ label: '…', value: null })
+  pages.push({ label: String(total), value: total })
+  return pages
 })
 
-const filteredArticles = computed(() => {
-  if (articleFilter.value === 'ALL') return articles.value
-  return articles.value.filter(a => a.status === articleFilter.value)
-})
+const statusFilters = computed(() => [
+  { key: 'ALL', label: '全部' },
+  { key: 'PUBLISHED', label: '已发布' },
+  { key: 'REVIEWING', label: '审核中' },
+  { key: 'REJECTED', label: '未通过' },
+  { key: 'DRAFT', label: '草稿' },
+])
+
+function formatTime(iso: string) {
+  if (!iso) return ''
+  const d = new Date(iso)
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日 ${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
 
 function statusLabel(s: string) {
-  const map: Record<string, string> = { DRAFT: '草稿', PUBLISHED: '已发布', REVIEWING: '审核中', REJECTED: '已退回', PRIVATE: '私密', BOOKMARKED: '收藏' }
+  const map: Record<string, string> = { DRAFT: '草稿', PUBLISHED: '已发布', REVIEWING: '审核中', REJECTED: '未通过', PRIVATE: '私密' }
   return map[s] || s
 }
 
 function statusBadgeClass(s: string) {
-  return { DRAFT: 'badge-draft', PUBLISHED: 'badge-published', REVIEWING: 'badge-reviewing', REJECTED: 'badge-draft' }[s] || 'badge-draft'
+  const map: Record<string, string> = { DRAFT: 'status-draft', PUBLISHED: 'status-published', REVIEWING: 'status-reviewing', REJECTED: 'status-rejected' }
+  return map[s] || 'status-draft'
 }
 
 function visibilityLabel(v?: string) {
   return v === 'PRIVATE' ? '私密' : '公开'
 }
 
-function visibilityBadgeClass(v?: string) {
-  return v === 'PRIVATE' ? 'badge-private' : 'badge-public'
+function onThumbError(e: Event) {
+  const img = e.target as HTMLImageElement
+  img.style.display = 'none'
+  const placeholder = img.nextElementSibling as HTMLElement
+  if (placeholder) placeholder.classList.add('show')
 }
 
 function editArticle(id: number) {
   router.push(`/write?articleId=${id}`)
 }
 
-async function handleDelete(a: StudyArticle) {
+async function handleDelete(a: ArticleManage) {
   if (!confirm(`确定删除「${a.title || '未命名'}」吗？`)) return
   try {
     const api = useApi()
@@ -180,17 +261,39 @@ async function saveProfile() {
   }
 }
 
-// ── Init ──
-onMounted(async () => {
-  const { listStudyArticles } = useArticle()
-  articles.value = await listStudyArticles()
+// ── Fetch ──
+const { listArticleManages } = useArticle()
+
+async function fetchArticles() {
+  const res = await listArticleManages(currentPage.value, pageSize, articleFilter.value)
+  articles.value = res?.records || []
+  totalCount.value = res?.total || 0
+  await nextTick()
+  document.querySelectorAll('.manage-thumb img').forEach(img => {
+    if (!(img as HTMLImageElement).complete || (img as HTMLImageElement).naturalWidth === 0) {
+      img.dispatchEvent(new Event('error'))
+    }
+  })
+}
+
+function goToPage(page: number) {
+  if (page < 1 || page > totalPages.value || page === currentPage.value) return
+  currentPage.value = page
+  fetchArticles()
+}
+
+watch(articleFilter, () => {
+  currentPage.value = 1
+  fetchArticles()
 })
+
+onMounted(() => fetchArticles())
 </script>
 
 <style scoped>
 /* ===== Layout ===== */
 .body {
-  display: flex; height: 100%; overflow: hidden;
+  display: flex; min-height: 100vh;
   background: var(--surface-soft);
 }
 
@@ -200,17 +303,27 @@ onMounted(async () => {
   display: flex; flex-direction: column;
   background: var(--surface);
   border-right: 1px solid var(--hairline);
+  position: sticky; top: 0; height: 100vh;
 }
 
-.sidebar-menu { display: flex; flex-direction: column; gap: 2px; padding: var(--spacing-sm) var(--spacing-md); }
+.sidebar-scroll {
+  flex: 1; overflow-y: auto;
+}
+
+.sidebar-menu {
+  display: flex; flex-direction: column; gap: 2px;
+  padding: var(--spacing-sm) var(--spacing-md);
+}
 
 .sidebar-menu-item {
   display: flex; align-items: center; gap: var(--spacing-xs);
   padding: var(--spacing-xs) var(--spacing-sm);
   border-radius: var(--rounded-md);
-  font-size: var(--body-sm); font-weight: var(--weight-regular); color: var(--charcoal);
-  cursor: pointer; border: none; background: transparent; font-family: var(--font-sans);
-  text-align: left; transition: background 0.15s var(--ease); line-height: 1.5;
+  font-family: var(--font-sans); font-size: var(--body-sm);
+  font-weight: var(--weight-regular); color: var(--charcoal);
+  cursor: pointer; border: none; background: transparent;
+  text-align: left; transition: background 0.15s var(--ease);
+  line-height: 1.5;
 }
 
 .sidebar-menu-item:hover { background: var(--hairline-soft); }
@@ -222,8 +335,9 @@ onMounted(async () => {
 .sidebar-back {
   margin-top: auto; display: flex; align-items: center; gap: var(--spacing-xs);
   padding: var(--spacing-xs) var(--spacing-sm); border-radius: var(--rounded-md);
-  font-size: var(--body-sm); color: var(--steel); cursor: pointer; border: none; font-family: var(--font-sans);
-  background: transparent; transition: color 0.15s var(--ease);
+  font-family: var(--font-sans); font-size: var(--body-sm); color: var(--steel);
+  cursor: pointer; border: none; background: transparent;
+  transition: color 0.15s var(--ease);
   margin: var(--spacing-xl) var(--spacing-md);
 }
 
@@ -231,108 +345,213 @@ onMounted(async () => {
 
 /* ===== Content ===== */
 .content {
-  flex: 1; display: flex; flex-direction: column;
-  background: var(--canvas); overflow: hidden;
+  flex: 1; min-width: 0;
+  display: flex; flex-direction: column;
+  background: var(--canvas);
 }
 
 .content-body {
-  flex: 1; overflow-y: auto;
-  padding: var(--spacing-xl) var(--spacing-xxl);
-  display: flex; justify-content: center;
+  padding: var(--spacing-xxl);
 }
 
-.content-inner { width: 100%; max-width: 780px; }
+.content-inner { width: 100%; }
 
-/* ── Filters ── */
+/* ===== Filter Bar ===== */
 .filter-bar {
   display: flex; align-items: center; gap: var(--spacing-xs);
   margin-bottom: var(--spacing-md);
 }
 
-.pill-filter {
-  padding: var(--spacing-xxs) var(--spacing-md);
-  border-radius: var(--rounded-full);
-  font-size: 14px; font-weight: 500; font-family: var(--font-sans);
-  color: var(--steel); border: 1px solid var(--hairline);
-  background: transparent; cursor: pointer; line-height: 1.5;
-  transition: all 0.15s var(--ease);
-}
-
-.pill-filter:hover { color: var(--ink); border-color: var(--hairline-strong); }
-
-.pill-filter.active {
-  background: var(--ink-deep); color: var(--surface);
-  border-color: var(--ink-deep);
-}
-
-.pill-count { font-weight: 400; color: var(--muted); margin-left: 2px; }
-
-.pill-filter.active .pill-count { color: var(--stone); }
-
-/* ── Article List ── */
-.article-list { display: flex; flex-direction: column; gap: var(--spacing-xs); }
-
-.article-row {
-  display: flex; align-items: center; gap: var(--spacing-md);
+.segmented-tab {
   padding: var(--spacing-sm) var(--spacing-md);
-  background: var(--canvas);
-  border-radius: var(--rounded-md);
-  border: 1px solid var(--hairline);
-  transition: box-shadow 0.15s var(--ease);
+  border: none;
+  border-bottom: 2px solid transparent;
+  font-family: var(--font-sans); font-size: var(--body-sm-medium);
+  font-weight: var(--weight-medium); color: var(--steel);
+  background: transparent; cursor: pointer; line-height: var(--leading-sm);
+  transition: color 0.15s var(--ease);
 }
 
-.article-row:hover { box-shadow: rgba(15,15,15,0.08) 0px 4px 12px 0px; }
+.segmented-tab:hover { color: var(--ink); }
 
-.article-title {
-  flex: 1; font-size: 14px; font-weight: 500; color: var(--ink);
+.segmented-tab.active {
+  color: var(--ink);
+  border-bottom-color: var(--ink);
+}
+
+/* ===== Manage List ===== */
+.manage-list { display: flex; flex-direction: column; }
+
+.manage-row {
+  display: flex; align-items: center; gap: var(--spacing-xl);
+  padding: var(--spacing-lg) 0;
+}
+
+.manage-row:first-child { padding-top: 0; }
+.manage-row:last-child { padding-bottom: 0; }
+
+.manage-row:not(:last-child) {
+  border-bottom: 1px solid var(--hairline-soft);
+}
+
+/* ── Thumbnail ── */
+.manage-thumb {
+  width: 176px; height: 112px; flex-shrink: 0;
+  border-radius: var(--rounded-sm); overflow: hidden;
+  background: var(--surface);
+}
+
+.manage-thumb img {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+}
+
+.manage-thumb-placeholder {
+  display: none; align-items: center; justify-content: center;
+  width: 100%; height: 100%;
+  background: var(--surface);
+  font-family: var(--font-sans); font-size: 13px; color: var(--muted);
+}
+
+.manage-thumb-placeholder.show { display: flex; }
+
+/* ── Body ── */
+.manage-body {
+  flex: 1; min-width: 0;
+  display: flex; flex-direction: column; gap: 4px;
+}
+
+.manage-title {
+  font-family: var(--font-sans); font-size: var(--body-md);
+  font-weight: var(--weight-medium); color: var(--ink);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  margin: 0;
 }
 
-.article-meta { display: flex; align-items: center; gap: var(--spacing-xs); flex-shrink: 0; }
-
-.article-updated { font-size: 13px; color: var(--steel); white-space: nowrap; min-width: 80px; }
-
-.article-actions { display: flex; gap: var(--spacing-xxs); flex-shrink: 0; }
-
-/* ── Badges ── */
-.badge {
-  display: inline-flex; align-items: center;
-  padding: 2px 8px; border-radius: var(--rounded-sm);
-  font-size: 13px; font-weight: 600; line-height: 1.4; white-space: nowrap;
+.manage-summary {
+  font-family: var(--font-sans); font-size: var(--body-sm); color: var(--steel);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  margin: 0;
 }
 
-.badge-draft     { background: #f0eeec; color: var(--steel); }
-.badge-published { background: #d9f3e1; color: var(--semantic-success); }
-.badge-reviewing { background: #fef7d6; color: var(--semantic-warning); }
-.badge-public    { background: #e6e0f5; color: #391c57; }
-.badge-private   { background: #ffe8d4; color: #793400; }
-
-/* ── Buttons ── */
-.btn-ghost-sm {
-  display: inline-flex; align-items: center;
-  padding: 4px 10px; border-radius: var(--rounded-sm);
-  font-size: 13px; font-weight: 500; color: var(--charcoal); font-family: var(--font-sans);
-  background: transparent; border: none; cursor: pointer;
-  transition: background 0.15s var(--ease); line-height: 1.4;
+.manage-review-reason {
+  font-family: var(--font-sans); font-size: 13px; color: var(--slate);
+  padding: 2px var(--spacing-sm); background: var(--surface);
+  border-radius: var(--rounded-sm);
+  margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 
-.btn-ghost-sm:hover { background: var(--surface); }
-.btn-ghost-sm.danger { color: var(--semantic-error); }
-.btn-ghost-sm.danger:hover { background: #fde8e8; }
+.manage-meta {
+  font-family: var(--font-sans); font-size: 13px; color: var(--muted);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  margin: 0; display: flex; align-items: center; gap: 4px;
+}
 
-/* ── Empty ── */
+.meta-dot { color: var(--hairline-strong); }
+
+/* ── Status Labels ── */
+.status-draft     { color: var(--steel); }
+.status-published { color: var(--semantic-success); }
+.status-reviewing { color: var(--semantic-warning); }
+.status-rejected  { color: var(--semantic-error); }
+
+/* ── Actions ── */
+.manage-actions {
+  display: flex; align-items: center; gap: var(--spacing-xxs); flex-shrink: 0;
+}
+
+/* ===== Buttons ===== */
+.btn-detail {
+  display: inline-flex; align-items: center; justify-content: center;
+  height: 32px; padding: 0 14px;
+  border: none; border-radius: var(--rounded-sm);
+  font-family: var(--font-sans); font-size: var(--body-sm-medium);
+  font-weight: var(--weight-medium); color: var(--ink);
+  background: transparent; cursor: pointer;
+  transition: background 0.15s var(--ease);
+}
+
+.btn-detail:hover { background: var(--hairline-soft); }
+
+.btn-detail.danger { color: var(--semantic-error); }
+.btn-detail.danger:hover { background: #fde8e8; }
+
+.btn-ghost {
+  display: inline-flex; align-items: center; justify-content: center;
+  height: 36px; padding: 0 16px;
+  border: none; border-radius: var(--rounded-sm);
+  font-family: var(--font-sans); font-size: 14px; font-weight: 500;
+  background: transparent; color: var(--ink);
+  cursor: pointer; transition: background 0.15s var(--ease);
+}
+
+.btn-ghost:hover { background: var(--hairline-soft); }
+
+.btn-primary {
+  display: inline-flex; align-items: center; justify-content: center;
+  height: 36px; padding: 0 16px;
+  border: none; border-radius: var(--rounded-md);
+  font-family: var(--font-sans); font-size: 14px; font-weight: 500;
+  background: var(--primary); color: var(--on-primary);
+  cursor: pointer; transition: background 0.15s var(--ease);
+}
+
+.btn-primary:hover { background: var(--primary-pressed); }
+
+/* ===== Empty ===== */
 .empty-state { padding: var(--spacing-xxxl) var(--spacing-xl); text-align: center; }
 
-.empty-state-text { font-size: 14px; color: var(--steel); margin-bottom: var(--spacing-sm); }
+.empty-state-text { font-family: var(--font-sans); font-size: 14px; color: var(--steel); margin-bottom: var(--spacing-sm); }
 
-/* ── Profile ── */
+/* ===== Pagination ===== */
+.pagination {
+  display: flex; align-items: center; justify-content: center;
+  gap: var(--spacing-xs); margin-top: var(--spacing-lg);
+}
+
+.page-total {
+  font-family: var(--font-sans); font-size: var(--body-sm);
+  color: var(--steel); margin-right: var(--spacing-sm);
+}
+
+.page-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 36px; height: 36px; padding: 8px 12px;
+  border: none; border-radius: var(--rounded-sm);
+  font-family: var(--font-sans); font-size: var(--body-sm-medium);
+  font-weight: var(--weight-medium); line-height: var(--leading-button);
+  color: var(--ink); background: transparent;
+  cursor: pointer; transition: background 0.15s var(--ease);
+}
+
+.page-btn:hover:not(:disabled):not(.active) { background: var(--hairline-soft); }
+
+.page-btn:disabled {
+  color: var(--muted); cursor: not-allowed;
+}
+
+.page-btn.active {
+  background: var(--ink-deep); color: var(--on-dark);
+  border-radius: var(--rounded-md); font-weight: var(--weight-semibold);
+}
+
+.page-ellipsis {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px;
+  font-family: var(--font-sans); font-size: var(--body-sm-medium);
+  color: var(--muted);
+}
+
+/* ===== Profile ===== */
 .profile-form {
   display: flex; flex-direction: column; gap: var(--spacing-lg);
+  max-width: 480px;
 }
 
 .form-group { display: flex; flex-direction: column; gap: var(--spacing-xxs); }
 
-.form-label { font-size: 14px; font-weight: 500; color: var(--charcoal); }
+.form-label {
+  font-family: var(--font-sans); font-size: 14px; font-weight: 500; color: var(--charcoal);
+}
 
 .form-input {
   height: 44px; padding: var(--spacing-sm) var(--spacing-md);
@@ -354,22 +573,7 @@ onMounted(async () => {
   flex-shrink: 0;
 }
 
-.btn-primary {
-  display: inline-flex; align-items: center; justify-content: center;
-  height: 40px; padding: 0 18px; border: none; border-radius: var(--rounded-md);
-  font-size: 14px; font-weight: 500; font-family: var(--font-sans);
-  background: var(--primary); color: var(--on-primary); cursor: pointer;
-  transition: background 0.15s var(--ease); line-height: 1; align-self: flex-start;
+.profile-saved-hint {
+  font-family: var(--font-sans); font-size: 13px; color: var(--semantic-success);
 }
-
-.btn-primary:hover { background: var(--primary-pressed); }
-
-.profile-saved-hint { font-size: 13px; color: var(--semantic-success); }
-
-/* ── Scrollbar ── */
-.content-body::-webkit-scrollbar { width: 5px; }
-.content-body::-webkit-scrollbar-track { background: transparent; }
-.content-body::-webkit-scrollbar-thumb { background: transparent; border-radius: 3px; }
-.content-body.scrolling::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); }
-.content-body::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.25); }
 </style>

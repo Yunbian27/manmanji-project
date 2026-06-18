@@ -1,12 +1,16 @@
 package com.yunbian27.content.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.yunbian27.common.constant.RedisTTL;
 import com.yunbian27.common.exception.BusinessException;
 import com.yunbian27.common.exception.ErrorCode;
+import com.yunbian27.common.result.PageDTO;
 import com.yunbian27.common.utils.JsonUtils;
 import com.yunbian27.common.utils.SecurityUtils;
-import com.yunbian27.content.constant.ArticleEnums;
+import com.yunbian27.content.constant.ArticleStatus;
+import com.yunbian27.content.constant.ArticleVisibility;
 import com.yunbian27.content.constant.ContentConstants;
 import com.yunbian27.content.constant.ContentRedisKeys;
 import com.yunbian27.content.mapper.ArticleGroupMapper;
@@ -16,6 +20,7 @@ import com.yunbian27.content.model.dto.ArticleSaveDTO;
 import com.yunbian27.content.model.entity.Article;
 import com.yunbian27.content.model.entity.ArticleGroup;
 import com.yunbian27.content.model.entity.Group;
+import com.yunbian27.content.model.vo.ArticleManageVO;
 import com.yunbian27.content.model.vo.ArticleTitlesVO;
 import com.yunbian27.content.model.vo.ArticleVO;
 import com.yunbian27.content.model.vo.GroupVO;
@@ -55,7 +60,7 @@ public class ArticleService {
     private final StringRedisTemplate stringRedisTemplate;
 
     /**
-     * 新建并发布文章
+     * 发布文章
      * @param dto
      */
     @Transactional
@@ -67,7 +72,8 @@ public class ArticleService {
             article.setTitle(ContentConstants.DEFAULT_ARTICLE_TITLE);
         article.setUserId(userId);
         article.setSlug(generateSlug(article.getTitle()));
-        article.setStatus(ArticleEnums.Status.PUBLISHED.getValue());
+        // 设置文章状态为审核中
+        article.setStatus(ArticleStatus.REVIEWING);
         article.setPublishedAt(LocalDateTime.now());
         articleMapper.insert(article);
 
@@ -91,7 +97,7 @@ public class ArticleService {
             throw new BusinessException(ErrorCode.NOT_FOUND);
         BeanUtils.copyProperties(dto, article);
         article.setId(id);
-        article.setStatus(ArticleEnums.Status.PUBLISHED.getValue());
+        article.setStatus(ArticleStatus.PUBLISHED);
         article.setPublishedAt(LocalDateTime.now());
         articleMapper.updateById(article);
 
@@ -171,7 +177,7 @@ public class ArticleService {
                         .set(Article::getSourceUrl, dto.getSourceUrl())
                         .set(Article::getVisibility, dto.getVisibility())
                         .set(Article::getCreationStatement, dto.getCreationStatement())
-                        .set(Article::getStatus, ArticleEnums.Status.PUBLISHED.getValue())
+                        .set(Article::getStatus, ArticleStatus.PUBLISHED)
                         .set(Article::getPublishedAt, LocalDateTime.now())
                         .set(Article::getUpdatedAt, LocalDateTime.now())
                         .eq(Article::getId, dto.getId())
@@ -181,24 +187,34 @@ public class ArticleService {
     }*/
 
     /**
-     * 保持草稿
-     * @param dto
+     * 保存草稿（新建或更新已有草稿）
      */
-    /*public void save(ArticleSaveDTO dto) {
-       if (dto.getTitle() == null)
-           throw new BusinessException(ErrorCode.BAD_REQUEST);
-       if (dto.getContent() == null)
-           throw new BusinessException(ErrorCode.BAD_REQUEST);
+    public Long save(ArticleSaveDTO dto) {
+        Long userId = SecurityUtils.getCurrentUserId();
+        Article article;
 
-        Article article = new Article();
-        BeanUtils.copyProperties(dto, article);
+        if (dto.getId() != null) {
+            article = articleMapper.selectById(dto.getId());
+            if (article == null || !userId.equals(article.getUserId())) {
+                throw new BusinessException(ErrorCode.NOT_FOUND);
+            }
+            article.setTitle(dto.getTitle());
+            article.setContent(dto.getContent());
+            article.setSlug(generateSlug(dto.getTitle()));
+            articleMapper.updateById(article);
+        } else {
+            article = new Article();
+            BeanUtils.copyProperties(dto, article);
+            article.setUserId(userId);
+            article.setSlug(generateSlug(dto.getTitle()));
+            article.setStatus(ArticleStatus.DRAFT);
+            article.setVisibility(ArticleVisibility.PRIVATE);
+            articleMapper.insert(article);
+        }
 
-        article.setStatus(ArticleEnums.Status.UNPUBLISHED.getValue());
-        article.setVisibility();
-
-        articleMapper.insert(article);
-        log.info("文章保存成功: id={}, title={}", dto.getId(), dto.getTitle());
-    }*/
+        log.info("文章保存成功: id={}, title={}", article.getId(), dto.getTitle());
+        return article.getId();
+    }
 
 
 
@@ -266,7 +282,7 @@ public class ArticleService {
             throw new BusinessException("文章不存在");
         }
         // 私密文章仅作者本人可读
-        if (ArticleEnums.Visibility.PRIVATE.getValue().equals(article.getVisibility())) {
+        if (ArticleVisibility.PRIVATE.equals(article.getVisibility())) {
             Long userId = SecurityUtils.getCurrentUserId();
             if (!userId.equals(article.getUserId())) {
                 throw new BusinessException(ErrorCode.NOT_FOUND);
@@ -274,6 +290,12 @@ public class ArticleService {
         }
         ArticleVO articleVO = new ArticleVO();
         BeanUtils.copyProperties(article, articleVO);
+        // 枚举 → 字符串转换（BeanUtils 无法跨类型复制）
+        articleVO.setStatus(article.getStatus() != null ? article.getStatus().getValue() : null);
+        articleVO.setVisibility(article.getVisibility() != null ? article.getVisibility().getValue() : null);
+        articleVO.setArticleType(article.getArticleType() != null ? article.getArticleType().getValue() : null);
+        articleVO.setCreationStatement(article.getCreationStatement() != null ? article.getCreationStatement().getValue() : null);
+        articleVO.setSourceType(article.getSourceType() != null ? article.getSourceType().getValue() : null);
         // 3、写缓存
         stringRedisTemplate.opsForValue().set(key, JsonUtils.toJson(articleVO), RedisTTL.ARTICLE);
         return articleVO;
@@ -326,6 +348,33 @@ public class ArticleService {
         Long userId = SecurityUtils.getCurrentUserId();
 
         return articleMapper.selectArticleTitlestByUserId(userId);
+    }
+
+    /**
+     * 内容管理列表（含封面、摘要、阅读/点赞/评论/收藏统计，分页）
+     */
+    public PageDTO<ArticleManageVO> listManageArticles(int page, int size, String status) {
+        Long userId = SecurityUtils.getCurrentUserId();
+        LambdaQueryWrapper<Article> qw = new LambdaQueryWrapper<Article>()
+                .select(Article::getId, Article::getTitle, Article::getSummary,
+                        Article::getCoverUrl, Article::getStatus, Article::getVisibility,
+                        Article::getViewCount, Article::getLikeCount, Article::getCommentCount,
+                        Article::getBookmarkCount, Article::getReviewReason, Article::getUpdatedAt)
+                .eq(Article::getUserId, userId)
+                .orderByDesc(Article::getUpdatedAt);
+        if (status != null && !status.isEmpty() && !"ALL".equalsIgnoreCase(status)) {
+            qw.eq(Article::getStatus, ArticleStatus.valueOf(status.toUpperCase()));
+        }
+        IPage<Article> result = articleMapper.selectPage(new Page<>(page, size), qw);
+        List<ArticleManageVO> records = result.getRecords().stream().map(a -> ArticleManageVO.builder()
+                .id(a.getId()).title(a.getTitle()).summary(a.getSummary())
+                .coverUrl(a.getCoverUrl()).status(a.getStatus().getValue())
+                .visibility(a.getVisibility() != null ? a.getVisibility().getValue() : null)
+                .viewCount(a.getViewCount()).likeCount(a.getLikeCount())
+                .commentCount(a.getCommentCount()).bookmarkCount(a.getBookmarkCount())
+                .reviewReason(a.getReviewReason()).updatedAt(a.getUpdatedAt())
+                .build()).toList();
+        return PageDTO.of(result.getTotal(), result.getCurrent(), result.getSize(), records);
     }
 
     /**

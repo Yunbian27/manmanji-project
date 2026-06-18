@@ -77,7 +77,7 @@ export interface ArticleVO {
 
 // 保存文章提交的数据
 export interface ArticleSaveDTO {
-  id: number
+  id?: number
   title: string
   content: string
 }
@@ -116,6 +116,30 @@ export interface StudyArticle {
   // 仅收藏文章
   sourceAuthor?: string           // 原作者昵称
   bookmarkedAt?: string           // 收藏时间
+}
+
+// ---------- 通用分页 ----------
+export interface PageDTO<T> {
+  total: number
+  page: number
+  size: number
+  records: T[]
+}
+
+// ---------- 内容管理 ----------
+export interface ArticleManage {
+  id: number
+  title: string
+  summary?: string
+  coverUrl?: string
+  status: string
+  visibility?: string
+  viewCount: number
+  likeCount: number
+  commentCount: number
+  bookmarkCount: number
+  reviewReason?: string
+  updatedAt: string
 }
 
 // ---------- 分组 ----------

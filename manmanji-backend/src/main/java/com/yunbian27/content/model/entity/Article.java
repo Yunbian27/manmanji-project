@@ -1,6 +1,7 @@
 package com.yunbian27.content.model.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
+import com.yunbian27.content.constant.*;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -25,16 +26,16 @@ public class Article {
     private String coverUrl;
     /** 作者用户ID */
     private Long userId;
-    /** 状态(UNPUBLISHED/PUBLISHED) */
-    private String status;
-    /** 可见范围(PUBLIC/PRIVATE) */
-    private String visibility;
-    /** 文章类型(ORIGINAL/REPOST) */
-    private String articleType;
-    /** 创作声明(NONE/AI_ASSISTED/NETWORK_SOURCED/PERSONAL_OPINION) */
-    private String creationStatement;
-    /** 来源类型(MANUAL/AI_GENERATED) */
-    private String sourceType;
+    /** 状态 */
+    private ArticleStatus status;
+    /** 可见范围 */
+    private ArticleVisibility visibility;
+    /** 文章类型 */
+    private ArticleType articleType;
+    /** 创作声明 */
+    private CreationStatement creationStatement;
+    /** 来源类型 */
+    private SourceType sourceType;
     /** 转载来源链接 */
     private String sourceUrl;
     /** 阅读量(冗余计数) */
@@ -56,4 +57,7 @@ public class Article {
 
     /** 发布时间 */
     private LocalDateTime publishedAt;
+
+    /** 审核意见/驳回理由 */
+    private String reviewReason;
 }

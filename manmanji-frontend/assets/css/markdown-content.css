@@ -33,9 +33,10 @@
 }
 
 /* ── 列表 ── */
-.markdown-body ul,
-.markdown-body ol { padding-left: 1.5em; margin-bottom: var(--spacing-md); }
+.markdown-body ul { padding-left: 1.5em; margin-bottom: var(--spacing-md); list-style: disc outside; }
+.markdown-body ol { padding-left: 1.5em; margin-bottom: var(--spacing-md); list-style: decimal outside; }
 .markdown-body li { margin-bottom: var(--spacing-xs); }
+.markdown-body .task-list-item { list-style: none; }
 
 /* ── 表格 ── */
 .markdown-body table { width: 100%; border-collapse: collapse; margin: var(--spacing-md) 0; }

@@ -273,6 +273,7 @@ const formatButtons = [
   { icon: 'B', label: '粗体', before: '**', after: '**', placeholder: '粗体文字' },
   { icon: 'I', label: '斜体', before: '*', after: '*', placeholder: '斜体文字' },
   { icon: 'S̶', label: '删除线', before: '~~', after: '~~', placeholder: '删除线' },
+  { icon: 'M', label: '高亮', before: '==', after: '==', placeholder: '高亮文字' },
 ]
 
 const fileInput = ref<HTMLInputElement | null>(null)
@@ -569,6 +570,13 @@ function onInsertMarkdown(before: string, after: string, placeholder: string) {
 // ── Actions ─────────────────────────────────────────────────
 async function handleSave() {
   await editor.save()
+  if (editor.titleError.value) {
+    toast.show(editor.titleError.value, 'error')
+  } else if (editor.publishError.value) {
+    toast.show(editor.publishError.value, 'error')
+  } else {
+    toast.show('草稿已保存', 'success')
+  }
 }
 
 function handleClose() {
@@ -1103,6 +1111,11 @@ onMounted(() => {})
 }
 
 /* ── Container Queries（卡片宽度响应，面板挤压时也会触发）── */
+@container (max-width: 1100px) {
+  .toolbar-right .toolbar-btn--labeled .btn-label { display: none; }
+  .toolbar-right .toolbar-btn--labeled { padding: 0 6px; gap: 0; }
+}
+
 @container (max-width: 900px) {
   .toolbar-btn--labeled .btn-label { display: none; }
   .toolbar-btn--labeled {

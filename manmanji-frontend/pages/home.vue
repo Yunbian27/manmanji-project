@@ -179,7 +179,7 @@ import type { StudyArticle, GroupVO } from '~/types'
 import { useMarkdownRenderer } from '~/composables/useMarkdownRenderer'
 import { onClickOutside } from '@vueuse/core'
 
-definePageMeta({ layout: 'blank' })
+definePageMeta({ layout: 'blank', middleware: 'role-guard' })
 
 import IconLucideFolder from '~icons/lucide/folder'
 import IconLucideX from '~icons/lucide/x'
@@ -767,12 +767,17 @@ onMounted(() => {
 }
 .content-inner {
   width: 100%;
-  max-width: 720px;
+  display: flex;
+  justify-content: center;
   background: var(--canvas);
   border-radius: var(--rounded-lg);
   box-shadow: rgba(15, 15, 15, 0.04) 0px 1px 2px 0px;
   padding: var(--spacing-xl);
   height: fit-content;
+}
+.content-inner .markdown-body {
+  width: 100%;
+  max-width: max(calc(50% - 24.5px), calc(50vw - 92.5px));
 }
 .content-empty,
 .content-loading {

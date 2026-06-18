@@ -1,7 +1,6 @@
 package com.yunbian27.content.model.dto;
 
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
@@ -10,9 +9,9 @@ import java.util.List;
 @Data
 public class ArticlePublishDTO {
 
-    /** 文章标题(最长200) */
+    /** 文章标题(5-100字) */
     @NotBlank(message = "标题不能为空")
-    @Size(max = 200, message = "标题最多 100 字")
+    @Size(min = 5, max = 100, message = "标题 5-100 字")
     private String title;
 
     /** Markdown正文 */
@@ -20,7 +19,7 @@ public class ArticlePublishDTO {
     private String content;
 
     /** AI摘要(可选) */
-    @Size(max = 500, message = "摘要最多 500 字")
+    @Size(max = 150, message = "摘要最多 150 字")
     private String summary;
 
     /** 封面图链接 */

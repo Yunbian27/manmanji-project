@@ -2,10 +2,12 @@ package com.yunbian27.content.controller;
 
 import com.yunbian27.content.model.dto.ArticlePublishDTO;
 import com.yunbian27.content.model.dto.ArticleSaveDTO;
+import com.yunbian27.content.model.vo.ArticleManageVO;
 import com.yunbian27.content.model.vo.ArticleTitlesVO;
 import com.yunbian27.content.model.vo.ArticleVO;
 import com.yunbian27.content.model.vo.GroupVO;
 import com.yunbian27.content.service.ArticleService;
+import com.yunbian27.common.result.PageDTO;
 import com.yunbian27.common.result.Result;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -24,7 +26,7 @@ public class ArticleController {
     private final ArticleService articleService;
 
     /**
-     * 新建并发布文章
+     * 发布文章
      * @param dto
      * @return
      */
@@ -45,11 +47,10 @@ public class ArticleController {
         return Result.success();
     }
 
-    /*@PutMapping("/save")
-    public Result<Void> save(@Valid @RequestBody ArticleSaveDTO dto) {
-        articleService.save(dto);
-        return Result.success();
-    }*/
+    @PutMapping("/save")
+    public Result<Long> save(@Valid @RequestBody ArticleSaveDTO dto) {
+        return Result.success(articleService.save(dto));
+    }
 
     @GetMapping("/groups")
     public Result<List<GroupVO>> group() {
@@ -89,6 +90,17 @@ public class ArticleController {
     @GetMapping("/titles")
     public Result<List<ArticleTitlesVO>> showArticleTitles() {
         return Result.success(articleService.showArticleTitles());
+    }
+
+    /**
+     * 内容管理列表（含封面、摘要、阅读/点赞/评论/收藏统计，分页）
+     */
+    @GetMapping("/manage")
+    public Result<PageDTO<ArticleManageVO>> manageArticles(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String status) {
+        return Result.success(articleService.listManageArticles(page, size, status));
     }
 
 }

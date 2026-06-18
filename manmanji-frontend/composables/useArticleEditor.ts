@@ -77,6 +77,10 @@ export function createEditorState(articleId: number) {
       titleError.value = '请输入文章标题'
       return false
     }
+    if (title.value.trim().length < 5) {
+      titleError.value = '标题至少 5 个字'
+      return false
+    }
     if (!content.value.trim()) {
       publishError.value = '请输入文章内容'
       return false
@@ -91,10 +95,10 @@ export function createEditorState(articleId: number) {
     try {
       const { saveArticle } = useArticle()
       const id = await saveArticle({
-        id: currentArticleId.value,
+        ...(currentArticleId.value > 0 ? { id: currentArticleId.value } : {}),
         title: title.value.trim(),
         content: content.value,
-      })
+      } as ArticleSaveDTO)
       if (currentArticleId.value === 0) {
         currentArticleId.value = id
       }

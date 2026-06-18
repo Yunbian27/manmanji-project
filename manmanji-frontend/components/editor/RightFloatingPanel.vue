@@ -40,11 +40,11 @@
           <div v-else-if="activePanel === 'help'" class="syntax-help">
             <div class="help-section">
               <h4 class="help-heading">标题</h4>
-              <code class="help-code"># H1 &nbsp; ## H2 &nbsp; ### H3</code>
+              <code class="help-code"># H1 &nbsp; ## H2 &nbsp; ### H3 &nbsp; #### H4 &nbsp; ##### H5 &nbsp; ###### H6</code>
             </div>
             <div class="help-section">
               <h4 class="help-heading">强调</h4>
-              <code class="help-code">**粗体** &nbsp; *斜体* &nbsp; ~~删除线~~</code>
+              <code class="help-code">**粗体** &nbsp; *斜体* &nbsp; ~~删除线~~ &nbsp; ==高亮==</code>
             </div>
             <div class="help-section">
               <h4 class="help-heading">链接与图片</h4>
@@ -52,19 +52,39 @@
             </div>
             <div class="help-section">
               <h4 class="help-heading">代码</h4>
-              <code class="help-code">`行内代码` &nbsp; ```代码块```</code>
+              <code class="help-code">`行内代码` &nbsp; ```语言 代码块```</code>
+            </div>
+            <div class="help-section">
+              <h4 class="help-heading">列表</h4>
+              <code class="help-code">- 无序列表 &nbsp; 1. 有序列表 &nbsp; - [ ] 待办 &nbsp; - [x] 已完成</code>
             </div>
             <div class="help-section">
               <h4 class="help-heading">引用</h4>
               <code class="help-code">&gt; 引用内容</code>
             </div>
             <div class="help-section">
-              <h4 class="help-heading">列表</h4>
-              <code class="help-code">- 无序列表 &nbsp; 1. 有序列表</code>
+              <h4 class="help-heading">表格</h4>
+              <code class="help-code">| 列1 | 列2 |<br/>| --- | --- |<br/>| 内容 | 内容 |</code>
             </div>
             <div class="help-section">
-              <h4 class="help-heading">表格</h4>
-              <code class="help-code">| 列1 | 列2 |<br/>| --- | --- |</code>
+              <h4 class="help-heading">分割线</h4>
+              <code class="help-code">--- 或 *** 或 ___</code>
+            </div>
+            <div class="help-section">
+              <h4 class="help-heading">数学公式（KaTeX）</h4>
+              <code class="help-code">$行内公式$ &nbsp; $$块级公式$$</code>
+            </div>
+            <div class="help-section">
+              <h4 class="help-heading">图表（Mermaid）</h4>
+              <code class="help-code">```mermaid<br/>graph TD<br/>  A--&gt;B<br/>```</code>
+            </div>
+            <div class="help-section">
+              <h4 class="help-heading">脚注</h4>
+              <code class="help-code">正文内容[^1]<br/><br/>[^1]: 脚注说明</code>
+            </div>
+            <div class="help-section">
+              <h4 class="help-heading">表情符号</h4>
+              <code class="help-code">:smile: :rocket: :+1: :tada:</code>
             </div>
           </div>
         </div>

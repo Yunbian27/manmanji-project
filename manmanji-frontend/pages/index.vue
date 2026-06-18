@@ -1,6 +1,6 @@
 <!--
   pages/index.vue — 项目介绍页（Landing Page）
-  未登录用户统一入口，已登录自动跳转 /home
+  未登录用户统一入口，已登录按角色跳转 /home 或 /admin
 -->
 <template>
   <div class="landing-page">
@@ -25,11 +25,15 @@ const auth = useAuthStore()
 if (import.meta.server) {
   const event = useRequestEvent()
   const cookieHeader = event?.headers.get('cookie') || ''
-  if (cookieHeader.includes('mannote-token=')) {
-    await navigateTo('/home', { replace: true })
+  const tokenMatch = cookieHeader.match(/mannote-token=([^;]+)/)
+  const token = tokenMatch?.[1]
+  if (token) {
+    const { decodeJwtPayload } = await import('~/utils/jwt')
+    const payload = decodeJwtPayload(token)
+    await navigateTo(payload?.role === 'ADMIN' ? '/admin' : '/home', { replace: true })
   }
 } else if (auth.isAuthenticated) {
-  await navigateTo('/home', { replace: true })
+  await navigateTo(auth.isAdmin ? '/admin' : '/home', { replace: true })
 }
 
 function handleGetStarted() {

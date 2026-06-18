@@ -17,9 +17,10 @@
         :value="title"
         class="title-input"
         :class="{ 'has-error': titleError }"
-        placeholder="输入文章标题..."
+        placeholder="输入文章标题（5-100字）"
         type="text"
         maxlength="100"
+        minlength="5"
         @input="onTitleInput"
         @keydown.enter.prevent
       />

@@ -5,12 +5,11 @@ import com.aliyun.oss.OSSClientBuilder;
 import com.yunbian27.common.exception.BusinessException;
 import com.yunbian27.common.exception.ErrorCode;
 import com.yunbian27.common.utils.SecurityUtils;
-import com.yunbian27.storage.config.AliOssProperties;
 import com.yunbian27.storage.model.StorageConfigDTO;
 import com.yunbian27.storage.registry.StorageProviderRegistry;
-import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -23,7 +22,8 @@ import java.util.UUID;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class AliOssStorageProvider {
+@ConditionalOnProperty(name = "storage.type", havingValue = "aliyun-oss")
+public class AliOssStorageProvider implements StorageProvider {
 
     private final StorageProviderRegistry registry;
 
@@ -34,7 +34,7 @@ public class AliOssStorageProvider {
      * @param dir  存储目录（如 "images"、"avatar"）
      * @return 文件访问 URL
      */
-    public String upload(MultipartFile file, String dir) {
+    public String  upload(MultipartFile file, String dir) {
         String originalFilename = file.getOriginalFilename();
         String suffix = originalFilename.substring(originalFilename.lastIndexOf("."));
         String cleanDir = dir != null && dir.endsWith("/") ? dir.substring(0, dir.length() - 1) : dir;

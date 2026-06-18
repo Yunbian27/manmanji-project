@@ -147,7 +147,8 @@ async function handleSubmit() {
     } else {
       await register({ username: account.value, email: email.value, password: password.value, code: code.value })
     }
-    router.push(redirectPath.value)
+    const authStore = useAuthStore()
+    router.push(authStore.isAdmin ? '/admin' : redirectPath.value)
   } catch (e: any) {
     errorMsg.value = e?.message || '操作失败，请重试'
   } finally {

@@ -7,5 +7,5 @@ public final class StorageConstants {
 
     private StorageConstants() {}
 
-    public static final String DEFAULT_IMAGES_URL = "manmanji/images";
+    public static final String DEFAULT_IMAGES_URL = "images";
 }

@@ -81,11 +81,12 @@ jwt:
   access-token-expire: 900000000000        # 15 分钟(900)
   refresh-token-expire: 604800    # 7 天
 
-# 本地上传
-app:
-  upload:
-    path: ./uploads/images/
-    url-prefix: /uploads/images/
+# 存储配置（local / aliyun-oss）
+storage:
+  type: local
+  local:
+    path: /data
+    url-prefix: /images
 
 # 阿里云 oss
 aliyun:
@@ -101,6 +102,7 @@ mybatis-plus:
   type-aliases-package: com.yunbian27
   configuration:
     map-underscore-to-camel-case: true
+    default-enum-type-handler: com.baomidou.mybatisplus.core.handlers.MybatisEnumTypeHandler
   global-config:
     db-config:
       id-type: auto

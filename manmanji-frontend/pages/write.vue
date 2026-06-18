@@ -108,7 +108,8 @@
           </div>
           <div class="ps-field">
             <span class="ps-label">文章摘要</span>
-            <textarea v-model="local.summary" class="form-textarea" placeholder="文章摘要（最多 500 字）" maxlength="500" rows="2" />
+            <textarea v-model="local.summary" class="form-textarea" placeholder="输入文章摘要（最多150字）" maxlength="150" rows="2" />
+            <span class="ps-count">{{ local.summary.length }}/150</span>
           </div>
           <div class="ps-field">
             <span class="ps-label">可见范围</span>
@@ -142,7 +143,7 @@ import IconLucideUpload from '~icons/lucide/upload'
 import IconLucideX from '~icons/lucide/x'
 import type { GroupVO } from '~/types'
 
-definePageMeta({ layout: 'editor' })
+definePageMeta({ layout: 'editor', middleware: 'role-guard' })
 
 const route = useRoute()
 const router = useRouter()
@@ -356,6 +357,12 @@ onUnmounted(() => document.removeEventListener('click', onDocClick))
   font-size: var(--body-sm);
   font-weight: var(--weight-medium);
   color: var(--steel);
+}
+
+.ps-count {
+  font-size: var(--caption);
+  color: var(--muted);
+  align-self: flex-end;
 }
 
 .ps-actions { display: flex; justify-content: flex-end; padding-top: var(--spacing-xs); }

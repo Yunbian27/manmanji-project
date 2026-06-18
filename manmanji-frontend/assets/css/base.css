@@ -27,6 +27,14 @@ body {
   color: var(--ink);
 }
 
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: var(--surface-soft);
+  z-index: -1;
+}
+
 /* --- Nuxt 挂载点 --- */
 #__nuxt {
   height: 100%;

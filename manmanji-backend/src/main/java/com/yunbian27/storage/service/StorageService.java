@@ -19,7 +19,7 @@ import org.springframework.web.multipart.MultipartFile;
 @RequiredArgsConstructor
 public class StorageService {
 
-    private final AliOssStorageProvider aliOssStorageProvider;
+    private final StorageProvider storageProvider;
     private final StorageConfigMapper storageConfigMapper;
     private final ApiKeyEncryption apiKeyEncryption;
 
@@ -62,7 +62,7 @@ public class StorageService {
 
         // TODO 校验图片大小
 
-        String imageUrl = aliOssStorageProvider.upload(file, StorageConstants.DEFAULT_IMAGES_URL);
+        String imageUrl = storageProvider.upload(file, StorageConstants.DEFAULT_IMAGES_URL);
 
         return imageUrl;
     }
