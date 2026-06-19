@@ -1,4 +1,9 @@
 package com.yunbian27.content.model.vo;
+import com.yunbian27.content.constant.ArticleStatus;
+import com.yunbian27.content.constant.ArticleVisibility;
+import com.yunbian27.content.constant.ArticleType;
+import com.yunbian27.content.constant.CreationStatement;
+import com.yunbian27.content.constant.SourceType;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -17,8 +22,8 @@ public class ArticleManageVO {
     private String title;
     private String summary;
     private String coverUrl;
-    private String status;
-    private String visibility;
+    private ArticleStatus status;
+    private ArticleVisibility visibility;
     private Integer viewCount;
     private Integer likeCount;
     private Integer commentCount;

@@ -177,7 +177,7 @@
           </div>
           <div class="statusbar-right">
             <span v-if="lastSavedAt" class="statusbar-timestamp">已保存 {{ lastSavedAt }}</span>
-            <button class="statusbar-btn statusbar-btn--save" :disabled="isSaving" @click="handleSave">
+            <button v-if="articleStatus === 'DRAFT' || currentArticleId === 0" class="statusbar-btn statusbar-btn--save" :disabled="isSaving" @click="handleSave">
               {{ isSaving ? '保存中...' : '保存草稿' }}
             </button>
             <button class="statusbar-btn statusbar-btn--publish" :disabled="isSaving" @click="scrollToSettings">
@@ -241,7 +241,7 @@ const emit = defineEmits<{ close: [] }>()
 const editor = injectEditor()
 const toast = injectToast()
 
-const { content, title, viewMode, isSaving, lastSavedAt } = editor
+const { content, title, viewMode, isSaving, lastSavedAt, articleStatus, currentArticleId } = editor
 const panelRatio = ref(0.5)
 
 // Topnav visibility — injected from write.vue

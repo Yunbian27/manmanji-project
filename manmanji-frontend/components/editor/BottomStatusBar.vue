@@ -9,7 +9,7 @@
     </div>
     <div class="status-right">
       <span v-if="lastSavedAt" class="save-timestamp">已保存 {{ lastSavedAt }}</span>
-      <button class="status-btn save-btn" :disabled="isSaving" @click="emit('save')">
+      <button v-if="articleStatus === 'DRAFT' || currentArticleId === 0" class="status-btn save-btn" :disabled="isSaving" @click="emit('save')">
         {{ isSaving ? '保存中...' : '保存草稿' }}
       </button>
       <button class="status-btn publish-btn" :disabled="isSaving" @click="emit('openPublishSettings')">
@@ -27,6 +27,8 @@ defineProps<{
   cursorCol: number
   isSaving: boolean
   lastSavedAt: string | null
+  articleStatus: string
+  currentArticleId: number
 }>()
 
 const emit = defineEmits<{

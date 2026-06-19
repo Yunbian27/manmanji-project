@@ -23,6 +23,7 @@ export function createEditorState(articleId: number) {
   const lastSavedAt = ref<string | null>(null)
   const publishError = ref<string | null>(null)
   const titleError = ref<string | null>(null)
+  const articleStatus = ref<string>('')
 
   const publishSettings = reactive<PublishSettings>({
     tagIds: [],
@@ -49,6 +50,7 @@ export function createEditorState(articleId: number) {
       publishSettings.creationStatement = (article.creationStatement as PublishSettings['creationStatement']) ?? 'NONE'
       publishSettings.tagIds = article.tagIds ?? []
       publishSettings.groupNames = article.groupNames ?? []
+      articleStatus.value = article.status ?? 'DRAFT'
     } catch {
       // article not found or network error, stay with empty state
     }
@@ -104,6 +106,7 @@ export function createEditorState(articleId: number) {
       } as ArticleSaveDTO)
       if (currentArticleId.value === 0) {
         currentArticleId.value = id
+        articleStatus.value = 'DRAFT'
       }
       lastSavedAt.value = new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
     } catch (e: any) {
@@ -156,6 +159,7 @@ export function createEditorState(articleId: number) {
     lastSavedAt,
     publishError,
     titleError,
+    articleStatus,
     publishSettings,
     loadFromServer,
     reset,

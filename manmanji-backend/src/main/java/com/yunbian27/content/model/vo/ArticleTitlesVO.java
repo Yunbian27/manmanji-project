@@ -1,21 +1,24 @@
 package com.yunbian27.content.model.vo;
 
+import com.yunbian27.content.constant.ArticleStatus;
+import com.yunbian27.content.constant.ArticleVisibility;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class ArticleTitlesVO {
-    /** 主键ID */
     private Long id;
-    /** 标题 */
     private String title;
-    /** 状态(UNPUBLISHED/PUBLISHED) */
-    private String status;
-    /** 可见范围(PUBLIC/PRIVATE) */
-    private String visibility;
-    /** 更新时间 */
+    private ArticleStatus status;
+    private ArticleVisibility visibility;
+    private List<Long> groupIds;
     private LocalDateTime updateTime;
 }

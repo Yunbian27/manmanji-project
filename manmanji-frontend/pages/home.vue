@@ -26,7 +26,8 @@
               <input
                 v-model="groupSearch"
                 class="group-modal-search-input"
-                placeholder="请输入文字搜索，Enter键可添加自定义分组"
+                placeholder="请输入文字搜索，Enter键可添加自定义分组（最多50字）"
+                maxlength="50"
                 @keydown.enter.prevent="handleGroupSearchEnter"
               />
               <div class="group-modal-grid">
@@ -34,7 +35,7 @@
                   v-for="g in filteredModalGroups"
                   :key="g.id"
                   class="group-modal-chip"
-                  :class="{ active: activeGroupNames.includes(g.name) }"
+                  :class="{ active: activeGroupIds.includes(g.id) }"
                   @click="toggleGroup(g)"
                 >
                   {{ g.name }}
@@ -51,60 +52,15 @@
 
       <div class="sidebar-scroll" ref="sidebarScrollRef">
         <div class="sidebar-actions">
-          <template v-for="item in statusItems" :key="item.key">
-            <!-- 已发布: collapsible dropdown -->
-            <template v-if="item.key === 'PUBLISHED'">
-              <button
-                class="sidebar-action-btn"
-                :class="{ active: activeStatus === 'PUBLISHED' && !publishedSubFilter }"
-                @click="togglePublished"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" v-html="item.icon" />
-                {{ item.label }}
-                <span class="sidebar-action-chevron" :class="{ expanded: publishedExpanded }">
-                  <IconLucideChevronDown class="icon-sm" />
-                </span>
-                <span class="sidebar-action-count">{{ item.count }}</span>
-              </button>
-              <div v-if="publishedExpanded" class="sidebar-sub-items">
-                <button
-                  class="sidebar-sub-btn"
-                  :class="{ active: publishedSubFilter === 'PUBLIC' }"
-                  @click="selectPublishedSub('PUBLIC')"
-                >
-                  公开文章
-                  <span class="sidebar-action-count">{{ item.publicCount }}</span>
-                </button>
-                <button
-                  class="sidebar-sub-btn"
-                  :class="{ active: publishedSubFilter === 'PRIVATE' }"
-                  @click="selectPublishedSub('PRIVATE')"
-                >
-                  私密笔记
-                  <span class="sidebar-action-count">{{ item.privateCount }}</span>
-                </button>
-                <button
-                  class="sidebar-sub-btn"
-                  :class="{ active: publishedSubFilter === 'REVIEWING' }"
-                  @click="selectPublishedSub('REVIEWING')"
-                >
-                  审核中
-                  <span class="sidebar-action-count">{{ item.reviewingCount }}</span>
-                </button>
-              </div>
-            </template>
-            <!-- 其他菜单: 原样不动 -->
-            <button
-              v-else
-              class="sidebar-action-btn"
-              :class="{ active: activeStatus === item.key }"
-              @click="activeStatus = item.key"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" v-html="item.icon" />
-              {{ item.label }}
-              <span class="sidebar-action-count">{{ item.count }}</span>
-            </button>
-          </template>
+          <button v-for="item in statusItems" :key="item.key"
+            class="sidebar-action-btn"
+            :class="{ active: activeStatus === item.key }"
+            @click="activeStatus = item.key"
+          >
+            <component :is="iconMap[item.iconKey]" class="icon-sm" />
+            {{ item.label }}
+            <span class="sidebar-action-count">{{ item.count }}</span>
+          </button>
         </div>
 
         <div class="note-list-header">文章列表</div>
@@ -176,6 +132,7 @@
 
 <script setup lang="ts">
 import type { StudyArticle, GroupVO } from '~/types'
+import type { Component } from 'vue'
 import { useMarkdownRenderer } from '~/composables/useMarkdownRenderer'
 import { onClickOutside } from '@vueuse/core'
 
@@ -183,8 +140,10 @@ definePageMeta({ layout: 'blank', middleware: 'role-guard' })
 
 import IconLucideFolder from '~icons/lucide/folder'
 import IconLucideX from '~icons/lucide/x'
-import IconLucideChevronDown from '~icons/lucide/chevron-down'
+import IconLucideList from '~icons/lucide/list'
 import IconLucideGlobe from '~icons/lucide/globe'
+import IconLucideLock from '~icons/lucide/lock'
+import IconLucideBookmark from '~icons/lucide/bookmark'
 import IconLucideSearch from '~icons/lucide/search'
 import IconLucideExternalLink from '~icons/lucide/external-link'
 
@@ -196,7 +155,7 @@ const articles = ref<StudyArticle[]>([])
 const selectedArticle = ref<StudyArticle | null>(null)
 const activeStatus = ref('ALL')
 const activeTagNames = ref<string[]>([])
-const activeGroupNames = ref<string[]>([])
+const activeGroupIds = ref<number[]>([])
 const groups = ref<GroupVO[]>([])
 const searchQuery = ref('')
 const groupModalVisible = ref(false)
@@ -204,66 +163,60 @@ const groupSearch = ref('')
 const groupPopoverRef = ref<HTMLElement | null>(null)
 
 onClickOutside(groupPopoverRef, () => { groupModalVisible.value = false })
-const publishedExpanded = ref(false)
-const publishedSubFilter = ref<'PUBLIC' | 'PRIVATE' | 'REVIEWING' | null>(null)
 
 // --- Refs for scrollbar ---
 const sidebarScrollRef = ref<HTMLElement | null>(null)
 const contentBodyRef = ref<HTMLElement | null>(null)
 
 // --- Compute ---
+const iconMap: Record<string, Component> = {
+  ALL: IconLucideList,
+  PUBLIC: IconLucideGlobe,
+  PRIVATE: IconLucideLock,
+  BOOKMARKED: IconLucideBookmark,
+}
+
 const statusItems = computed(() => [
   {
     key: 'ALL',
     label: '全部',
-    icon: '<line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>',
+    iconKey: 'ALL',
     count: articles.value.length,
   },
   {
-    key: 'PUBLISHED',
-    label: '已发布',
-    icon: '<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>',
-    count: articles.value.filter(a => a.status === 'PUBLISHED' || a.status === 'PRIVATE' || a.status === 'REVIEWING').length,
-    publicCount: articles.value.filter(a => a.status === 'PUBLISHED').length,
-    privateCount: articles.value.filter(a => a.status === 'PRIVATE').length,
-    reviewingCount: articles.value.filter(a => a.status === 'REVIEWING').length,
+    key: 'PUBLIC',
+    label: '公开文章',
+    iconKey: 'PUBLIC',
+    count: articles.value.filter(a => a.visibility === 'PUBLIC').length,
   },
   {
-    key: 'DRAFT',
-    label: '草稿',
-    icon: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>',
-    count: articles.value.filter(a => a.status === 'DRAFT' || a.status === 'REJECTED').length,
+    key: 'PRIVATE',
+    label: '私密笔记',
+    iconKey: 'PRIVATE',
+    count: articles.value.filter(a => a.visibility === 'PRIVATE').length,
   },
   {
     key: 'BOOKMARKED',
     label: '收藏',
-    icon: '<path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>',
+    iconKey: 'BOOKMARKED',
     count: articles.value.filter(a => a.status === 'BOOKMARKED').length,
   },
 ])
 
 const filteredNotes = computed(() => {
   let list = articles.value
-  if (activeStatus.value !== 'ALL') {
-    if (activeStatus.value === 'PUBLISHED' && publishedSubFilter.value) {
-      if (publishedSubFilter.value === 'PUBLIC') {
-        list = list.filter(a => a.status === 'PUBLISHED')
-      } else if (publishedSubFilter.value === 'PRIVATE') {
-        list = list.filter(a => a.status === 'PRIVATE')
-      } else if (publishedSubFilter.value === 'REVIEWING') {
-        list = list.filter(a => a.status === 'REVIEWING')
-      }
-    } else if (activeStatus.value === 'DRAFT') {
-      list = list.filter(a => a.status === 'DRAFT' || a.status === 'REJECTED')
-    } else {
-      list = list.filter(a => a.status === activeStatus.value)
-    }
+  if (activeStatus.value === 'PUBLIC') {
+    list = list.filter(a => a.visibility === 'PUBLIC')
+  } else if (activeStatus.value === 'PRIVATE') {
+    list = list.filter(a => a.visibility === 'PRIVATE')
+  } else if (activeStatus.value === 'BOOKMARKED') {
+    list = list.filter(a => a.status === 'BOOKMARKED')
   }
   if (activeTagNames.value.length) {
     list = list.filter(a => activeTagNames.value.some(t => a.tags?.includes(t)))
   }
-  if (activeGroupNames.value.length) {
-    list = list.filter(a => activeGroupNames.value.some(g => a.groupNames?.includes(g)))
+  if (activeGroupIds.value.length) {
+    list = list.filter(a => activeGroupIds.value.some(gid => a.groupIds?.includes(gid)))
   }
   if (searchQuery.value.trim()) {
     const q = searchQuery.value.trim().toLowerCase()
@@ -301,8 +254,8 @@ async function handleDeleteGroup(id: number) {
     const removed = groups.value.find(g => g.id === id)
     groups.value = groups.value.filter(g => g.id !== id)
     if (removed) {
-      const idx = activeGroupNames.value.indexOf(removed.name)
-      if (idx >= 0) activeGroupNames.value.splice(idx, 1)
+      const idx = activeGroupIds.value.indexOf(removed.id)
+      if (idx >= 0) activeGroupIds.value.splice(idx, 1)
     }
   } catch {
     // 后端报错则忽略
@@ -318,11 +271,11 @@ function toggleTag(tag: string) {
 }
 
 function toggleGroup(g: GroupVO) {
-  const idx = activeGroupNames.value.indexOf(g.name)
+  const idx = activeGroupIds.value.indexOf(g.id)
   if (idx >= 0) {
-    activeGroupNames.value.splice(idx, 1)
+    activeGroupIds.value.splice(idx, 1)
   } else {
-    activeGroupNames.value.push(g.name)
+    activeGroupIds.value.push(g.id)
   }
 }
 
@@ -337,21 +290,6 @@ async function selectArticle(article: StudyArticle) {
   } finally {
     contentLoading.value = false
   }
-}
-
-function togglePublished() {
-  if (publishedExpanded.value) {
-    publishedExpanded.value = false
-  } else {
-    publishedExpanded.value = true
-    activeStatus.value = 'PUBLISHED'
-    publishedSubFilter.value = null
-  }
-}
-
-function selectPublishedSub(sub: 'PUBLIC' | 'PRIVATE' | 'REVIEWING') {
-  activeStatus.value = 'PUBLISHED'
-  publishedSubFilter.value = sub
 }
 
 function viewDetail() {
@@ -461,51 +399,6 @@ onMounted(() => {
   margin-left: auto;
   font-size: var(--caption);
   color: var(--muted);
-}
-
-.sidebar-action-chevron {
-  display: inline-flex;
-  align-items: center;
-  color: var(--muted);
-  transition: transform 0.2s var(--ease);
-}
-.sidebar-action-chevron.expanded {
-  transform: rotate(180deg);
-}
-
-.sidebar-sub-items {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.sidebar-sub-btn {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-xs);
-  width: 100%;
-  padding: 5px var(--spacing-sm) 5px 32px;
-  border: none;
-  border-radius: var(--rounded-sm);
-  background: transparent;
-  color: var(--charcoal);
-  font-family: var(--font-sans);
-  font-size: var(--body-sm);
-  font-weight: var(--weight-regular);
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background 0.15s var(--ease), color 0.15s var(--ease);
-  text-align: left;
-}
-.sidebar-sub-btn:hover {
-  background: var(--hairline-soft);
-  color: var(--ink);
-}
-.sidebar-sub-btn.active {
-  background: var(--canvas);
-  color: var(--ink);
-  font-weight: var(--weight-medium);
-  box-shadow: rgba(15, 15, 15, 0.06) 0px 1px 3px 0px;
 }
 
 /* Scrollable zone */
@@ -798,7 +691,7 @@ onMounted(() => {
 }
 
 .group-modal-card {
-  width: 320px;
+  width: 480px;
   max-height: 400px;
   display: flex;
   flex-direction: column;

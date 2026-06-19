@@ -64,7 +64,8 @@
                 <input
                   v-model="groupSearch"
                   class="group-modal-search"
-                  placeholder="请输入文字搜索，Enter键可添加自定义分组"
+                  placeholder="输入分组名，Enter 添加（最多50字）"
+                  maxlength="50"
                   @keydown.enter.prevent="handleGroupSearchEnter"
                 />
                 <div class="group-modal-tags">

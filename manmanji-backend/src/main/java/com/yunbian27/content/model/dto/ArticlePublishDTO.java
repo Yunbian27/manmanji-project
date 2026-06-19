@@ -16,7 +16,7 @@ public class ArticlePublishDTO {
     /** 文章ID（新建时为 null，更新时传入） */
     private Long id;
 
-    /** 文章标题(5-100字) */
+    /** 文章标题(5-100 字) */
     @NotBlank(message = "标题不能为空")
     @Size(min = 5, max = 100, message = "标题 5-100 字")
     private String title;

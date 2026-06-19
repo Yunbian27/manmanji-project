@@ -80,6 +80,7 @@ export interface ArticleEditorVO {
   id: number
   title: string
   content: string
+  status?: string
   summary?: string
   coverUrl?: string
   articleType?: string
@@ -127,7 +128,7 @@ export interface StudyArticle {
   status: 'DRAFT' | 'PUBLISHED' | 'PRIVATE' | 'REVIEWING' | 'REJECTED' | 'BOOKMARKED'
   visibility?: 'PUBLIC' | 'PRIVATE' | 'FOLLOWER'
   tags?: string[]                 // 标签名称列表
-  groupNames?: string[]           // 分组名称列表
+  groupIds?: number[]              // 分组ID列表
   updateTime: string               // 最后修改时间
   // 仅收藏文章
   sourceAuthor?: string           // 原作者昵称

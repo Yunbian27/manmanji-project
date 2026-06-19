@@ -1,4 +1,9 @@
 package com.yunbian27.content.model.vo;
+import com.yunbian27.content.constant.ArticleStatus;
+import com.yunbian27.content.constant.ArticleVisibility;
+import com.yunbian27.content.constant.ArticleType;
+import com.yunbian27.content.constant.CreationStatement;
+import com.yunbian27.content.constant.SourceType;
 
 import lombok.Data;
 
@@ -22,15 +27,15 @@ public class ArticleVO {
     /** 作者用户ID */
     private Long userId;
     /** 状态(UNPUBLISHED/PUBLISHED) */
-    private String status;
+    private ArticleStatus status;
     /** 可见范围(PUBLIC/PRIVATE) */
-    private String visibility;
+    private ArticleVisibility visibility;
     /** 文章类型(ORIGINAL/REPOST) */
-    private String articleType;
+    private ArticleType articleType;
     /** 创作声明(NONE/AI_ASSISTED/NETWORK_SOURCED/PERSONAL_OPINION) */
-    private String creationStatement;
+    private CreationStatement creationStatement;
     /** 来源(MANUAL/AI_GENERATED) */
-    private String sourceType;
+    private SourceType sourceType;
     /** 转载来源链接 */
     private String sourceUrl;
     /** 阅读量(冗余计数) */

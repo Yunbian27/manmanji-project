@@ -41,9 +41,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toSet;
 
@@ -121,28 +124,21 @@ public class ArticleService {
                         .in(Group::getName, names)
         );
 
-        // 2、插新的
+        // 2、插新的（逐条插入，立即执行并回填 ID）
         Set<String> existingNames = existing.stream()
                 .map(Group::getName).collect(toSet());
-        List<String> newNames = names.stream()
-                .filter(n -> n != null && !n.isBlank() && !existingNames.contains(n)).toList();
-        if (!newNames.isEmpty()) {
-            groupMapper.insert(
-                    newNames.stream().map(n -> {
-                        Group g = new Group();
-                        g.setUserId(userId);
-                        g.setName(n);
-                        return g;
-                    }).toList()
-            );
+        List<Long> groupIds = new ArrayList<>(existing.stream().map(Group::getId).toList());
+        for (String n : names) {
+            if (n == null || n.isBlank() || existingNames.contains(n)) continue;
+            if (n.length() > 50) throw new BusinessException(ErrorCode.BAD_REQUEST, "分组名最多50字");
+            Group g = new Group();
+            g.setUserId(userId);
+            g.setName(n);
+            groupMapper.insert(g);
+            groupIds.add(g.getId());
         }
 
-        // 3、返回ids
-        return groupMapper.selectList(
-                new LambdaQueryWrapper<Group>()
-                        .eq(Group::getUserId, userId)
-                        .in(Group::getName, names)
-        ).stream().map(Group::getId).toList();
+        return groupIds;
     }
 
     private void replaceArticleGroups(Long articleId, List<Long> groupIds) {
@@ -150,14 +146,16 @@ public class ArticleService {
                 new LambdaQueryWrapper<ArticleGroup>()
                         .eq(ArticleGroup::getArticleId, articleId)
         );
-        articleGroupMapper.insert(
-                groupIds.stream().map(gid -> {
-                    ArticleGroup ag = new ArticleGroup();
-                    ag.setArticleId(articleId);
-                    ag.setGroupId(gid);
-                    return ag;
-                }).toList()
-        );
+        if (!groupIds.isEmpty()) {
+            articleGroupMapper.insert(
+                    groupIds.stream().map(gid -> {
+                        ArticleGroup ag = new ArticleGroup();
+                        ag.setArticleId(articleId);
+                        ag.setGroupId(gid);
+                        return ag;
+                    }).toList()
+            );
+        }
     }
 
     /*public void publish(ArticlePublishDTO dto) {
@@ -198,6 +196,9 @@ public class ArticleService {
             if (article == null || !userId.equals(article.getUserId())) {
                 throw new BusinessException(ErrorCode.NOT_FOUND);
             }
+            if (!ArticleStatus.DRAFT.equals(article.getStatus())) {
+                throw new BusinessException(ErrorCode.BAD_REQUEST, "仅草稿状态可保存");
+            }
             article.setTitle(dto.getTitle());
             article.setContent(dto.getContent());
             article.setSlug(generateSlug(dto.getTitle()));
@@ -230,9 +231,6 @@ public class ArticleService {
 
         ArticleEditorVO vo = new ArticleEditorVO();
         BeanUtils.copyProperties(article, vo);
-        vo.setArticleType(article.getArticleType() != null ? article.getArticleType().getValue() : null);
-        vo.setVisibility(article.getVisibility() != null ? article.getVisibility().getValue() : null);
-        vo.setCreationStatement(article.getCreationStatement() != null ? article.getCreationStatement().getValue() : null);
 
         // 标签 ID 列表
         List<ArticleTag> articleTags = articleTagMapper.selectList(
@@ -327,12 +325,6 @@ public class ArticleService {
         }
         ArticleVO articleVO = new ArticleVO();
         BeanUtils.copyProperties(article, articleVO);
-        // 枚举 → 字符串转换（BeanUtils 无法跨类型复制）
-        articleVO.setStatus(article.getStatus() != null ? article.getStatus().getValue() : null);
-        articleVO.setVisibility(article.getVisibility() != null ? article.getVisibility().getValue() : null);
-        articleVO.setArticleType(article.getArticleType() != null ? article.getArticleType().getValue() : null);
-        articleVO.setCreationStatement(article.getCreationStatement() != null ? article.getCreationStatement().getValue() : null);
-        articleVO.setSourceType(article.getSourceType() != null ? article.getSourceType().getValue() : null);
         // 3、写缓存
         stringRedisTemplate.opsForValue().set(key, JsonUtils.toJson(articleVO), RedisTTL.ARTICLE);
         return articleVO;
@@ -381,10 +373,35 @@ public class ArticleService {
      * @return
      */
     public List<ArticleTitlesVO> showArticleTitles() {
-        // 1、获取用户id
         Long userId = SecurityUtils.getCurrentUserId();
+        List<Article> articles = articleMapper.selectList(
+            new LambdaQueryWrapper<Article>()
+                .select(Article::getId, Article::getTitle, Article::getStatus,
+                        Article::getVisibility, Article::getUpdateTime)
+                .eq(Article::getUserId, userId)
+                .orderByDesc(Article::getUpdateTime)
+        );
+        // 批量查分组ID
+        List<Long> articleIds = articles.stream().map(Article::getId).toList();
+        Map<Long, List<Long>> groupIdMap = articleIds.isEmpty() ? Map.of()
+            : articleGroupMapper.selectList(
+                new LambdaQueryWrapper<ArticleGroup>().in(ArticleGroup::getArticleId, articleIds))
+                .stream()
+                .collect(Collectors.groupingBy(
+                    ArticleGroup::getArticleId,
+                    Collectors.mapping(ArticleGroup::getGroupId, Collectors.toList())
+                ));
 
-        return articleMapper.selectArticleTitlestByUserId(userId);
+        return articles.stream().map(a -> {
+            ArticleTitlesVO vo = new ArticleTitlesVO();
+            vo.setId(a.getId());
+            vo.setTitle(a.getTitle());
+            vo.setStatus(a.getStatus());
+            vo.setVisibility(a.getVisibility());
+            vo.setGroupIds(groupIdMap.getOrDefault(a.getId(), List.of()));
+            vo.setUpdateTime(a.getUpdateTime());
+            return vo;
+        }).toList();
     }
 
     /**
@@ -405,8 +422,8 @@ public class ArticleService {
         IPage<Article> result = articleMapper.selectPage(new Page<>(page, size), qw);
         List<ArticleManageVO> records = result.getRecords().stream().map(a -> ArticleManageVO.builder()
                 .id(a.getId()).title(a.getTitle()).summary(a.getSummary())
-                .coverUrl(a.getCoverUrl()).status(a.getStatus().getValue())
-                .visibility(a.getVisibility() != null ? a.getVisibility().getValue() : null)
+                .coverUrl(a.getCoverUrl()).status(a.getStatus())
+                .visibility(a.getVisibility())
                 .viewCount(a.getViewCount()).likeCount(a.getLikeCount())
                 .commentCount(a.getCommentCount()).bookmarkCount(a.getBookmarkCount())
                 .reviewReason(a.getReviewReason()).updateTime(a.getUpdateTime())

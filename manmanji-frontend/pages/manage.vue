@@ -62,9 +62,9 @@
                 </div>
 
                 <div class="manage-body">
-                  <p class="manage-title">{{ a.title || '未命名' }}</p>
-                  <p class="manage-summary">{{ a.summary || '暂无摘要' }}</p>
-                  <p v-if="a.status === 'REJECTED' && a.reviewReason" class="manage-review-reason">驳回理由：{{ a.reviewReason }}</p>
+                  <p class="manage-title" @click.stop="openTooltip(a, 'title', $event)">{{ a.title || '未命名' }}</p>
+                  <p class="manage-summary" @click.stop="openTooltip(a, 'summary', $event)">{{ a.summary || '暂无摘要' }}</p>
+                  <p v-if="a.status === 'REJECTED' && a.reviewReason" class="manage-review-reason" @click.stop="openTooltip(a, 'reason', $event)">驳回理由：{{ a.reviewReason }}</p>
                   <p class="manage-meta">
                     <span :class="statusBadgeClass(a.status)">{{ statusLabel(a.status) }}</span>
                     <span class="meta-dot">·</span>
@@ -93,6 +93,18 @@
               <p class="empty-state-text">暂无文章</p>
               <button class="btn-ghost" @click="goWrite">去写一篇</button>
             </div>
+
+            <!-- 悬浮详情 -->
+            <Teleport to="body">
+              <div
+                v-if="tooltip"
+                class="manage-tooltip"
+                :style="{ left: tooltip.rect.left + 'px', top: (tooltip.rect.top - 8) + 'px', transform: 'translateY(-100%)' }"
+                @click.stop
+              >
+                {{ tooltip.text }}
+              </div>
+            </Teleport>
 
             <!-- ── 分页 ── -->
             <div class="pagination">
@@ -223,6 +235,21 @@ function visibilityLabel(v?: string) {
   return map[v || ''] || '公开'
 }
 
+const tooltip = ref<{ text: string; rect: DOMRect } | null>(null)
+
+function openTooltip(a: ArticleManage, field: string, e: MouseEvent) {
+  const target = e.currentTarget as HTMLElement
+  const text = field === 'title' ? (a.title || '未命名')
+    : field === 'summary' ? (a.summary || '暂无摘要')
+    : (a.reviewReason || '')
+  if (!text) return
+  tooltip.value = { text, rect: target.getBoundingClientRect() }
+}
+
+function closeTooltip() {
+  tooltip.value = null
+}
+
 function onThumbError(e: Event) {
   const img = e.target as HTMLImageElement
   img.style.display = 'none'
@@ -286,6 +313,12 @@ function goToPage(page: number) {
   currentPage.value = page
   fetchArticles()
 }
+
+watch(tooltip, (v) => {
+  if (v) {
+    document.addEventListener('click', closeTooltip, { once: true })
+  }
+})
 
 watch(articleFilter, () => {
   currentPage.value = 1
@@ -506,6 +539,25 @@ onMounted(() => fetchArticles())
 .empty-state { padding: var(--spacing-xxxl) var(--spacing-xl); text-align: center; }
 
 .empty-state-text { font-family: var(--font-sans); font-size: 14px; color: var(--steel); margin-bottom: var(--spacing-sm); }
+
+/* ===== Tooltip ===== */
+.manage-tooltip {
+  position: fixed;
+  max-width: 320px;
+  padding: var(--spacing-lg);
+  background: var(--canvas);
+  border-radius: var(--rounded-lg);
+  border: 1px solid var(--hairline);
+  box-shadow: rgba(15, 15, 15, 0.16) 0px 16px 48px -8px;
+  font-family: var(--font-sans);
+  font-size: var(--body-sm);
+  font-weight: var(--weight-regular);
+  line-height: 1.50;
+  color: var(--ink);
+  white-space: normal;
+  word-break: break-word;
+  z-index: var(--z-modal);
+}
 
 /* ===== Pagination ===== */
 .pagination {
