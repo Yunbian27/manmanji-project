@@ -159,6 +159,12 @@ export interface ArticleManage {
   updateTime: string
 }
 
+// ---------- 标签 ----------
+export interface TagVO {
+  id: number
+  name: string
+}
+
 // ---------- 分组 ----------
 export interface GroupVO {
   id: number

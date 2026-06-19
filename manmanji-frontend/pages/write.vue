@@ -29,54 +29,81 @@
       <div class="ps-container">
         <h3 class="ps-title">发布设置</h3>
         <div class="ps-form">
-          <div class="ps-field">
+          <div class="ps-field ps-field-picker" @click.stop>
             <span class="ps-label">标签</span>
-            <div class="tag-picker-wrap">
-              <button type="button" class="tag-picker-trigger" @click="showTagPicker = !showTagPicker">
-                <span v-if="local.tagIds.length === 0" class="picker-placeholder">选择标签</span>
-                <div v-else class="tag-list">
-                  <AppTag v-for="tagId in local.tagIds" :key="tagId" variant="default">{{ getTagName(tagId) }}<button class="tag-remove" @click.stop="removeTag(tagId)"><IconLucideX class="icon-xxs" /></button></AppTag>
-                </div>
-                <IconLucideChevronDown class="picker-chevron" :class="{ open: showTagPicker }" />
+            <div class="picker-tags-area">
+              <span v-for="tagId in local.tagIds" :key="tagId" class="picker-tag-pill">
+                {{ getTagName(tagId) }}
+                <button class="picker-tag-remove" @click="removeTag(tagId)"><IconLucideX class="icon-xs" /></button>
+              </span>
+              <button type="button" class="picker-add-btn" :disabled="local.tagIds.length >= 8" @click="openTagPicker">
+                {{ local.tagIds.length >= 8 ? '已达上限' : '添加标签' }}
               </button>
-              <div v-if="showTagPicker" class="tag-picker-popover">
-                <button v-for="tag in availableTags" :key="tag.id" type="button" :class="['tag-picker-chip', { selected: local.tagIds.includes(tag.id) }]" @click="toggleTag(tag.id)">{{ tag.name }}</button>
+            </div>
+            <div v-if="showTagPicker" class="picker-modal-overlay">
+              <div class="picker-modal-dialog">
+                <div class="picker-modal-header">
+                  <span class="picker-modal-title">标签（{{ local.tagIds.length }}/8）</span>
+                  <button type="button" class="picker-modal-close" @click="showTagPicker = false; tagSearch = ''">
+                    <IconLucideX class="icon-md" />
+                  </button>
+                </div>
+                <input
+                  v-model="tagSearch"
+                  class="picker-modal-search"
+                  placeholder="搜索标签"
+                  @keydown.enter.prevent
+                />
+                <div class="picker-modal-tags">
+                  <button
+                    v-for="tag in filteredTags"
+                    :key="tag.id"
+                    type="button"
+                    :class="['picker-modal-tag', { selected: local.tagIds.includes(tag.id) }]"
+                    :disabled="!local.tagIds.includes(tag.id) && local.tagIds.length >= 8"
+                    @click="toggleTag(tag.id)"
+                  >{{ tag.name }}</button>
+                  <div v-if="filteredTags.length === 0" class="picker-modal-empty">暂无匹配标签</div>
+                </div>
               </div>
             </div>
           </div>
-          <div class="ps-field ps-field-group" @click.stop>
+          <div class="ps-field ps-field-picker" @click.stop>
             <span class="ps-label">分组</span>
-            <div class="group-tags-area">
-              <span v-for="(name, i) in local.groupNames" :key="i" class="group-tag-pill">
+            <div class="picker-tags-area">
+              <span v-for="(name, i) in local.groupNames" :key="i" class="picker-tag-pill">
                 {{ name }}
-                <button class="group-tag-remove" @click="removeGroup(i)"><IconLucideX class="icon-xs" /></button>
+                <button class="picker-tag-remove" @click="removeGroup(i)"><IconLucideX class="icon-xs" /></button>
               </span>
-              <button type="button" class="group-add-btn" @click="openGroupPicker">添加分组</button>
+              <button type="button" class="picker-add-btn" :disabled="local.groupNames.length >= 8" @click="openGroupPicker">
+                {{ local.groupNames.length >= 8 ? '已达上限' : '添加分组' }}
+              </button>
             </div>
-            <div v-if="showGroupPicker" class="group-modal-overlay">
-              <div class="group-modal-dialog">
-                <div class="group-modal-header">
-                  <span class="group-modal-title">分组</span>
-                  <button type="button" class="group-modal-close" @click="showGroupPicker = false; groupSearch = ''">
+            <div v-if="showGroupPicker" class="picker-modal-overlay">
+              <div class="picker-modal-dialog">
+                <div class="picker-modal-header">
+                  <span class="picker-modal-title">分组（{{ local.groupNames.length }}/8）</span>
+                  <button type="button" class="picker-modal-close" @click="showGroupPicker = false; groupSearch = ''">
                     <IconLucideX class="icon-md" />
                   </button>
                 </div>
                 <input
                   v-model="groupSearch"
-                  class="group-modal-search"
+                  class="picker-modal-search"
                   placeholder="输入分组名，Enter 添加（最多50字）"
                   maxlength="50"
                   @keydown.enter.prevent="handleGroupSearchEnter"
                 />
-                <div class="group-modal-tags">
+                <div class="picker-modal-tags">
                   <button
                     v-for="g in filteredGroups"
                     :key="g.id"
                     type="button"
-                    :class="['group-modal-tag', { selected: local.groupNames.includes(g.name) }]"
+                    :class="['picker-modal-tag', { selected: local.groupNames.includes(g.name) }]"
+                    :disabled="!local.groupNames.includes(g.name) && local.groupNames.length >= 8"
                     @click="toggleGroup(g)"
                   >{{ g.name }}</button>
-                  <div v-if="filteredGroups.length === 0" class="group-modal-empty">暂无匹配分组，按 Enter 创建</div>
+                  <div v-if="filteredGroups.length === 0" class="picker-modal-empty">暂无匹配分组，按 Enter 创建</div>
                 </div>
               </div>
             </div>
@@ -139,10 +166,9 @@
 
 <script setup lang="ts">
 import { createEditorState, provideEditor, type PublishSettings, type EditorState } from '~/composables/useArticleEditor'
-import IconLucideChevronDown from '~icons/lucide/chevron-down'
 import IconLucideUpload from '~icons/lucide/upload'
 import IconLucideX from '~icons/lucide/x'
-import type { GroupVO } from '~/types'
+import type { GroupVO, TagVO } from '~/types'
 
 definePageMeta({ layout: 'editor', middleware: 'role-guard' })
 
@@ -212,6 +238,7 @@ const isSaving = computed(() => editor.isSaving.value ?? false)
 
 const showTagPicker = ref(false)
 const showGroupPicker = ref(false)
+const tagSearch = ref('')
 const groupSearch = ref('')
 const coverInputRef = ref<HTMLInputElement | null>(null)
 const availableGroups = ref<GroupVO[]>([])
@@ -227,22 +254,17 @@ const visibilityOptions = [
   { value: 'FOLLOWER' as const, label: '粉丝可见' },
 ]
 
-const availableTags = [
-  { id: 1, name: 'Java' }, { id: 2, name: '并发' }, { id: 3, name: 'PostgreSQL' },
-  { id: 4, name: '数据库' }, { id: 5, name: 'Kubernetes' }, { id: 6, name: '分布式' },
-  { id: 7, name: 'Spring Boot' }, { id: 8, name: '前端' }, { id: 9, name: 'Go' },
-  { id: 10, name: 'Redis' }, { id: 11, name: '源码' }, { id: 12, name: '设计模式' },
-  { id: 13, name: 'Linux' }, { id: 14, name: 'Python' }, { id: 15, name: '安全' },
-  { id: 16, name: 'TypeScript' }, { id: 17, name: 'Elasticsearch' }, { id: 18, name: '消息队列' },
-  { id: 19, name: 'Nginx' }, { id: 20, name: 'Docker' }, { id: 21, name: '微服务' },
-  { id: 22, name: '性能优化' }, { id: 23, name: '网络' }, { id: 24, name: '运维' },
-  { id: 25, name: 'AI' }, { id: 26, name: '机器学习' }, { id: 27, name: 'Rust' },
-  { id: 28, name: '工程实践' }, { id: 29, name: '搜索' },
-]
+const availableTags = ref<TagVO[]>([])
 
 const local = reactive<PublishSettings>({
   tagIds: [], groupNames: [], coverUrl: '', articleType: 'ORIGINAL',
   summary: '', sourceUrl: '', visibility: 'PUBLIC', creationStatement: 'NONE',
+})
+
+const filteredTags = computed(() => {
+  const q = tagSearch.value.trim().toLowerCase()
+  if (!q) return availableTags.value
+  return availableTags.value.filter(t => t.name.toLowerCase().includes(q))
 })
 
 const filteredGroups = computed(() => {
@@ -252,13 +274,28 @@ const filteredGroups = computed(() => {
 })
 
 onMounted(async () => {
+  try { availableTags.value = await useArticle().listTags() } catch { availableTags.value = [] }
   try { availableGroups.value = await useArticle().listGroups() } catch { availableGroups.value = [] }
 })
 
-function getTagName(tagId: number) { return availableTags.find(t => t.id === tagId)?.name ?? `标签 ${tagId}` }
-function toggleTag(tagId: number) { const i = local.tagIds.indexOf(tagId); i >= 0 ? local.tagIds.splice(i, 1) : local.tagIds.push(tagId) }
+function getTagName(tagId: number) { return availableTags.value.find(t => t.id === tagId)?.name ?? `标签 ${tagId}` }
+function toggleTag(tagId: number) {
+  const idx = local.tagIds.indexOf(tagId)
+  if (idx >= 0) { local.tagIds.splice(idx, 1); return }
+  if (local.tagIds.length >= 8) { toast.show('最多添加8个标签', 'error'); return }
+  local.tagIds.push(tagId)
+}
 function removeTag(tagId: number) { local.tagIds = local.tagIds.filter(id => id !== tagId) }
-function toggleGroup(g: GroupVO) { const i = local.groupNames.indexOf(g.name); i >= 0 ? local.groupNames.splice(i, 1) : local.groupNames.push(g.name) }
+function openTagPicker() {
+  tagSearch.value = ''
+  showTagPicker.value = true
+}
+function toggleGroup(g: GroupVO) {
+  const idx = local.groupNames.indexOf(g.name)
+  if (idx >= 0) { local.groupNames.splice(idx, 1); return }
+  if (local.groupNames.length >= 8) { toast.show('最多添加8个分组', 'error'); return }
+  local.groupNames.push(g.name)
+}
 function removeGroup(i: number) { local.groupNames.splice(i, 1) }
 function openGroupPicker() {
   groupSearch.value = ''
@@ -267,6 +304,7 @@ function openGroupPicker() {
 function handleGroupSearchEnter() {
   const q = groupSearch.value.trim()
   if (!q) return
+  if (local.groupNames.length >= 8) { toast.show('最多添加8个分组', 'error'); groupSearch.value = ''; return }
   const match = availableGroups.value.find(g => g.name === q)
   if (match) {
     toggleGroup(match)
@@ -282,8 +320,8 @@ async function handlePublishSettings() {
   Object.assign(editor.publishSettings, local)
   const ok = await editor.publish()
   if (ok) {
-    toast.show('发布成功', 'success')
-    router.push('/home')
+    editor.suppressUnsavedWarning.value = true
+    router.push(`/publish-success?articleId=${editor.currentArticleId.value}`)
   } else if (editor.titleError.value) {
     toast.show(editor.titleError.value, 'error')
   } else if (editor.publishError.value) {
@@ -293,8 +331,8 @@ async function handlePublishSettings() {
 
 function onDocClick(e: MouseEvent) {
   const t = e.target as HTMLElement
-  if (showTagPicker.value && !t.closest('.tag-picker-wrap')) showTagPicker.value = false
-  if (showGroupPicker.value && !t.closest('.group-modal-dialog') && !t.closest('.ps-field-group')) showGroupPicker.value = false
+  if (showTagPicker.value && !t.closest('.picker-modal-dialog') && !t.closest('.ps-field-picker')) showTagPicker.value = false
+  if (showGroupPicker.value && !t.closest('.picker-modal-dialog') && !t.closest('.ps-field-picker')) showGroupPicker.value = false
 }
 onMounted(() => document.addEventListener('click', onDocClick))
 onUnmounted(() => document.removeEventListener('click', onDocClick))
@@ -385,55 +423,47 @@ onUnmounted(() => document.removeEventListener('click', onDocClick))
 .ps-btn-publish:hover:not(:disabled) { background: var(--primary-pressed); }
 .ps-btn-publish:disabled { opacity: 0.5; cursor: not-allowed; }
 
-.tag-picker-wrap { position: relative; }
+/* ── 通用标签/分组选区 ── */
+.ps-field-picker { position: relative; }
 
-.tag-picker-trigger {
-  display: flex; align-items: center; gap: 4px; width: 100%;
-  min-height: var(--spacing-xxl); padding: var(--spacing-xs) var(--spacing-md);
-  border: 1px solid var(--hairline-strong); border-radius: var(--rounded-md);
-  background: var(--surface); cursor: pointer; transition: border-color 0.15s var(--ease);
-}
-.tag-picker-trigger:hover { border-color: var(--primary); }
-
-.picker-placeholder { color: var(--muted); font-size: var(--body-md); flex: 1; text-align: left; }
-
-.picker-chevron { margin-left: auto; flex-shrink: 0; color: var(--steel); transition: transform 0.2s var(--ease); }
-.picker-chevron.open { transform: rotate(180deg); }
-
-.tag-list { display: flex; flex-wrap: wrap; gap: 4px; }
-
-.tag-remove {
-  display: inline-flex; align-items: center; margin-left: 2px; padding: 0;
-  background: transparent; border: none; color: var(--muted); cursor: pointer;
-}
-.tag-remove:hover { color: var(--semantic-error); }
-
-.tag-picker-popover {
-  position: absolute; left: 0; right: 0; top: calc(100% + 4px);
-  background: var(--canvas); border: 1px solid var(--hairline); border-radius: var(--rounded-lg);
-  box-shadow: rgba(15, 15, 15, 0.08) 0px 4px 12px 0px; z-index: 10;
-  max-height: 180px; overflow-y: auto;
-  display: flex; flex-wrap: wrap; gap: 6px; padding: var(--spacing-sm);
+.picker-tags-area {
+  display: flex; flex-wrap: wrap; align-items: center; gap: var(--spacing-xs);
 }
 
-.tag-picker-chip {
-  padding: 4px 10px; border: 1px solid var(--hairline); border-radius: var(--rounded-full);
-  background: transparent; color: var(--steel); font-size: var(--body-sm); font-weight: var(--weight-medium);
-  cursor: pointer; transition: all 0.15s var(--ease);
+.picker-tag-pill {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: var(--spacing-xs) var(--spacing-md);
+  background: var(--surface); color: var(--ink);
+  border-radius: var(--rounded-md);
+  font-family: var(--font-sans); font-size: var(--body-sm-medium); font-weight: var(--weight-medium);
 }
-.tag-picker-chip:hover { border-color: var(--hairline-strong); color: var(--ink); }
-.tag-picker-chip.selected { background: var(--ink-deep); border-color: var(--ink-deep); color: var(--on-dark); }
 
-.picker-empty { width: 100%; text-align: center; font-size: var(--body-sm); color: var(--muted); padding: var(--spacing-sm); }
-/* ── 分组字段定位锚点 ── */
-.ps-field-group { position: relative; }
+.picker-tag-remove {
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 0; border: none; background: transparent;
+  color: var(--stone); cursor: pointer;
+  transition: color 0.2s var(--ease);
+}
+.picker-tag-remove:hover { color: var(--ink); }
 
-/* ── 分组弹窗（上方弹出）── */
-.group-modal-overlay {
+.picker-add-btn {
+  display: inline-flex; align-items: center;
+  padding: var(--spacing-xs) var(--spacing-md);
+  border: 1px solid var(--hairline); border-radius: var(--rounded-md);
+  background: transparent; color: var(--ink);
+  font-family: var(--font-sans); font-size: var(--body-sm-medium); font-weight: var(--weight-medium);
+  cursor: pointer;
+  transition: background 0.2s var(--ease), border-color 0.2s var(--ease);
+}
+.picker-add-btn:hover:not(:disabled) { background: var(--hairline-soft); border-color: var(--hairline-strong); }
+.picker-add-btn:disabled { color: var(--muted); cursor: not-allowed; }
+
+/* ── 标签/分组弹窗（上方弹出）── */
+.picker-modal-overlay {
   position: absolute; bottom: calc(100% + 8px); left: 0; z-index: 100;
 }
 
-.group-modal-dialog {
+.picker-modal-dialog {
   background: var(--canvas);
   border-radius: var(--rounded-lg);
   border: 1px solid var(--hairline);
@@ -443,28 +473,28 @@ onUnmounted(() => document.removeEventListener('click', onDocClick))
   overflow: hidden;
 }
 
-.group-modal-header {
+.picker-modal-header {
   display: flex; align-items: center; justify-content: space-between;
   padding: var(--spacing-lg) var(--spacing-lg) 0;
   flex-shrink: 0;
 }
 
-.group-modal-title {
+.picker-modal-title {
   font-size: var(--heading-4);
   font-weight: var(--weight-semibold);
   color: var(--ink);
 }
 
-.group-modal-close {
+.picker-modal-close {
   display: flex; align-items: center; justify-content: center;
   width: 32px; height: 32px; padding: 0;
   border: none; border-radius: var(--rounded-sm);
   background: transparent; color: var(--steel); cursor: pointer;
   transition: background 0.2s var(--ease), color 0.2s var(--ease);
 }
-.group-modal-close:hover { background: var(--hairline-soft); color: var(--ink); }
+.picker-modal-close:hover { background: var(--hairline-soft); color: var(--ink); }
 
-.group-modal-search {
+.picker-modal-search {
   margin: var(--spacing-lg);
   height: 36px; padding: 0 var(--spacing-md);
   border: 1px solid var(--hairline-strong); border-radius: var(--rounded-md);
@@ -473,17 +503,17 @@ onUnmounted(() => document.removeEventListener('click', onDocClick))
   transition: border-color 0.2s var(--ease);
   flex-shrink: 0;
 }
-.group-modal-search::placeholder { color: var(--muted); }
-.group-modal-search:focus { border-color: var(--primary); }
+.picker-modal-search::placeholder { color: var(--muted); }
+.picker-modal-search:focus { border-color: var(--primary); }
 
-.group-modal-tags {
+.picker-modal-tags {
   display: flex; flex-wrap: wrap; gap: var(--spacing-xs);
   padding: 0 var(--spacing-lg) var(--spacing-lg);
   overflow-y: auto;
   min-height: 0;
 }
 
-.group-modal-tag {
+.picker-modal-tag {
   display: inline-flex; align-items: center;
   padding: var(--spacing-xs) var(--spacing-md);
   border: 1px solid var(--hairline); border-radius: var(--rounded-full);
@@ -492,47 +522,16 @@ onUnmounted(() => document.removeEventListener('click', onDocClick))
   cursor: pointer;
   transition: background 0.2s var(--ease), color 0.2s var(--ease), border-color 0.2s var(--ease);
 }
-.group-modal-tag:hover { border-color: var(--hairline-strong); color: var(--ink); }
-.group-modal-tag.selected {
+.picker-modal-tag:hover:not(:disabled) { border-color: var(--hairline-strong); color: var(--ink); }
+.picker-modal-tag.selected {
   background: var(--ink-deep); border-color: var(--ink-deep); color: var(--on-dark);
 }
+.picker-modal-tag:disabled { opacity: 0.4; cursor: not-allowed; }
 
-.group-modal-empty {
+.picker-modal-empty {
   width: 100%; text-align: center; font-size: var(--body-sm); color: var(--muted);
   padding: var(--spacing-lg) 0;
 }
-
-/* ── 分组标签 ── */
-.group-tags-area {
-  display: flex; flex-wrap: wrap; align-items: center; gap: var(--spacing-xs);
-}
-
-.group-tag-pill {
-  display: inline-flex; align-items: center; gap: 4px;
-  padding: var(--spacing-xs) var(--spacing-md);
-  background: var(--surface); color: var(--ink);
-  border-radius: var(--rounded-md);
-  font-family: var(--font-sans); font-size: var(--body-sm-medium); font-weight: var(--weight-medium);
-}
-
-.group-tag-remove {
-  display: inline-flex; align-items: center; justify-content: center;
-  padding: 0; border: none; background: transparent;
-  color: var(--stone); cursor: pointer;
-  transition: color 0.2s var(--ease);
-}
-.group-tag-remove:hover { color: var(--ink); }
-
-.group-add-btn {
-  display: inline-flex; align-items: center;
-  padding: var(--spacing-xs) var(--spacing-md);
-  border: 1px solid var(--hairline); border-radius: var(--rounded-md);
-  background: transparent; color: var(--ink);
-  font-family: var(--font-sans); font-size: var(--body-sm-medium); font-weight: var(--weight-medium);
-  cursor: pointer;
-  transition: background 0.2s var(--ease), border-color 0.2s var(--ease);
-}
-.group-add-btn:hover { background: var(--hairline-soft); border-color: var(--hairline-strong); }
 
 .cover-upload-area { display: flex; flex-wrap: wrap; align-items: flex-start; gap: var(--spacing-sm); }
 .cover-file-input { display: none; }

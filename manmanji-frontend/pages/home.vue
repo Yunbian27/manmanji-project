@@ -107,7 +107,7 @@
               <IconLucideExternalLink class="icon-md" />
             </button>
           </div>
-          <span class="center-meta-text" v-if="selectedArticle">{{ selectedArticle.updateTime }}</span>
+          <span class="center-meta-text" v-if="selectedArticle">{{ formatTime(selectedArticle.updateTime) }}</span>
         </div>
         <div class="content-topbar-right">
           <button class="btn-primary" @click="onPublish">发布文章</button>
@@ -261,6 +261,13 @@ async function handleDeleteGroup(id: number) {
     // 后端报错则忽略
   }
 }
+function formatTime(iso: string) {
+  if (!iso) return ''
+  const d = new Date(iso)
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日 ${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
 function toggleTag(tag: string) {
   const idx = activeTagNames.value.indexOf(tag)
   if (idx >= 0) {

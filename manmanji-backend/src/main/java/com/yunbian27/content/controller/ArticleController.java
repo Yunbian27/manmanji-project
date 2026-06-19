@@ -7,6 +7,7 @@ import com.yunbian27.content.model.vo.ArticleManageVO;
 import com.yunbian27.content.model.vo.ArticleTitlesVO;
 import com.yunbian27.content.model.vo.ArticleVO;
 import com.yunbian27.content.model.vo.GroupVO;
+import com.yunbian27.content.model.vo.TagVO;
 import com.yunbian27.content.service.ArticleService;
 import com.yunbian27.common.result.PageDTO;
 import com.yunbian27.common.result.Result;
@@ -39,6 +40,11 @@ public class ArticleController {
     @PutMapping("/save")
     public Result<Long> save(@Valid @RequestBody ArticleSaveDTO dto) {
         return Result.success(articleService.save(dto));
+    }
+
+    @GetMapping("/tags")
+    public Result<List<TagVO>> tags() {
+        return Result.success(articleService.listTags());
     }
 
     @GetMapping("/groups")

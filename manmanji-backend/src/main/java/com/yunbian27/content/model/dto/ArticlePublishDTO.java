@@ -32,8 +32,10 @@ public class ArticlePublishDTO {
     /** 封面图链接 */
     private String coverUrl;
     /** 标签ID列表 */
+    @Size(max = 8, message = "最多添加8个标签")
     private List<Long> tagIds;
     /** 分组名称列表 */
+    @Size(max = 8, message = "最多添加8个分组")
     private List<String> groupNames;
     /** 文章类型 */
     @NotNull(message = "文章类型不能为空")

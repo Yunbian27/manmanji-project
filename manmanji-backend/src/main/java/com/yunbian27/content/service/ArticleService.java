@@ -23,6 +23,7 @@ import com.yunbian27.content.model.entity.ArticleTag;
 import com.yunbian27.content.model.entity.Group;
 import com.yunbian27.content.model.entity.Tag;
 import com.yunbian27.content.model.vo.ArticleEditorVO;
+import com.yunbian27.content.model.vo.TagVO;
 import com.yunbian27.content.model.vo.ArticleManageVO;
 import com.yunbian27.content.model.vo.ArticleTitlesVO;
 import com.yunbian27.content.model.vo.ArticleVO;
@@ -32,6 +33,7 @@ import com.yunbian27.ai.model.LlmGlobalSettingEntity;
 import com.yunbian27.ai.registry.LlmProviderRegistry;
 import com.yunbian27.content.mapper.ArticleMapper;
 import com.yunbian27.content.mapper.ArticleTagMapper;
+import com.yunbian27.content.mapper.TagMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
@@ -59,6 +61,7 @@ public class ArticleService {
     private final ArticleTagMapper articleTagMapper;
     private final ArticleGroupMapper articleGroupMapper;
     private final GroupMapper groupMapper;
+    private final TagMapper tagMapper;
 
     private final LlmProviderRegistry providerRegistry;
     private final LlmGlobalSettingMapper llmGlobalSettingMapper;
@@ -102,6 +105,7 @@ public class ArticleService {
 
         Long articleId = article.getId();
         handleGroups(userId, articleId, dto.getGroupNames());
+        handleTags(articleId, dto.getTagIds());
 
         log.info("文章发布成功: id={}, title={}", articleId, article.getTitle());
         // 删除缓存，确保下次读取获取最新数据
@@ -156,6 +160,20 @@ public class ArticleService {
                     }).toList()
             );
         }
+    }
+
+    private void handleTags(Long articleId, List<Long> tagIds) {
+        if (tagIds == null || tagIds.isEmpty()) return;
+        articleTagMapper.delete(
+                new LambdaQueryWrapper<ArticleTag>().eq(ArticleTag::getArticleId, articleId));
+        articleTagMapper.insert(
+                tagIds.stream().map(tid -> {
+                    ArticleTag at = new ArticleTag();
+                    at.setArticleId(articleId);
+                    at.setTagId(tid);
+                    return at;
+                }).toList()
+        );
     }
 
     /*public void publish(ArticlePublishDTO dto) {
@@ -429,6 +447,20 @@ public class ArticleService {
                 .reviewReason(a.getReviewReason()).updateTime(a.getUpdateTime())
                 .build()).toList();
         return PageDTO.of(result.getTotal(), result.getCurrent(), result.getSize(), records);
+    }
+
+    /**
+     * 获取所有标签
+     */
+    public List<TagVO> listTags() {
+        List<Tag> tags = tagMapper.selectList(
+                new LambdaQueryWrapper<Tag>().select(Tag::getId, Tag::getName));
+        return tags.stream().map(t -> {
+            TagVO vo = new TagVO();
+            vo.setId(t.getId());
+            vo.setName(t.getName());
+            return vo;
+        }).toList();
     }
 
     /**

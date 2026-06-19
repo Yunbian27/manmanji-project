@@ -1,4 +1,4 @@
-import type { ArticleVO, ArticleEditorVO, ArticleSaveDTO, ArticlePublishDTO, StudyArticle, ArticleManage, PageDTO, GroupVO } from '~/types'
+import type { ArticleVO, ArticleEditorVO, ArticleSaveDTO, ArticlePublishDTO, StudyArticle, ArticleManage, PageDTO, GroupVO, TagVO } from '~/types'
 
 export function useArticle() {
   const api = useApi()
@@ -13,6 +13,11 @@ export function useArticle() {
     const params = new URLSearchParams({ page: String(page), size: String(size) })
     if (status && status !== 'ALL') params.set('status', status)
     return api.get<PageDTO<ArticleManage>>(`/api/articles/manage?${params.toString()}`)
+  }
+
+  /** 获取所有标签 */
+  function listTags(): Promise<TagVO[]> {
+    return api.get<TagVO[]>('/api/articles/tags')
   }
 
   /** 获取用户已有分组 */
@@ -67,5 +72,5 @@ export function useArticle() {
     return api.delete(`/api/articles/groups/${id}`)
   }
 
-  return { getArticle, getArticleForEditor, createArticle, saveArticle, publishArticle, improve, uploadImage, listStudyArticles, listArticleManages, listGroups, createGroup, deleteGroup }
+  return { getArticle, getArticleForEditor, createArticle, saveArticle, publishArticle, improve, uploadImage, listStudyArticles, listArticleManages, listTags, listGroups, createGroup, deleteGroup }
 }

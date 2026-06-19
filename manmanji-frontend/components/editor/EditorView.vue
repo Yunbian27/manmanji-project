@@ -241,7 +241,7 @@ const emit = defineEmits<{ close: [] }>()
 const editor = injectEditor()
 const toast = injectToast()
 
-const { content, title, viewMode, isSaving, lastSavedAt, articleStatus, currentArticleId } = editor
+const { content, title, viewMode, isSaving, lastSavedAt, articleStatus, currentArticleId, suppressUnsavedWarning } = editor
 const panelRatio = ref(0.5)
 
 // Topnav visibility — injected from write.vue
@@ -249,6 +249,7 @@ const topnavHidden = inject<Ref<boolean>>('topnavHidden', ref(false))
 const toggleTopnav = inject<() => void>('toggleTopnav', () => {})
 
 onBeforeRouteLeave((_to, _from, next) => {
+  if (suppressUnsavedWarning.value) { next(); return }
   if (content.value || title.value) {
     if (!confirm('有未保存的内容，确定离开吗？')) {
       next(false)
@@ -259,6 +260,7 @@ onBeforeRouteLeave((_to, _from, next) => {
 })
 
 function handleBeforeUnload(e: BeforeUnloadEvent) {
+  if (suppressUnsavedWarning.value) return
   if (content.value || title.value) {
     e.preventDefault()
     e.returnValue = ''

@@ -37,6 +37,7 @@
   --tint-gray:      #f0eeec;
 
   /* === 语义色 === */
+  --semantic-success:   #1aae39;
   --semantic-error:     #e03131;
 
   /* === 字体: Notion Sans (Inter) === */

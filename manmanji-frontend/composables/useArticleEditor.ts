@@ -24,6 +24,7 @@ export function createEditorState(articleId: number) {
   const publishError = ref<string | null>(null)
   const titleError = ref<string | null>(null)
   const articleStatus = ref<string>('')
+  const suppressUnsavedWarning = ref(false)
 
   const publishSettings = reactive<PublishSettings>({
     tagIds: [],
@@ -160,6 +161,7 @@ export function createEditorState(articleId: number) {
     publishError,
     titleError,
     articleStatus,
+    suppressUnsavedWarning,
     publishSettings,
     loadFromServer,
     reset,
