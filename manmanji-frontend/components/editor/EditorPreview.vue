@@ -48,13 +48,14 @@ function syncScroll(ratio: number) {
 }
 
 function scrollToHeading(index: number) {
-  const el = previewRef.value
-  if (!el) return
-  const headings = el.querySelectorAll('h1, h2, h3, h4, h5, h6')
-  headings[index]?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  const container = previewRef.value
+  if (!container) return
+  const target = container.querySelector<HTMLElement>(`#heading-${index}`)
+  if (!target) return
+  container.scrollTop = target.getBoundingClientRect().top - container.getBoundingClientRect().top + container.scrollTop
 }
 
-defineExpose({ syncScroll, scrollToHeading })
+defineExpose({ syncScroll, scrollToHeading, containerEl: previewRef })
 </script>
 
 <style scoped>

@@ -103,7 +103,7 @@
         <div class="content-topbar-center">
           <div class="center-title-row">
             <span class="center-title-text">{{ selectedArticle?.title || '' }}</span>
-            <button class="center-detail-btn" @click="viewDetail">
+            <button class="center-detail-btn" disabled title="功能开发中">
               <IconLucideExternalLink class="icon-md" />
             </button>
           </div>
@@ -114,16 +114,53 @@
         </div>
       </div>
 
-      <div class="content-body" ref="contentBodyRef">
-        <div v-if="selectedArticle" class="content-inner">
-          <div v-if="contentLoading" class="content-loading">加载中...</div>
-          <div v-else class="markdown-body">
-            <div class="article-content" v-html="renderedHtml" />
+      <div class="content-body-wrapper">
+        <div class="content-body" ref="contentBodyRef">
+          <div v-if="selectedArticle" class="content-inner">
+            <div v-if="contentLoading" class="content-loading">加载中...</div>
+            <div v-else class="markdown-body">
+              <div class="article-content" v-html="renderedHtml" />
+            </div>
+          </div>
+          <div v-else class="content-empty">
+            <p>选择左侧笔记开始阅读</p>
           </div>
         </div>
-        <div v-else class="content-empty">
-          <p>选择左侧笔记开始阅读</p>
-        </div>
+
+        <!-- 文章目录 TOC -->
+        <aside v-if="selectedArticle && tocItems.length > 0" class="content-toc">
+          <span class="toc-title">目录</span>
+          <nav class="toc-nav">
+            <a
+              v-for="item in tocItems"
+              :key="item.id"
+              :class="['toc-link', `toc-level-${item.level}`, { active: activeTocId === item.id }]"
+              @click.prevent="scrollToHeading(item.id)"
+            >{{ item.text }}</a>
+          </nav>
+        </aside>
+      </div>
+
+      <!-- AI 悬浮按钮 -->
+      <div class="ai-float">
+        <Transition name="panel-slide">
+          <div v-if="showAiPanel" class="ai-panel">
+            <div class="ai-panel-header">
+              <span class="ai-panel-title">AI 助手</span>
+              <button class="ai-panel-close" @click="showAiPanel = false">
+                <IconLucideX class="icon-md" />
+              </button>
+            </div>
+            <div class="ai-panel-body">
+              <div class="ai-placeholder">
+                <p class="ai-placeholder-desc">智能写作辅助功能开发中，敬请期待...</p>
+              </div>
+            </div>
+          </div>
+        </Transition>
+        <button class="ai-trigger" :class="{ active: showAiPanel }" @click="showAiPanel = !showAiPanel" title="AI 助手">
+          <span class="ai-trigger-icon">AI</span>
+        </button>
       </div>
     </main>
 
@@ -232,8 +269,22 @@ const filteredModalGroups = computed(() => {
 })
 
 const articleRawContent = ref('')
-const { renderedHtml } = useMarkdownRenderer(articleRawContent)
+const { renderedHtml, tocItems } = useMarkdownRenderer(articleRawContent)
 const contentLoading = ref(false)
+
+// TOC 滚动追踪
+import { useTocActive } from '~/composables/useTocActive'
+const { activeTocId } = useTocActive(tocItems)
+
+function scrollToHeading(id: string) {
+  const el = document.querySelector(`#${CSS.escape(id)}`)
+  if (el) {
+    el.scrollIntoView({ block: 'start', behavior: 'auto' })
+  }
+}
+
+// AI 面板
+const showAiPanel = ref(false)
 
 // --- Methods ---
 async function handleGroupSearchEnter() {
@@ -587,9 +638,13 @@ onMounted(() => {
   position: relative;
   transition: background 0.15s var(--ease), color 0.15s var(--ease);
 }
-.center-detail-btn:hover {
+.center-detail-btn:hover:not(:disabled) {
   background: var(--hairline-soft);
   color: var(--ink);
+}
+.center-detail-btn:disabled {
+  color: var(--muted);
+  cursor: not-allowed;
 }
 
 .center-detail-btn::after {
@@ -659,11 +714,25 @@ onMounted(() => {
 }
 .btn-primary:hover { background: var(--primary-pressed); }
 
-/* Content body */
-.content-body {
+/* Content body wrapper (body + TOC) */
+.content-body-wrapper {
   display: flex;
   justify-content: center;
-  padding: var(--spacing-xxxl) var(--spacing-xxl);
+  padding: var(--spacing-xxxl) 0;
+}
+
+/* Invisible left spacer to keep content-body truly centered */
+.content-body-wrapper::before {
+  content: '';
+  width: 270px;
+  flex-shrink: 0;
+}
+
+/* Content body */
+.content-body {
+  width: 720px;
+  flex-shrink: 0;
+  min-width: 0;
 }
 .content-inner {
   width: 100%;
@@ -677,7 +746,7 @@ onMounted(() => {
 }
 .content-inner .markdown-body {
   width: 100%;
-  max-width: max(calc(50% - 24.5px), calc(50vw - 92.5px));
+  max-width: 720px;
 }
 .content-empty,
 .content-loading {
@@ -687,6 +756,188 @@ onMounted(() => {
   height: 100%;
   color: var(--muted);
   font-size: var(--body-md);
+}
+
+/* ── TOC ── */
+.content-toc {
+  width: 220px;
+  flex-shrink: 0;
+  margin-left: 50px;
+  min-width: 0;
+  position: sticky;
+  top: calc(var(--topbar-height) + var(--spacing-xl));
+  align-self: flex-start;
+  max-height: calc(100vh - var(--topbar-height) - var(--spacing-xxxl) * 2);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.toc-title {
+  display: block;
+  font-size: var(--caption);
+  font-weight: var(--weight-semibold);
+  color: var(--muted);
+  letter-spacing: 0.04em;
+  margin-bottom: var(--spacing-sm);
+  padding-left: 4px;
+  flex-shrink: 0;
+}
+
+.toc-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-left: 12px;
+  border-left: 1px solid var(--hairline);
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+  padding-right: 4px;
+}
+
+.toc-link {
+  display: block;
+  padding: 5px 8px;
+  border-radius: var(--rounded-sm);
+  text-decoration: none;
+  line-height: var(--leading-body);
+  color: var(--steel);
+  cursor: pointer;
+  word-break: break-all;
+  transition: background 0.12s var(--ease), color 0.12s var(--ease);
+}
+
+.toc-link:hover {
+  background: var(--hairline-soft);
+  color: var(--ink);
+}
+
+.toc-link.active {
+  color: var(--primary);
+  font-weight: var(--weight-medium);
+}
+
+.toc-level-1 { padding-left: 0; font-size: 13px; font-weight: var(--weight-semibold); color: var(--ink); }
+.toc-level-2 { padding-left: 8px; font-size: var(--caption); }
+.toc-level-3 { padding-left: 18px; font-size: 12px; }
+.toc-level-4 { padding-left: 28px; font-size: 12px; }
+.toc-level-5 { padding-left: 38px; font-size: 11px; }
+.toc-level-6 { padding-left: 48px; font-size: 11px; }
+
+/* ── AI floating button ── */
+.ai-float {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 50;
+}
+
+.ai-trigger {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--rounded-full);
+  border: 1px solid var(--hairline);
+  background: var(--canvas);
+  color: var(--primary);
+  box-shadow: rgba(15, 15, 15, 0.08) 0px 4px 12px 0px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s var(--ease);
+}
+
+.ai-trigger-icon {
+  font-size: 13px;
+  font-weight: var(--weight-semibold);
+  font-family: var(--font-sans);
+}
+
+.ai-trigger:hover,
+.ai-trigger.active {
+  background: var(--primary);
+  color: var(--on-primary);
+  border-color: var(--primary);
+  box-shadow: rgba(15, 15, 15, 0.12) 0px 6px 16px 0px;
+}
+
+.ai-panel {
+  position: absolute;
+  bottom: 56px;
+  right: 0;
+  width: 320px;
+  background: var(--canvas);
+  border-radius: var(--rounded-lg);
+  border: 1px solid var(--hairline);
+  box-shadow: rgba(15, 15, 15, 0.16) 0px 16px 48px -8px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.ai-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-md);
+  border-bottom: 1px solid var(--hairline);
+  flex-shrink: 0;
+}
+
+.ai-panel-title {
+  font-size: var(--body-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--ink);
+}
+
+.ai-panel-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: var(--rounded-sm);
+  background: transparent;
+  color: var(--steel);
+  cursor: pointer;
+  transition: background 0.12s var(--ease);
+}
+
+.ai-panel-close:hover { background: var(--hairline-soft); }
+
+.ai-panel-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--spacing-md);
+}
+
+.ai-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--spacing-xxl) var(--spacing-md);
+  text-align: center;
+}
+
+.ai-placeholder-desc {
+  font-size: var(--body-sm);
+  color: var(--muted);
+  margin: 0;
+  line-height: var(--leading-body);
+}
+
+/* AI panel transition */
+.panel-slide-enter-active,
+.panel-slide-leave-active {
+  transition: opacity 0.2s var(--ease), transform 0.2s var(--ease);
+}
+
+.panel-slide-enter-from,
+.panel-slide-leave-to {
+  opacity: 0;
+  transform: translateY(8px);
 }
 
 /* ===== Group popover ===== */
@@ -821,6 +1072,11 @@ onMounted(() => {
 .sidebar-scroll::-webkit-scrollbar-thumb { background: transparent; border-radius: 3px; }
 .sidebar-scroll.scrolling::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); }
 .sidebar-scroll::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.25); }
+
+.toc-nav::-webkit-scrollbar { width: 5px; }
+.toc-nav::-webkit-scrollbar-track { background: transparent; }
+.toc-nav::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.12); border-radius: 3px; }
+.toc-nav::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.25); }
 
 /* ===== Responsive ===== */
 @media (max-width: 767px) {

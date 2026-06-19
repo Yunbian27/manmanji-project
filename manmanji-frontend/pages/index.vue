@@ -13,6 +13,9 @@
         <AppButton variant="secondary" @click="handleLearnMore">了解更多</AppButton>
       </div>
     </div>
+    <footer class="landing-footer">
+      <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener">粤ICP备XXXXXXXX号</a>
+    </footer>
   </div>
 </template>
 
@@ -49,10 +52,26 @@ function handleLearnMore() {
 .landing-page {
   min-height: 100vh;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   background: var(--canvas);
 }
+
+.landing-footer {
+  position: absolute;
+  bottom: var(--spacing-md);
+  left: 0;
+  right: 0;
+  text-align: center;
+}
+
+.landing-footer a {
+  font-size: var(--caption);
+  color: var(--muted);
+  text-decoration: none;
+}
+.landing-footer a:hover { color: var(--steel); }
 
 .landing-hero {
   text-align: center;

@@ -162,6 +162,7 @@
               ref="previewRef"
               :centered="viewMode === 'preview'"
               @scroll="onPreviewScroll"
+              @toc-updated="items => tocItems = items"
             />
           </div>
         </div>
@@ -191,7 +192,7 @@
       <DraggableDivider v-model:split-ratio="panelRatio" class="card-divider" />
 
       <!-- 右侧悬浮按钮 -->
-      <RightFloatingPanel :toc-items="outlineItems" @navigate-to-heading="handleNavigateToHeading" />
+      <RightFloatingPanel :toc-items="outlineItems" :active-toc-id="activeTocId" @navigate-to-heading="handleNavigateToHeading" />
     </div>
 
 
@@ -230,6 +231,7 @@
 <script setup lang="ts">
 import { onClickOutside } from '@vueuse/core'
 import type { TocItem } from '~/types'
+import { useTocActive } from '~/composables/useTocActive'
 import IconLucideImage from '~icons/lucide/image'
 import IconLucideLink from '~icons/lucide/link'
 import IconLucideClock from '~icons/lucide/clock'
@@ -445,12 +447,13 @@ const lineCount = computed(() => {
 })
 
 // ── Outline ──────────────────────────────────────────────────
-function extractOutline(text: string): TocItem[] {
+const tocItems = ref<TocItem[]>([])
+
+function extractHeadings(text: string): TocItem[] {
   if (!text) return []
-  const headingRe = /^(#{1,6})\s+(.+)$/gm
   const items: TocItem[] = []
   let index = 0
-  for (const m of text.matchAll(headingRe)) {
+  for (const m of text.matchAll(/^(#{1,6})\s+(.+)$/gm)) {
     items.push({
       id: `heading-${index++}`,
       text: m[2]!.trim(),
@@ -460,39 +463,42 @@ function extractOutline(text: string): TocItem[] {
   return items
 }
 
-const outlineItems = ref<TocItem[]>(extractOutline(content.value))
-watch(() => content.value, (text) => {
-  outlineItems.value = extractOutline(text)
-})
+const outlineItems = computed(() =>
+  tocItems.value.length > 0 ? tocItems.value : extractHeadings(content.value)
+)
 
-function findNthHeading(text: string, targetIndex: number): number {
-  let i = 0
-  for (const m of text.matchAll(/^(#{1,6})\s+(.+)$/gm)) {
-    if (i === targetIndex) return m.index!
-    i++
-  }
-  return -1
-}
+const previewContainerEl = computed(() => (previewRef.value as any)?.containerEl as HTMLElement | null)
 
-function handleNavigateToHeading(index: number) {
-  const pos = findNthHeading(content.value, index)
-  if (pos < 0) return
+const { activeTocId } = useTocActive(outlineItems, previewContainerEl)
 
-  // scroll editor
-  if (viewMode.value === 'edit') {
-    textareaRef.value?.scrollToPos(pos)
-  } else {
-    const scrollEl = textareaRef.value?.scrollDOM
-    if (scrollEl) {
-      const linesBefore = content.value.substring(0, pos).split('\n').length
-      const lineHeight = 28 // 16px * 1.75
-      scrollEl.scrollTop = Math.max(0, (linesBefore - 2) * lineHeight)
-    }
-  }
+function handleNavigateToHeading(id: string) {
+  const idx = parseInt(id.split('-')[1]!)
+  if (isNaN(idx)) return
 
-  // scroll preview
+  // scroll preview — 与 home.vue 一致：按 ID 在 DOM 中定位
   if (viewMode.value !== 'edit') {
-    previewRef.value?.scrollToHeading(index)
+    previewRef.value?.scrollToHeading(idx)
+  }
+
+  // scroll CM6 editor — 按序号在原始 Markdown 中找位置
+  if (viewMode.value !== 'preview') {
+    let count = 0
+    for (const m of content.value.matchAll(/^(#{1,6})\s+(.+)$/gm)) {
+      if (count === idx) {
+        const pos = m.index!
+        if (viewMode.value === 'edit') {
+          textareaRef.value?.scrollToPos(pos)
+        } else {
+          const scrollEl = textareaRef.value?.scrollDOM
+          if (scrollEl) {
+            const linesBefore = content.value.substring(0, pos).split('\n').length
+            scrollEl.scrollTop = Math.max(0, (linesBefore - 2) * 28)
+          }
+        }
+        break
+      }
+      count++
+    }
   }
 }
 

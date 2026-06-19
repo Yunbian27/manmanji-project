@@ -17,6 +17,7 @@ html {
   line-height: var(--leading-body);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  scroll-padding-top: 60px;       /* 为固定顶栏预留空间，配合 scrollIntoView */
 }
 
 /* --- Body --- */

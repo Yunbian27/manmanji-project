@@ -63,18 +63,20 @@ export function useMarkdownRenderer(content: ComputedRef<string> | Ref<string>) 
       .replace(/"/g, '&quot;')
   }
 
-  const tocIndex = [0, 0, 0, 0, 0, 0]
+  let headingCounter = 0
+
+  // 在 token 级别注入唯一 ID，比正则替换更可靠
+  md.renderer.rules.heading_open = (tokens, idx, options, _env, self) => {
+    const id = `heading-${headingCounter++}`
+    tokens[idx]!.attrSet('id', id)
+    return self.renderToken(tokens, idx, options)
+  }
 
   const renderedHtml = ref('')
 
   function doRender(text: string) {
-    for (let i = 0; i < tocIndex.length; i++) tocIndex[i] = 0
-    let html = md.render(text || '')
-    html = html.replace(/<(h[123456])>/g, (_, tag) => {
-      const level = parseInt(tag[1]!) as 1 | 2 | 3 | 4 | 5 | 6
-      const id = `heading-${tocIndex[level - 1]!++}`
-      return `<${tag} id="${id}">`
-    })
+    headingCounter = 0
+    const html = md.render(text || '')
     renderedHtml.value = html
   }
 

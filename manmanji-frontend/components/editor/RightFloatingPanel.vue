@@ -26,8 +26,8 @@
             <a
               v-for="(item, i) in tocItems"
               :key="item.id"
-              :class="['toc-item', `toc-level-${item.level}`]"
-              @click.prevent="emit('navigateToHeading', i)"
+              :class="['toc-item', `toc-level-${item.level}`, { active: activeTocId === item.id }]"
+              @click.stop.prevent="emit('navigateToHeading', item.id)"
             >
               {{ item.text }}
             </a>
@@ -100,12 +100,12 @@
 <script setup lang="ts">
 import type { TocItem } from '~/types'
 
-defineProps<{ tocItems?: TocItem[] }>()
+defineProps<{ tocItems?: TocItem[]; activeTocId?: string }>()
 
 const activePanel = ref<string | null>(null)
 
 import IconLucideX from '~icons/lucide/x'
-const emit = defineEmits<{ navigateToHeading: [index: number] }>()
+const emit = defineEmits<{ navigateToHeading: [id: string] }>()
 
 const actions = [
   { id: 'ai', label: 'AI 助手', icon: 'AI' },
@@ -275,6 +275,11 @@ function togglePanel(id: string) {
 
 .toc-item:hover {
   background: var(--hairline-soft);
+}
+
+.toc-item.active {
+  color: var(--primary);
+  font-weight: var(--weight-medium);
 }
 
 .toc-level-1 {
