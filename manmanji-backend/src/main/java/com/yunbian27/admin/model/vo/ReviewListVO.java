@@ -16,5 +16,5 @@ public class ReviewListVO {
     private String author;
     private String reviewStatus;
     private String reviewReason;
-    private LocalDateTime submittedAt;
+    private LocalDateTime submittedTime;
 }

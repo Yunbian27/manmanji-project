@@ -53,11 +53,11 @@ public class ArticleDetailVO {
     /** 当前用户是否已收藏 */
     private Boolean bookmarked;
     /** 发布时间 */
-    private LocalDateTime publishedAt;
+    private LocalDateTime publishedTime;
     /** 创建时间 */
-    private LocalDateTime createdAt;
+    private LocalDateTime createTime;
     /** 更新时间 */
-    private LocalDateTime updatedAt;
+    private LocalDateTime updateTime;
 
     @Data
     @Builder

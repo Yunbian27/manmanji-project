@@ -191,10 +191,20 @@ function onTopnavLeave() {
 const editor = createEditorState(articleId.value)
 provideEditor(editor)
 
-watch(articleId, (id) => {
+watch(articleId, async (id) => {
   editor.currentArticleId.value = id
-  if (id > 0) editor.loadFromServer()
-})
+  if (id > 0) {
+    await editor.loadFromServer()
+    local.tagIds = [...editor.publishSettings.tagIds]
+    local.groupNames = [...editor.publishSettings.groupNames]
+    local.coverUrl = editor.publishSettings.coverUrl
+    local.articleType = editor.publishSettings.articleType
+    local.summary = editor.publishSettings.summary
+    local.sourceUrl = editor.publishSettings.sourceUrl
+    local.visibility = editor.publishSettings.visibility
+    local.creationStatement = editor.publishSettings.creationStatement
+  }
+}, { immediate: true })
 
 const toast = injectToast()
 const isSaving = computed(() => editor.isSaving.value ?? false)
@@ -241,15 +251,6 @@ const filteredGroups = computed(() => {
 })
 
 onMounted(async () => {
-  await nextTick()
-  local.tagIds = [...editor.publishSettings.tagIds]
-  local.groupNames = [...editor.publishSettings.groupNames]
-  local.coverUrl = editor.publishSettings.coverUrl
-  local.articleType = editor.publishSettings.articleType
-  local.summary = editor.publishSettings.summary
-  local.sourceUrl = editor.publishSettings.sourceUrl
-  local.visibility = editor.publishSettings.visibility
-  local.creationStatement = editor.publishSettings.creationStatement
   try { availableGroups.value = await useArticle().listGroups() } catch { availableGroups.value = [] }
 })
 

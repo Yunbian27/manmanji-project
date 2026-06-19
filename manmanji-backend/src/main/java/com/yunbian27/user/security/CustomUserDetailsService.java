@@ -1,6 +1,7 @@
 package com.yunbian27.user.security;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.yunbian27.user.constant.UserStatus;
 import com.yunbian27.user.model.entity.User;
 import com.yunbian27.user.mapper.UserMapper;
 import lombok.RequiredArgsConstructor;
@@ -34,12 +35,12 @@ public class CustomUserDetailsService implements UserDetailsService {
             throw new UsernameNotFoundException("用户不存在: " + account);
         }
 
-        if ("BANNED".equals(user.getStatus())) {
+        if (UserStatus.BANNED.equals(user.getStatus())) {
             throw new UsernameNotFoundException("用户已被禁用");
         }
 
         List<SimpleGrantedAuthority> authorities = List.of(
-                new SimpleGrantedAuthority("ROLE_" + user.getRole().toUpperCase())
+                new SimpleGrantedAuthority("ROLE_" + user.getRole().name())
         );
 
         return new org.springframework.security.core.userdetails.User(

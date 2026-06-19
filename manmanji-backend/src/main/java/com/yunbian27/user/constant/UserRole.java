@@ -1,4 +1,4 @@
-package com.yunbian27.admin.constant;
+package com.yunbian27.user.constant;
 
 import com.baomidou.mybatisplus.annotation.EnumValue;
 import lombok.AllArgsConstructor;
@@ -6,9 +6,9 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public enum ReviewAction {
-    REJECT(0, "REJECT"),
-    APPROVE(1, "APPROVE");
+public enum UserRole {
+    USER(0, "USER"),
+    ADMIN(1, "ADMIN");
 
     @EnumValue
     private final Integer code;

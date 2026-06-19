@@ -18,5 +18,5 @@ public class Group {
     private String name;
 
     @TableField(fill = FieldFill.INSERT)
-    private LocalDateTime createdAt;
+    private LocalDateTime createTime;
 }

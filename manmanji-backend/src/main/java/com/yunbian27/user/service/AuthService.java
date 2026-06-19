@@ -4,6 +4,8 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.yunbian27.common.constant.RedisTTL;
 import com.yunbian27.user.config.JwtProperties;
 import com.yunbian27.user.constant.UserConstants;
+import com.yunbian27.user.constant.UserRole;
+import com.yunbian27.user.constant.UserStatus;
 import com.yunbian27.user.constant.UserRedisKeys;
 import com.yunbian27.user.model.dto.LoginDTO;
 import com.yunbian27.user.model.vo.LoginVO;
@@ -92,14 +94,14 @@ public class AuthService {
         user.setPasswordHash(passwordEncoder.encode(req.getPassword()));
         user.setNickname(req.getNickname() != null ? req.getNickname() : req.getUsername());
         user.setAvatarUrl(UserConstants.DEFAULT_AVATAR);
-        user.setRole("USER");
-        user.setStatus("ACTIVE");
+        user.setRole(UserRole.USER);
+        user.setStatus(UserStatus.ACTIVE);
         userMapper.insert(user);
 
         // 用户注册时自动分配一个待整理文件夹
 
 
-        String accessToken = jwtService.generateAccessToken(user.getId(), user.getRole());
+        String accessToken = jwtService.generateAccessToken(user.getId(), user.getRole().name());
         String refreshToken = jwtService.generateRefreshToken(user.getId());
 
         return LoginVO.builder()
@@ -122,7 +124,7 @@ public class AuthService {
             User user = userMapper.selectOne(new LambdaQueryWrapper<User>()
                     .eq(User::getUsername, principal.getUsername()));
 
-            String accessToken = jwtService.generateAccessToken(user.getId(), user.getRole());
+            String accessToken = jwtService.generateAccessToken(user.getId(), user.getRole().name());
             String refreshToken = jwtService.generateRefreshToken(user.getId());
 
             return LoginVO.builder()
@@ -162,11 +164,11 @@ public class AuthService {
         if (user == null) {
             throw new BusinessException(ErrorCode.USER_NOT_FOUND);
         }
-        if ("BANNED".equals(user.getStatus())) {
+        if (UserStatus.BANNED.equals(user.getStatus())) {
             throw new BusinessException(ErrorCode.USER_BANNED);
         }
 
-        String newAccessToken = jwtService.generateAccessToken(user.getId(), user.getRole());
+        String newAccessToken = jwtService.generateAccessToken(user.getId(), user.getRole().name());
         String newRefreshToken = jwtService.generateRefreshToken(user.getId());
 
         // 构建新的Jti
@@ -200,7 +202,7 @@ public class AuthService {
                 .email(user.getEmail())
                 .nickname(user.getNickname())
                 .avatarUrl(user.getAvatarUrl())
-                .role(user.getRole())
+                .role(user.getRole().name())
                 .build();
     }
 }

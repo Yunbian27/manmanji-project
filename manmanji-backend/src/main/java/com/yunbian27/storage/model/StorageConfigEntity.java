@@ -36,7 +36,7 @@ public class StorageConfigEntity {
 
     private Boolean enabled;
 
-    private LocalDateTime createdAt;
+    private LocalDateTime createTime;
 
-    private LocalDateTime updatedAt;
+    private LocalDateTime updateTime;
 }

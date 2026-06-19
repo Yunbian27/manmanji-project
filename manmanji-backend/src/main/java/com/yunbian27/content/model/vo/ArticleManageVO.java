@@ -24,5 +24,5 @@ public class ArticleManageVO {
     private Integer commentCount;
     private Integer bookmarkCount;
     private String reviewReason;
-    private LocalDateTime updatedAt;
+    private LocalDateTime updateTime;
 }

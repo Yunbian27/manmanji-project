@@ -20,5 +20,5 @@ public class UserFollow {
 
     @TableField(fill = FieldFill.INSERT)
     /** 关注时间(follower_id+following_id唯一,CHECK防止自己关注自己) */
-    private LocalDateTime createdAt;
+    private LocalDateTime createTime;
 }

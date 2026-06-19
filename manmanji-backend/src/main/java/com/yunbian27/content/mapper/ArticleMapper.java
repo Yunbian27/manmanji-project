@@ -15,6 +15,6 @@ public interface ArticleMapper extends BaseMapper<Article> {
     @Select("select id, title, status from articles where user_id = #{userId}")
     List<FolderTree.ArticleBasic> getArticleBasics(Long userId);
 
-    @Select("select id, title, status ,visibility ,updated_at from articles where user_id = #{userId}")
+    @Select("select id, title, status, visibility, update_time from articles where user_id = #{userId}")
     List<ArticleTitlesVO> selectArticleTitlestByUserId(Long userId);
 }

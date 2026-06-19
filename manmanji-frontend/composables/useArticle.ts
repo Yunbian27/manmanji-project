@@ -1,4 +1,4 @@
-import type { ArticleVO, ArticleSaveDTO, ArticlePublishDTO, StudyArticle, ArticleManage, PageDTO, GroupVO } from '~/types'
+import type { ArticleVO, ArticleEditorVO, ArticleSaveDTO, ArticlePublishDTO, StudyArticle, ArticleManage, PageDTO, GroupVO } from '~/types'
 
 export function useArticle() {
   const api = useApi()
@@ -25,6 +25,11 @@ export function useArticle() {
     return api.get<ArticleVO>(`/api/articles/${id}`)
   }
 
+  /** 获取编辑器回显数据（含标签和分组） */
+  function getArticleForEditor(id: number): Promise<ArticleEditorVO> {
+    return api.get<ArticleEditorVO>(`/api/articles/editor/${id}`)
+  }
+
   /** 创建文章 */
   function createArticle(): Promise<number> {
     return api.post<number>('/api/articles/create')
@@ -35,14 +40,9 @@ export function useArticle() {
     return api.put<number>('/api/articles/save', dto)
   }
 
-  /** 新建并发布文章，返回新文章 ID */
+  /** 发布文章（新建或更新并提交审核），返回文章 ID */
   function publishArticle(dto: ArticlePublishDTO): Promise<number> {
     return api.post<number>('/api/articles/publish', dto)
-  }
-
-  /** 更新已有文章并发布 */
-  function updateArticle(id: number, dto: ArticlePublishDTO): Promise<void> {
-    return api.put(`/api/articles/${id}`, dto)
   }
 
   /** AI 润色文章内容（需要登录） */
@@ -67,5 +67,5 @@ export function useArticle() {
     return api.delete(`/api/articles/groups/${id}`)
   }
 
-  return { getArticle, createArticle, saveArticle, publishArticle, updateArticle, improve, uploadImage, listStudyArticles, listArticleManages, listGroups, createGroup, deleteGroup }
+  return { getArticle, getArticleForEditor, createArticle, saveArticle, publishArticle, improve, uploadImage, listStudyArticles, listArticleManages, listGroups, createGroup, deleteGroup }
 }

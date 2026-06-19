@@ -19,7 +19,10 @@ import com.yunbian27.content.model.dto.ArticlePublishDTO;
 import com.yunbian27.content.model.dto.ArticleSaveDTO;
 import com.yunbian27.content.model.entity.Article;
 import com.yunbian27.content.model.entity.ArticleGroup;
+import com.yunbian27.content.model.entity.ArticleTag;
 import com.yunbian27.content.model.entity.Group;
+import com.yunbian27.content.model.entity.Tag;
+import com.yunbian27.content.model.vo.ArticleEditorVO;
 import com.yunbian27.content.model.vo.ArticleManageVO;
 import com.yunbian27.content.model.vo.ArticleTitlesVO;
 import com.yunbian27.content.model.vo.ArticleVO;
@@ -60,50 +63,47 @@ public class ArticleService {
     private final StringRedisTemplate stringRedisTemplate;
 
     /**
-     * 发布文章
-     * @param dto
+     * 发布文章（新建或更新已有并提交审核）
      */
     @Transactional
     public Long publish(ArticlePublishDTO dto) {
         Long userId = SecurityUtils.getCurrentUserId();
-        Article article = new Article();
-        BeanUtils.copyProperties(dto, article);
+        Article article;
+
+        if (dto.getId() != null) {
+            // 更新已有文章
+            article = articleMapper.selectById(dto.getId());
+            if (article == null || !userId.equals(article.getUserId())) {
+                throw new BusinessException(ErrorCode.NOT_FOUND);
+            }
+            BeanUtils.copyProperties(dto, article);
+            article.setId(dto.getId());
+        } else {
+            // 新建文章
+            article = new Article();
+            BeanUtils.copyProperties(dto, article);
+            article.setUserId(userId);
+            article.setSlug(generateSlug(article.getTitle()));
+        }
+
         if (article.getTitle() == null || article.getTitle().isBlank())
             article.setTitle(ContentConstants.DEFAULT_ARTICLE_TITLE);
-        article.setUserId(userId);
-        article.setSlug(generateSlug(article.getTitle()));
-        // 设置文章状态为审核中
         article.setStatus(ArticleStatus.REVIEWING);
-        article.setPublishedAt(LocalDateTime.now());
-        articleMapper.insert(article);
+        article.setPublishedTime(LocalDateTime.now());
+
+        if (dto.getId() != null) {
+            articleMapper.updateById(article);
+        } else {
+            articleMapper.insert(article);
+        }
 
         Long articleId = article.getId();
         handleGroups(userId, articleId, dto.getGroupNames());
 
         log.info("文章发布成功: id={}, title={}", articleId, article.getTitle());
+        // 删除缓存，确保下次读取获取最新数据
+        stringRedisTemplate.delete(ContentRedisKeys.ARTICLE_CACHE_PREFIX + articleId);
         return articleId;
-    }
-
-    /**
-     * 更新已有文章并发布
-     * @param id
-     * @param dto
-     */
-    @Transactional
-    public void update(Long id, ArticlePublishDTO dto) {
-        Long userId = SecurityUtils.getCurrentUserId();
-        Article article = articleMapper.selectById(id);
-        if (article == null || !userId.equals(article.getUserId()))
-            throw new BusinessException(ErrorCode.NOT_FOUND);
-        BeanUtils.copyProperties(dto, article);
-        article.setId(id);
-        article.setStatus(ArticleStatus.PUBLISHED);
-        article.setPublishedAt(LocalDateTime.now());
-        articleMapper.updateById(article);
-
-        handleGroups(userId, id, dto.getGroupNames());
-
-        log.info("文章更新发布成功: id={}, title={}", id, article.getTitle());
     }
 
     private void handleGroups(Long userId, Long articleId, List<String> groupNames) {
@@ -178,8 +178,8 @@ public class ArticleService {
                         .set(Article::getVisibility, dto.getVisibility())
                         .set(Article::getCreationStatement, dto.getCreationStatement())
                         .set(Article::getStatus, ArticleStatus.PUBLISHED)
-                        .set(Article::getPublishedAt, LocalDateTime.now())
-                        .set(Article::getUpdatedAt, LocalDateTime.now())
+                        .set(Article::getPublishedTime, LocalDateTime.now())
+                        .set(Article::getUpdateTime, LocalDateTime.now())
                         .eq(Article::getId, dto.getId())
                         .eq(Article::getUserId, userId));
 
@@ -213,7 +213,44 @@ public class ArticleService {
         }
 
         log.info("文章保存成功: id={}, title={}", article.getId(), dto.getTitle());
+        // 删除缓存，确保下次读取获取最新数据
+        stringRedisTemplate.delete(ContentRedisKeys.ARTICLE_CACHE_PREFIX + article.getId());
         return article.getId();
+    }
+
+    /**
+     * 加载文章数据供编辑器回显（含标签和分组）
+     */
+    public ArticleEditorVO loadForEditor(Long articleId) {
+        Long userId = SecurityUtils.getCurrentUserId();
+        Article article = articleMapper.selectById(articleId);
+        if (article == null || !userId.equals(article.getUserId())) {
+            throw new BusinessException(ErrorCode.NOT_FOUND);
+        }
+
+        ArticleEditorVO vo = new ArticleEditorVO();
+        BeanUtils.copyProperties(article, vo);
+        vo.setArticleType(article.getArticleType() != null ? article.getArticleType().getValue() : null);
+        vo.setVisibility(article.getVisibility() != null ? article.getVisibility().getValue() : null);
+        vo.setCreationStatement(article.getCreationStatement() != null ? article.getCreationStatement().getValue() : null);
+
+        // 标签 ID 列表
+        List<ArticleTag> articleTags = articleTagMapper.selectList(
+                new LambdaQueryWrapper<ArticleTag>().eq(ArticleTag::getArticleId, articleId));
+        vo.setTagIds(articleTags.stream().map(ArticleTag::getTagId).toList());
+
+        // 分组名称列表
+        List<ArticleGroup> articleGroups = articleGroupMapper.selectList(
+                new LambdaQueryWrapper<ArticleGroup>().eq(ArticleGroup::getArticleId, articleId));
+        if (!articleGroups.isEmpty()) {
+            List<Long> groupIds = articleGroups.stream().map(ArticleGroup::getGroupId).toList();
+            List<Group> groups = groupMapper.selectBatchIds(groupIds);
+            vo.setGroupNames(groups.stream().map(Group::getName).toList());
+        } else {
+            vo.setGroupNames(List.of());
+        }
+
+        return vo;
     }
 
 
@@ -359,9 +396,9 @@ public class ArticleService {
                 .select(Article::getId, Article::getTitle, Article::getSummary,
                         Article::getCoverUrl, Article::getStatus, Article::getVisibility,
                         Article::getViewCount, Article::getLikeCount, Article::getCommentCount,
-                        Article::getBookmarkCount, Article::getReviewReason, Article::getUpdatedAt)
+                        Article::getBookmarkCount, Article::getReviewReason, Article::getUpdateTime)
                 .eq(Article::getUserId, userId)
-                .orderByDesc(Article::getUpdatedAt);
+                .orderByDesc(Article::getUpdateTime);
         if (status != null && !status.isEmpty() && !"ALL".equalsIgnoreCase(status)) {
             qw.eq(Article::getStatus, ArticleStatus.valueOf(status.toUpperCase()));
         }
@@ -372,7 +409,7 @@ public class ArticleService {
                 .visibility(a.getVisibility() != null ? a.getVisibility().getValue() : null)
                 .viewCount(a.getViewCount()).likeCount(a.getLikeCount())
                 .commentCount(a.getCommentCount()).bookmarkCount(a.getBookmarkCount())
-                .reviewReason(a.getReviewReason()).updatedAt(a.getUpdatedAt())
+                .reviewReason(a.getReviewReason()).updateTime(a.getUpdateTime())
                 .build()).toList();
         return PageDTO.of(result.getTotal(), result.getCurrent(), result.getSize(), records);
     }

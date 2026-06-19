@@ -70,9 +70,24 @@ export interface ArticleVO {
   articleType?: 'ORIGINAL' | 'REPOST'
   groupNames?: string[]
   creationStatement?: string
-  createdAt: string
-  updatedAt: string
-  publishedAt: string | null
+  createTime: string
+  updateTime: string
+  publishedTime: string | null
+}
+
+// 编辑器回显数据（对应 /api/articles/editor/{id}）
+export interface ArticleEditorVO {
+  id: number
+  title: string
+  content: string
+  summary?: string
+  coverUrl?: string
+  articleType?: string
+  sourceUrl?: string
+  visibility?: string
+  creationStatement?: string
+  tagIds: number[]
+  groupNames: string[]
 }
 
 // 保存文章提交的数据
@@ -84,6 +99,7 @@ export interface ArticleSaveDTO {
 
 // 发布文章提交的数据
 export interface ArticlePublishDTO {
+  id?: number
   title: string
   content: string
   summary?: string
@@ -112,7 +128,7 @@ export interface StudyArticle {
   visibility?: 'PUBLIC' | 'PRIVATE' | 'FOLLOWER'
   tags?: string[]                 // 标签名称列表
   groupNames?: string[]           // 分组名称列表
-  updatedAt: string               // 最后修改时间
+  updateTime: string               // 最后修改时间
   // 仅收藏文章
   sourceAuthor?: string           // 原作者昵称
   bookmarkedAt?: string           // 收藏时间
@@ -139,7 +155,7 @@ export interface ArticleManage {
   commentCount: number
   bookmarkCount: number
   reviewReason?: string
-  updatedAt: string
+  updateTime: string
 }
 
 // ---------- 分组 ----------

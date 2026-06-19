@@ -11,6 +11,13 @@
 
 <script setup lang="ts">
 provideToast()
+
+onMounted(() => {
+  document.documentElement.style.overflow = 'hidden'
+})
+onUnmounted(() => {
+  document.documentElement.style.overflow = ''
+})
 </script>
 
 <style scoped>

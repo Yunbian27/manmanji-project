@@ -1,6 +1,10 @@
 package com.yunbian27.content.model.dto;
 
+import com.yunbian27.content.constant.ArticleType;
+import com.yunbian27.content.constant.ArticleVisibility;
+import com.yunbian27.content.constant.CreationStatement;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
@@ -8,6 +12,9 @@ import java.util.List;
 
 @Data
 public class ArticlePublishDTO {
+
+    /** 文章ID（新建时为 null，更新时传入） */
+    private Long id;
 
     /** 文章标题(5-100字) */
     @NotBlank(message = "标题不能为空")
@@ -28,12 +35,14 @@ public class ArticlePublishDTO {
     private List<Long> tagIds;
     /** 分组名称列表 */
     private List<String> groupNames;
-    /** 文章类型(ORIGINAL/REPOST) */
-    private String articleType;
+    /** 文章类型 */
+    @NotNull(message = "文章类型不能为空")
+    private ArticleType articleType;
     /** 转载来源链接 */
     private String sourceUrl;
-    /** 可见范围(PUBLIC/PRIVATE) */
-    private String visibility;
-    /** 创作声明(NONE/AI_ASSISTED/NETWORK_SOURCED/PERSONAL_OPINION) */
-    private String creationStatement;
+    /** 可见范围 */
+    @NotNull(message = "可见范围不能为空")
+    private ArticleVisibility visibility;
+    /** 创作声明 */
+    private CreationStatement creationStatement;
 }

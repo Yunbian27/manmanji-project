@@ -42,9 +42,9 @@ public class AdminArticleService {
                 .select(Article::getId, Article::getTitle, Article::getSummary,
                         Article::getCoverUrl, Article::getUserId,
                         Article::getStatus, Article::getReviewReason,
-                        Article::getUpdatedAt)
+                        Article::getUpdateTime)
                 .in(Article::getStatus, ArticleStatus.REVIEWING, ArticleStatus.PUBLISHED, ArticleStatus.REJECTED)
-                .orderByDesc(Article::getUpdatedAt);
+                .orderByDesc(Article::getUpdateTime);
 
         if (status != null && !status.isEmpty()) {
             qw.eq(Article::getStatus, ArticleStatus.valueOf(status.toUpperCase()));
@@ -68,7 +68,7 @@ public class AdminArticleService {
                 .author(userNames.getOrDefault(a.getUserId(), "未知用户"))
                 .reviewStatus(a.getStatus().getValue())
                 .reviewReason(a.getReviewReason())
-                .submittedAt(a.getUpdatedAt())
+                .submittedTime(a.getUpdateTime())
                 .build()).toList();
         return PageDTO.of(result.getTotal(), result.getCurrent(), result.getSize(), records);
     }
@@ -83,9 +83,7 @@ public class AdminArticleService {
             throw new BusinessException(ErrorCode.NOT_FOUND);
         }
 
-        ReviewAction action = ReviewAction.valueOf(dto.getAction().toUpperCase());
-
-        if (action == ReviewAction.APPROVE) {
+        if (dto.getAction() == ReviewAction.APPROVE) {
             articleMapper.update(null, new LambdaUpdateWrapper<Article>()
                     .eq(Article::getId, articleId)
                     .set(Article::getStatus, ArticleStatus.PUBLISHED)

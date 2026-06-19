@@ -66,7 +66,7 @@
                   <p class="review-meta">
                     <span>{{ item.author }}</span>
                     <span class="meta-dot">·</span>
-                    <span>{{ formatTime(item.submittedAt) }}</span>
+                    <span>{{ formatTime(item.submittedTime) }}</span>
                   </p>
                 </div>
 
@@ -148,7 +148,7 @@
             <div class="detail-meta">
               <span>{{ detailTarget.author }}</span>
               <span class="meta-dot">·</span>
-              <span>{{ formatTime(detailTarget.submittedAt) }}</span>
+              <span>{{ formatTime(detailTarget.submittedTime) }}</span>
             </div>
             <div
               v-if="detailTarget.reviewStatus !== 'REVIEWING' && detailTarget.reviewReason"
@@ -195,7 +195,7 @@ interface ReviewItem {
   summary?: string
   coverUrl?: string
   author: string
-  submittedAt: string
+  submittedTime: string
   reviewStatus: 'REVIEWING' | 'PUBLISHED' | 'REJECTED'
   reviewReason?: string
 }

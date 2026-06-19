@@ -151,7 +151,7 @@
               <IconLucideExternalLink class="icon-md" />
             </button>
           </div>
-          <span class="center-meta-text" v-if="selectedArticle">{{ selectedArticle.updatedAt }}</span>
+          <span class="center-meta-text" v-if="selectedArticle">{{ selectedArticle.updateTime }}</span>
         </div>
         <div class="content-topbar-right">
           <button class="btn-primary" @click="onPublish">发布文章</button>

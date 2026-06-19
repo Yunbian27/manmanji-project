@@ -2,6 +2,7 @@ package com.yunbian27.content.controller;
 
 import com.yunbian27.content.model.dto.ArticlePublishDTO;
 import com.yunbian27.content.model.dto.ArticleSaveDTO;
+import com.yunbian27.content.model.vo.ArticleEditorVO;
 import com.yunbian27.content.model.vo.ArticleManageVO;
 import com.yunbian27.content.model.vo.ArticleTitlesVO;
 import com.yunbian27.content.model.vo.ArticleVO;
@@ -35,18 +36,6 @@ public class ArticleController {
         return Result.success(articleService.publish(dto));
     }
 
-    /**
-     * 更新已有文章并发布
-     * @param id
-     * @param dto
-     * @return
-     */
-    @PutMapping("/{id}")
-    public Result<Void> update(@PathVariable Long id, @Valid @RequestBody ArticlePublishDTO dto) {
-        articleService.update(id, dto);
-        return Result.success();
-    }
-
     @PutMapping("/save")
     public Result<Long> save(@Valid @RequestBody ArticleSaveDTO dto) {
         return Result.success(articleService.save(dto));
@@ -55,6 +44,11 @@ public class ArticleController {
     @GetMapping("/groups")
     public Result<List<GroupVO>> group() {
         return Result.success(articleService.showGroup());
+    }
+
+    @GetMapping("/editor/{id}")
+    public Result<ArticleEditorVO> loadForEditor(@PathVariable Long id) {
+        return Result.success(articleService.loadForEditor(id));
     }
 
     @PostMapping("/groups")

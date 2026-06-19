@@ -42,9 +42,9 @@ public class ArticleVO {
     /** 收藏数(冗余计数) */
     private Integer bookmarkCount;
     /** 创建时间 */
-    private LocalDateTime createdAt;
+    private LocalDateTime createTime;
     /** 更新时间 */
-    private LocalDateTime updatedAt;
+    private LocalDateTime updateTime;
     /** 发布时间 */
-    private LocalDateTime publishedAt;
+    private LocalDateTime publishedTime;
 }

@@ -1,6 +1,8 @@
 package com.yunbian27.user.model.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
+import com.yunbian27.user.constant.UserRole;
+import com.yunbian27.user.constant.UserStatus;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -25,16 +27,16 @@ public class User {
     private String avatarUrl;
     /** 个人简介 */
     private String bio;
-    /** 角色(USER/ADMIN) */
-    private String role;
-    /** 账号状态(ACTIVE/BANNED) */
-    private String status;
+    /** 角色 */
+    private UserRole role;
+    /** 账号状态 */
+    private UserStatus status;
 
     /** 创建时间 */
     @TableField(fill = FieldFill.INSERT)
-    private LocalDateTime createdAt;
+    private LocalDateTime createTime;
 
     /** 更新时间 */
     @TableField(fill = FieldFill.INSERT_UPDATE)
-    private LocalDateTime updatedAt;
+    private LocalDateTime updateTime;
 }

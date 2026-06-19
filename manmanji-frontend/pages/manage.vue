@@ -78,7 +78,7 @@
                     <span class="meta-dot">·</span>
                     <span>藏 {{ a.bookmarkCount }}</span>
                     <span class="meta-dot">·</span>
-                    {{ formatTime(a.updatedAt) }}
+                    {{ formatTime(a.updateTime) }}
                   </p>
                 </div>
 
@@ -91,7 +91,7 @@
 
             <div v-else class="empty-state">
               <p class="empty-state-text">暂无文章</p>
-              <button class="btn-ghost" @click="router.push('/write')">去写一篇</button>
+              <button class="btn-ghost" @click="goWrite">去写一篇</button>
             </div>
 
             <!-- ── 分页 ── -->
@@ -219,7 +219,8 @@ function statusBadgeClass(s: string) {
 }
 
 function visibilityLabel(v?: string) {
-  return v === 'PRIVATE' ? '私密' : '公开'
+  const map: Record<string, string> = { PUBLIC: '公开', PRIVATE: '私密', FOLLOWER: '粉丝可见' }
+  return map[v || ''] || '公开'
 }
 
 function onThumbError(e: Event) {
@@ -230,7 +231,11 @@ function onThumbError(e: Event) {
 }
 
 function editArticle(id: number) {
-  router.push(`/write?articleId=${id}`)
+  window.open(`/write?articleId=${id}`, '_blank')
+}
+
+function goWrite() {
+  window.open('/write', '_blank')
 }
 
 async function handleDelete(a: ArticleManage) {

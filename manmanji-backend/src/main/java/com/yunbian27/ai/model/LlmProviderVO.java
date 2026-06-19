@@ -16,6 +16,6 @@ public class LlmProviderVO {
     private Boolean enabled;
     private Boolean builtin;
     private boolean hasApiKey;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+    private LocalDateTime createTime;
+    private LocalDateTime updateTime;
 }

@@ -37,15 +37,18 @@ export function createEditorState(articleId: number) {
 
   async function loadFromServer() {
     try {
-      const { getArticle } = useArticle()
-      const article = await getArticle(currentArticleId.value)
+      const { getArticleForEditor } = useArticle()
+      const article = await getArticleForEditor(currentArticleId.value)
       title.value = article.title || ''
       content.value = article.content || ''
       publishSettings.coverUrl = article.coverUrl ?? ''
       publishSettings.summary = article.summary ?? ''
-      publishSettings.articleType = article.articleType ?? 'ORIGINAL'
+      publishSettings.articleType = (article.articleType as PublishSettings['articleType']) ?? 'ORIGINAL'
       publishSettings.sourceUrl = article.sourceUrl ?? ''
-      publishSettings.visibility = article.visibility ?? 'PUBLIC'
+      publishSettings.visibility = (article.visibility as PublishSettings['visibility']) ?? 'PUBLIC'
+      publishSettings.creationStatement = (article.creationStatement as PublishSettings['creationStatement']) ?? 'NONE'
+      publishSettings.tagIds = article.tagIds ?? []
+      publishSettings.groupNames = article.groupNames ?? []
     } catch {
       // article not found or network error, stay with empty state
     }
@@ -115,8 +118,9 @@ export function createEditorState(articleId: number) {
     isSaving.value = true
     publishError.value = null
     try {
-      const { publishArticle, updateArticle } = useArticle()
+      const { publishArticle } = useArticle()
       const dto: ArticlePublishDTO = {
+        ...(currentArticleId.value > 0 ? { id: currentArticleId.value } : {}),
         title: title.value.trim(),
         content: content.value,
         summary: publishSettings.summary || undefined,
@@ -128,11 +132,9 @@ export function createEditorState(articleId: number) {
         visibility: publishSettings.visibility,
         creationStatement: publishSettings.creationStatement !== 'NONE' ? publishSettings.creationStatement : undefined,
       }
+      const id = await publishArticle(dto)
       if (currentArticleId.value === 0) {
-        const id = await publishArticle(dto)
         currentArticleId.value = id
-      } else {
-        await updateArticle(currentArticleId.value, dto)
       }
       lastSavedAt.value = new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
       return true

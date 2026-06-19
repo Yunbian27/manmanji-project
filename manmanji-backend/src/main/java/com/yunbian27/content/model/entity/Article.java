@@ -49,14 +49,14 @@ public class Article {
 
     /** 创建时间 */
     @TableField(fill = FieldFill.INSERT)
-    private LocalDateTime createdAt;
+    private LocalDateTime createTime;
 
     /** 更新时间 */
     @TableField(fill = FieldFill.INSERT_UPDATE)
-    private LocalDateTime updatedAt;
+    private LocalDateTime updateTime;
 
     /** 发布时间 */
-    private LocalDateTime publishedAt;
+    private LocalDateTime publishedTime;
 
     /** 审核意见/驳回理由 */
     private String reviewReason;

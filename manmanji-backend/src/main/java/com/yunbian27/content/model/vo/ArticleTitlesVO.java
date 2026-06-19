@@ -17,5 +17,5 @@ public class ArticleTitlesVO {
     /** 可见范围(PUBLIC/PRIVATE) */
     private String visibility;
     /** 更新时间 */
-    private LocalDateTime updatedAt;
+    private LocalDateTime updateTime;
 }
