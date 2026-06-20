@@ -71,10 +71,12 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                     new SimpleGrantedAuthority("SCOPE_ROLE_" + role.toUpperCase())
             );
 
+            // 组装认证对象
             UsernamePasswordAuthenticationToken authentication =
                     new UsernamePasswordAuthenticationToken(userId, null, authorities);
             authentication.setDetails(claims);
 
+            // 写入上下文
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
         } catch (ExpiredJwtException e) {

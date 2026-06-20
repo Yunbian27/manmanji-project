@@ -26,7 +26,7 @@
     </div>
     <div class="footer-bottom">
       <span class="footer-copy">&copy; 2026 慢慢记</span>
-      <a class="footer-icp" href="https://beian.miit.gov.cn/" target="_blank" rel="noopener">粤ICP备XXXXXXXX号</a>
+      <a class="footer-icp" href="https://beian.miit.gov.cn/" target="_blank" rel="noopener">鄂ICP备2026025890号</a>
       <div class="footer-legal">
         <a class="footer-legal-link" href="#">隐私政策</a>
         <a class="footer-legal-link" href="#">服务条款</a>

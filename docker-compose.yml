@@ -1,0 +1,72 @@
+services:
+  # ===== PostgreSQL 16 + pgvector =====
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: manmanji-db
+    environment:
+      POSTGRES_DB: manmanji
+      POSTGRES_USER: manmanji
+      POSTGRES_PASSWORD: manmanji123
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # 首次创建数据库时自动执行建表 + 初始数据（重启不会重复执行）
+      - ./manmanji-backend/src/main/resources/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+      - ./manmanji-backend/src/main/resources/data.sql:/docker-entrypoint-initdb.d/02-data.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U manmanji"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ===== Redis 7 =====
+  redis:
+    image: redis:7-alpine
+    container_name: manmanji-redis
+    command: redis-server --appendonly yes
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ===== Spring Boot 后端 =====
+  backend:
+    build: ./manmanji-backend
+    container_name: manmanji-backend
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+      POSTGRES_DB: manmanji
+      POSTGRES_USER: manmanji
+      POSTGRES_PASSWORD: manmanji123
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      AI_BAILIAN_API_KEY: ${AI_BAILIAN_API_KEY:-}
+    volumes:
+      - uploads:/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ===== Nginx + 前端 =====
+  nginx:
+    build: ./manmanji-frontend
+    container_name: manmanji-nginx
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  redisdata:
+  uploads:

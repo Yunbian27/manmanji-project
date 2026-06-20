@@ -98,9 +98,6 @@ public class AuthService {
         user.setStatus(UserStatus.ACTIVE);
         userMapper.insert(user);
 
-        // 用户注册时自动分配一个待整理文件夹
-
-
         String accessToken = jwtService.generateAccessToken(user.getId(), user.getRole().name());
         String refreshToken = jwtService.generateRefreshToken(user.getId());
 

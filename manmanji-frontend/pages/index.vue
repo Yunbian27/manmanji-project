@@ -14,7 +14,7 @@
       </div>
     </div>
     <footer class="landing-footer">
-      <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener">粤ICP备XXXXXXXX号</a>
+      <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener">鄂ICP备2026025890号</a>
     </footer>
   </div>
 </template>
