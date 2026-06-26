@@ -95,7 +95,7 @@ public class ArticleService {
         if (article.getTitle() == null || article.getTitle().isBlank())
             article.setTitle(ContentConstants.DEFAULT_ARTICLE_TITLE);
         article.setStatus(ArticleStatus.REVIEWING);
-        article.setPublishedTime(LocalDateTime.now());
+        article.setPublishTime(LocalDateTime.now());
 
         if (dto.getId() != null) {
             articleMapper.updateById(article);

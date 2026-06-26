@@ -56,7 +56,7 @@ public class Article {
     private LocalDateTime updateTime;
 
     /** 发布时间 */
-    private LocalDateTime publishedTime;
+    private LocalDateTime publishTime;
 
     /** 审核意见/驳回理由 */
     private String reviewReason;

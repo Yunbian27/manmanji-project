@@ -51,5 +51,5 @@ public class ArticleVO {
     /** 更新时间 */
     private LocalDateTime updateTime;
     /** 发布时间 */
-    private LocalDateTime publishedTime;
+    private LocalDateTime publishTime;
 }

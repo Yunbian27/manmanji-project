@@ -72,7 +72,7 @@ export interface ArticleVO {
   creationStatement?: string
   createTime: string
   updateTime: string
-  publishedTime: string | null
+  publishTime: string | null
 }
 
 // 编辑器回显数据（对应 /api/articles/editor/{id}）

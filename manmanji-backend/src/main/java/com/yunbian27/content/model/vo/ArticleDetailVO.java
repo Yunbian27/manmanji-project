@@ -58,7 +58,7 @@ public class ArticleDetailVO {
     /** 当前用户是否已收藏 */
     private Boolean bookmarked;
     /** 发布时间 */
-    private LocalDateTime publishedTime;
+    private LocalDateTime publishTime;
     /** 创建时间 */
     private LocalDateTime createTime;
     /** 更新时间 */

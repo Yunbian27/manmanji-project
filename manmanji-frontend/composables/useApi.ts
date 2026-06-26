@@ -86,7 +86,7 @@ async function tryRefresh(baseURL: string): Promise<boolean> {
 
 export function useApi() {
   const config = useRuntimeConfig()
-  const baseURL = config.public.apiBase || 'http://localhost:8080'
+  const baseURL = config.public.apiBase ?? 'http://localhost:8080'
 
   async function request<T>(
     endpoint: string,
@@ -126,7 +126,7 @@ export function useApi() {
         })
       } else {
         clearSession()
-        if (import.meta.client) window.location.href = '/login'
+        if (import.meta.client) navigateTo('/login')
         throw new Error('登录已过期，请重新登录')
       }
     }

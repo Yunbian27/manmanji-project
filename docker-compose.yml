@@ -21,7 +21,7 @@ services:
 
   # ===== Redis 7 =====
   redis:
-    image: redis:7-alpine
+    image: redis:8.0-alpine
     container_name: manmanji-redis
     command: redis-server --appendonly yes
     volumes:

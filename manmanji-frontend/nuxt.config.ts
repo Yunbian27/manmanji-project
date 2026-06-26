@@ -4,8 +4,12 @@
 // ============================================================
 
 export default defineNuxtConfig({
-  // compatibilityDate: 锁定 Nuxt 行为版本，确保未来升级不破坏现有功能
   compatibilityDate: '2026-05-14',
+
+  // 纯 SPA 模式：所有路由客户端渲染，nginx try_files 回退到 index.html
+  routeRules: {
+    '/**': { ssr: false },
+  },
 
   // --------------------------------------------------
   // modules: Nuxt 插件模块（在构建时自动注入功能）
@@ -36,7 +40,7 @@ export default defineNuxtConfig({
   // --------------------------------------------------
   runtimeConfig: {
     public: {
-      apiBase: 'http://localhost:8080',  // 后端 API 地址
+      apiBase: process.env.NUXT_PUBLIC_API_BASE ?? '',
     },
   },
 
